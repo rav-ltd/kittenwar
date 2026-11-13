@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gattini guerrieri 3D — il Clan della Felce</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#16201a;color:#eef3e8;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#wrap{display:flex;gap:12px;padding:10px;justify-content:center;align-items:flex-start}
+#scena3{position:relative;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px #0008;background:#9fc3d6}
+#gl{display:block}
+#c{position:absolute;left:0;top:0;display:block;cursor:grab}
+#panel{width:300px;font-size:13.5px;line-height:1.38;max-height:calc(100vh - 20px);overflow-y:auto}
+body{overflow:hidden}
+#panel h2{margin:0 0 2px;font-size:19px;color:#ffe9a8}
+#panel h3{margin:10px 0 4px;font-size:14px;color:#b9e3a3}
+.bar{height:11px;background:#0006;border-radius:6px;overflow:hidden;margin:1px 0 5px}
+.bar>div{height:100%}
+.etb{display:flex;justify-content:space-between;font-size:12.5px}
+#log{height:150px;overflow-y:auto;background:#0005;padding:6px 8px;border-radius:8px;font-size:12.5px}
+#log div{margin-bottom:3px}
+.ok{color:#9be07f}.no{color:#ffab9a}
+#modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:10}
+#modal .box{background:#273629;border:2px solid #6c8f5d;padding:22px 24px;border-radius:14px;max-width:580px;width:92%;line-height:1.45}
+#modal h2{margin-top:0;color:#ffe9a8}
+#modal .box{max-height:92vh;overflow-y:auto}
+.sapere{margin-top:12px;padding:8px 11px;background:#1c271d;border-left:3px solid #c9b46a;border-radius:6px;font-size:14px}
+.fonte{margin-top:10px;font-size:12.5px;color:#c9b46a;font-style:italic}
+.griglia{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:8px}
+.mb{display:flex;align-items:center;gap:6px;font-size:13px}.mb .bar{flex:1;margin:0}
+.obiettivo{background:#2d3b22;border:1px solid #8fb07f;border-radius:9px;padding:8px 10px;margin:9px 0 5px;font-size:14px;line-height:1.4}
+.pic{font-size:12.5px;color:#cfd8c6}
+@keyframes lamp{50%{opacity:.35}} .lampeggia{animation:lamp .8s infinite}
+.tb{display:inline-block;width:62px;height:8px;background:#0006;border-radius:4px;overflow:hidden;vertical-align:middle;margin-right:6px}.tb span{display:block;height:100%}
+details{margin-top:8px}summary{cursor:pointer;color:#b9e3a3}
+#mb{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+#mb button{font-size:15px;padding:10px 12px;border-radius:9px;border:1px solid #8fb07f;background:#3b5233;color:#fff;cursor:pointer;text-align:left}
+#mb button:hover{background:#4d6b43}
+kbd{background:#0006;border:1px solid #777;border-radius:4px;padding:0 4px;font-size:12px}
+#nuova{background:#3b2f2f;color:#fff;border:1px solid #a77;border-radius:7px;padding:5px 10px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="wrap">
+<div id="scena3"><canvas id="c" width="960" height="640"></canvas></div>
+<div id="panel">
+ <h2 id="pnome"></h2>
+ <div id="prango" class="pic"></div>
+ <div id="pbar" class="griglia"></div>
+ <div id="pobj" class="obiettivo"></div>
+ <div id="pmis" class="obiettivo" style="background:#22303f;border-color:#7fa8d0"></div>
+ <div id="preq" class="pic"></div>
+ <div id="pguerra" class="pic" style="margin-top:6px"></div>
+ <div id="pclan" class="pic" style="margin-top:4px"></div>
+ <h3>Diario</h3>
+ <div id="log"></div>
+ <details><summary>Comandi</summary><div class="pic"><kbd>Frecce</kbd>/<kbd>WASD</kbd> muoversi · <kbd>Maiusc</kbd> acquattarsi<br><kbd>Spazio</kbd> fa tutto: l’azione dipende da dove sei e da chi hai vicino (parlare, mangiare, bere, dormire, cacciare, combattere, giocare). Guarda il suggerimento in basso sullo schermo.</div></details>
+ <p><button id="nuova">💾 Partite</button></p>
+ <div class="pic" style="opacity:.7">Modello del gatto: «Toon Cat FREE» di Omabuarts Studio, licenza CC BY 4.0. Trascina con il mouse per girare la telecamera, rotella per avvicinarla.</div>
+</div>
+</div>
+<div id="modal"><div class="box"><h2 id="mt"></h2><div id="mx"></div><div id="mb"></div></div></div>
+<script src="js/leggende.js?v=20261113141038"></script><script src="js/suoni.js?v=20261113141038"></script><script src="js/musica.js?v=20261113141038"></script><script src="js/storie.js?v=20261113141038"></script><script src="js/registro.js?v=20261113141038"></script><script src="js/modello.js?v=20261113141038"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script>
+'use strict';
+// ================== basi ==================
+const $=id=>document.getElementById(id);
+const cv=$('c'), ctx=cv.getContext('2d');
+const WW=2400,WH=1800,MOON=45;      // MOON = secondi di gioco per una luna
+const FX0=1000,FX1=1080,STRISCIA=150;           // fiume e larghezza di una striscia conquistata
+const GUADI=[320,900,1480];                     // sassi per attraversare il fiume
+const KEY='gattiGuerrieri_v1';
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+const CLAN={
+ felce:{nome:'Clan della Felce',col:'#b4f59a',campo:{x:450,y:900,r:220},ingresso:0},
+ nebbia:{nome:'Clan della Nebbia',col:'#a6d0ff',campo:{x:1800,y:430,r:185},ingresso:Math.PI},
+ pietre:{nome:'Clan delle Pietre',col:'#ffc57e',campo:{x:1800,y:1370,r:185},ingresso:Math.PI},
+};
+const L={
+ roccia:{x:450,y:731,r:38,nome:'Roccia Alta'},
+ mucchio:{x:450,y:900,r:28,nome:'mucchio delle prede'},
+ tanaGuerrieri:{x:278,y:851,r:42,nome:'tana dei guerrieri'},
+ tanaApprendisti:{x:622,y:851,r:42,nome:'tana degli apprendisti'},
+ nursery:{x:323,y:1033,r:42,nome:'nursery'},
+ tanaGuaritore:{x:577,y:1033,r:42,nome:'tana del guaritore'},
+ pozza:{x:450,y:1089,r:16,nome:'pozzanghera'},
+ lago:{x:230,y:210,r:80,nome:'Lago d’Argento'},
+ stagno:{x:720,y:1460,r:60,nome:'stagno'},
+};
+const TANE=['tanaGuerrieri','tanaApprendisti','nursery','tanaGuaritore'];
+const PREFISSI=['Cenere','Pioggia','Volpe','Luna','Sole','Rovo','Neve','Fiume','Brina','Quercia','Salvia','Tempesta','Merlo','Fango','Ombra','Piuma','Selce','Betulla','Muschio','Ruggine','Gufo','Corteccia','Ghianda','Lepre','Vespa','Sabbia','Ortica','Alba','Nube','Vento','Pino','Mora','Castagna','Grandine','Lampo','Edera','Rugiada','Falco','Cardo','Tasso','Felce','Ciottolo','Scintilla','Gelso','Corvo','Ghiro','Riccio','Salice','Frassino','Tuono','Sasso','Ramo','Larice','Giunco','Cervo','Fulmine','Ginepro','Picchio'];
+const SUFFISSI=['Artiglio','Cuore','Coda','Pelo','Balzo','Spina','Orecchio','Occhio','Fuoco','Vento','Pietra','Ala','Graffio','Sentiero','Canto','Lampo','Ombra','Dente'];
+const SUFF_GUAR=['Foglia','Petalo','Radice','Seme','Rugiada','Fiore'];
+const PELI=[{n:'rosso',c:'#d9822b'},{n:'grigio',c:'#8a8f96'},{n:'nero',c:'#34343a'},{n:'bianco',c:'#f1ede4'},{n:'marrone',c:'#8b5e3c'},{n:'crema',c:'#e3c99a'},{n:'grigio fumo',c:'#5d6470'},{n:'fulvo',c:'#b8864f'}];
+const PELI_CLAN={felce:['#d9822b','#8b5e3c','#b8864f','#34343a','#e3c99a','#a0522d'],nebbia:['#8a8f96','#5d6470','#c9ccd2','#a9b4c2','#f1ede4','#6f7f94'],pietre:['#c9a477','#9c7a54','#d8c19c','#7a6650','#e0b080','#b59a6a']};
+const EMBLEMA={felce:'🌿',nebbia:'💧',pietre:'⛰️'}, ANELLO={felce:'#8fe070',nebbia:'#5aa8ff',pietre:'#ff9a3a'};
+const OCCHI=['#9be04a','#f2c94c','#5ec4e8','#e8a33d'];
+const PREDE={
+ topo:{col:'#7d6650',v:55,r:5,cibo:35,nome:'un topo'},
+ uccello:{col:'#4f6aa8',v:0,r:6,cibo:40,nome:'un uccello'},
+ coniglio:{col:'#cdbb9e',v:105,r:8,cibo:60,nome:'un coniglio'},
+ scoiattolo:{col:'#b0683a',v:80,r:6,cibo:45,nome:'uno scoiattolo'},
+};
+const OFF=[[-45,-30],[-45,30],[-72,0]];
+
+// ================== geografia ==================
+function bordo(cl){return FX1+STRISCIA*G.conq[cl];}
+function territorio(x,y){ if(x<FX0) return 'felce'; if(x<FX1) return 'fiume'; const cl=y<900?'nebbia':'pietre'; return x<bordo(cl)?'felce':cl; }
+const nelFiume=x=>x>=FX0&&x<FX1;
+function acqua(x,y){
+ if(nelFiume(x)) return !GUADI.some(g=>Math.abs(y-g)<16);
+ for(const k of ['lago','stagno','pozza']){const l=L[k]; if(Math.hypot(x-l.x,y-l.y)<l.r) return true;}
+ return false;
+}
+function vicinoAcqua(p){ if(p.x>FX0-22&&p.x<FX1+22) return true; for(const k of ['lago','stagno','pozza']){const l=L[k]; if(dist(p,l)<l.r+20) return true;} return false; }
+function inCampo(x,y,m){ for(const k in CLAN){const c=CLAN[k].campo; if(Math.hypot(x-c.x,y-c.y)<c.r+m) return true;} return false; }
+
+const DECOR=[],ERBE=[];
+(function(){
+ const r=mulberry32(12345);
+ for(let i=0;i<950;i++){
+  const x=r()*WW,y=r()*WH;
+  if(x>FX0-35&&x<FX1+35) continue; if(x>FX1&&x<1750&&(Math.abs(y-330)<95||Math.abs(y-1470)<95)) continue; if(inCampo(x,y,45)||inCampo(x,y-100,0)) continue;
+  let bad=false; for(const k of ['lago','stagno']) if(Math.hypot(x-L[k].x,y-L[k].y)<L[k].r+25) bad=true; if(bad) continue;
+  DECOR.push({x,y,z:x<FX0?'felce':(y<900?'nebbia':'pietre'),s:0.7+r()*0.7,v:r()});
+ }
+ while(ERBE.length<14){const x=40+r()*900,y=40+r()*1720; if(inCampo(x,y,40)||acqua(x,y)) continue; ERBE.push({x,y,tipo:Math.floor(r()*3)});}
+})();
+
+// ================== stato ==================
+let G=null, prede=[], floats=[], fx=null, modBtn=null, paused=true;
+const keys={};
+const palla={x:400,y:955,vx:0,vy:0};
+let avvisoFiume=0, ultimoTerr='felce', tSec=0, tPan=0, tSave=0, avvisoBordo=0;
+
+const lune=c=>Math.floor((G.t-c.nascita)/MOON);
+const gatto=id=>id===0?G.p:id===-1?G.visitatore:G.cats.find(c=>c.id===id);
+const o=c=>c.sesso==='f'?'a':'o';
+function nome(c){
+ if(!c) return '—';
+ if(c.leader) return 'Stella di '+c.prefisso;
+ if(c.rango==='gattino') return (c.sesso==='f'?'Piccola ':'Piccolo ')+c.prefisso;
+ if(c.rango==='apprendista') return 'Zampa di '+c.prefisso;
+ return c.prefisso+' '+c.suffisso;
+}
+function rangoTesto(c){
+ if(c.leader) return 'capo del clan';
+ if(c.rango==='apprendista') return c.via==='guaritore'?'apprendista guaritore':'apprendista guerriero';
+ if(c.rango==='guerriero') return c.sesso==='f'?'guerriera':'guerriero';
+ if(c.rango==='guaritore') return c.sesso==='f'?'guaritrice':'guaritore';
+ if(c.rango==='anziano') return c.sesso==='f'?'anziana':'anziano';
+ return c.sesso==='f'?'gattina':'gattino';
+}
+function stat(c){
+ const T={gattino:[20,2],apprendista:[50,5],guerriero:[80,9],guaritore:[55,4],anziano:[40,3]};
+ let [h,f]=T[c.rango]; if(c.leader){h=110;f=12;}
+ c.hpMax=h; c.hp=h; c.forza=f+(c.bonus||0); c.ferito=false;
+}
+function forza(c){ if(c!==G.p) return c.forza+(c.clan==='felce'?coesione():0)+((G.raid&&c.stato==='segui'&&c.amicizia>=3)?3:0); return ({gattino:2,apprendista:5,guerriero:10,guaritore:5})[c.rango]+Math.min(c.allenamenti,8)+bonusSpirito(); }
+const puoErbe=()=>G.p.rango==='guaritore'||G.p.via==='guaritore';
+
+function nuovoPrefisso(s){
+ const base=prefissiPer(s), liberi=base.filter(x=>!G.usati.includes(x));
+ const n=liberi.length?pick(liberi):pick(base)+' '+aggettivoNome(s);
+ G.usati.push(n); return n;
+}
+function nuovoGatto(clan,rango,op={}){
+ const camp=CLAN[clan].campo;
+ const c={id:G.nextId++,clan,rango,via:op.via||null,sesso:op.sesso||(op.sesso=pick(['m','f'])),prefisso:op.prefisso||nuovoPrefisso(op.sesso),
+  colore:op.colore||pick(PELI_CLAN[clan]),macchie:Math.random()<0.45?pick(PELI_CLAN[clan]):null,occhi:pick(OCCHI),
+  nascita:G.t-(op.lune??rnd(14,50))*MOON,leader:!!op.leader,regina:!!op.regina,figlio:!!op.figlio,
+  amicizia:0,ferito:false,stato:clan==='felce'?'campo':'pattuglia',attesa:rnd(0,3),cd:0,dir:0,flip:1,passo:0,
+  x:op.x??camp.x+rnd(-80,80),y:op.y??camp.y+rnd(-80,80)};
+ c.suffisso=op.suffisso||(rango==='guaritore'?pick(SUFF_GUAR):pick(SUFFISSI));
+ c.tx=c.x;c.ty=c.y; stat(c); G.cats.push(c); return c;
+}
+function creaMondo(sc){
+ cam.init=false;
+ G={t:0,cats:[],cibo:6,conq:{nebbia:0,pietre:0},nextId:1,raid:null,prossimoAssalto:MOON*3.2,pasto:0,attesaGattini:null,
+    erbe:ERBE.map(()=>0),usati:[sc.prefisso],tens:{nebbia:30,pietre:25},motivo:{},lontana:null,prossimoVisitatore:MOON*1.5,visitatore:null,prossimaNascita:MOON*2.5};
+ G.p={id:0,clan:'felce',prefisso:sc.prefisso,sesso:sc.sesso,colore:sc.colore,macchie:null,occhi:'#9be04a',rango:'gattino',via:null,suffisso:'',
+  nascita:-2*MOON,x:L.nursery.x+40,y:L.nursery.y-40,dir:0,flip:1,passo:0,fame:85,sete:85,energia:85,salute:100,preda:null,
+  prede:0,allenamenti:0,erbe:0,erbeTotali:0,cure:0,vittorie:0,mentore:null,compagno:null,figli:0,balzo:0,cd:0,giochi:0,acq:false,vx:0,vy:0};
+ nuovoGatto('felce','guerriero',{leader:true,lune:42});
+ nuovoGatto('felce','guaritore',{lune:45});
+ nuovoGatto('felce','anziano',{lune:58});
+ for(let i=0;i<3;i++) nuovoGatto('felce','guerriero');
+ const madre=nuovoGatto('felce','guerriero',{regina:true,sesso:'f',lune:30});
+ G.madre=madre.id;
+ nuovoGatto('felce','apprendista',{lune:9,via:'guerriero'});
+ nuovoGatto('felce','gattino',{lune:3}); nuovoGatto('felce','gattino',{lune:2});
+ for(const cl of ['nebbia','pietre']){ nuovoGatto(cl,'guerriero',{leader:true,lune:60}); for(let i=0;i<4;i++) nuovoGatto(cl,'guerriero'); }
+ prede=[]; for(let i=0;i<40;i++) spawnPreda();
+ ultimoTerr='felce';
+}
+function spawnPreda(){
+ for(let k=0;k<30;k++){
+  const x=rnd(30,WW-30),y=rnd(30,WH-30);
+  if(acqua(x,y)||inCampo(x,y,50)) continue;
+  if(G&&Math.hypot(x-G.p.x,y-G.p.y)<150) continue;
+  prede.push({x,y,tipo:pick(['topo','topo','topo','uccello','uccello','coniglio','scoiattolo']),vx:0,vy:0,t:0,allarme:0,vola:0,morta:false,lenta:Math.random()<0.5}); // una preda su tre è assonnata: lenta e distratta
+  return;
+ }
+}
+
+// ================== messaggi e finestre ==================
+function log(t,col){ const d=document.createElement('div'); d.innerHTML=t; if(col) d.style.color=col; const l=$('log'); l.prepend(d); while(l.children.length>60) l.lastChild.remove(); }
+function flo(x,y,txt,col='#fff'){ floats.push({x,y,gy:y+30,txt,col,t:1.3}); }
+function modale(titolo,testo,bottoni){
+ paused=true; $('modal').style.display='flex'; $('mt').innerHTML=titolo; $('mx').innerHTML=testo;
+ const b=$('mb'); b.innerHTML='';
+ bottoni.forEach((bt,i)=>{ const e=document.createElement('button'); e.innerHTML=(bottoni.length>1?(i+1)+'. ':'')+bt.t; e.onclick=()=>{chiudiModale(); bt.f&&bt.f();}; b.appendChild(e); });
+ modBtn=bottoni;
+}
+function chiudiModale(){ $('modal').style.display='none'; paused=false; modBtn=null; for(const k in keys) keys[k]=false; }
+function effetto(testo,dur,fine){ fx={t:dur,dur,testo,fine}; }
+
+// ================== azioni del giocatore ==================
+// un solo tasto, Spazio: l'azione dipende dal contesto
+function azioneSpazio(){
+ const p=G.p, gu=azioneGuerra(); if(gu) return gu;
+ const nem=G.dentro?null:nemicoVicino(p,55);
+ if(nem&&p.rango!=='gattino'&&!G.raid) return {t:TESTI_LEGG.nemico.spazio(nome(nem)),f:()=>incontroNemico(nem)}; // menu: combattere, scappare… (js/leggende.js)
+ if(nem) return {t:p.rango==='gattino'?'scappa nella nursery!':'attacca '+nome(nem),f:balzo};
+ if(p.rango==='gattino'&&dist(p,palla)<45) return {t:'salta sulla palla di muschio',f:()=>{ p.dir=Math.atan2(palla.y-p.y,palla.x-p.x); p.flip=palla.x<p.x?-1:1; balzo(); }};
+ const nelLuogo=dist(p,L.roccia)<L.roccia.r+18||dist(p,L.mucchio)<L.mucchio.r+16||TANE.some(k=>dist(p,L[k])<L[k].r);
+ if(!nelLuogo&&p.rango!=='gattino'&&(!p.preda||(p.carico||[]).length<2)&&!p.caccia&&MIRATA&&!felcePerParlare(p,34)) return {t:'insegui '+PREDE[MIRATA.tipo].nome,f:()=>{ p.caccia={q:MIRATA,t:0}; }};
+ const a=contesto(); if(a) return {t:a.t.charAt(0).toLowerCase()+a.t.slice(1),f:a.f};
+ if(p.preda) return {t:'mangia '+PREDE[p.preda].nome,f:mangiaPreda};
+ if(puoErbe()&&p.erbe>0&&p.salute<60) return {t:'usa un’erba su di te',f:mangiaPreda};
+ return {t:null,f:balzo};
+}
+function contesto(){
+ const p=G.p, vi=G.visitatore;
+ { const r=contestoTana(); if(r!==undefined) return r; }
+ if(vi&&!vi.parte&&dist(p,vi)<55) return {t:'Farti accarezzare da '+VISITATORI[vi.tipo].nome,f:incontro};
+ if(dist(p,L.roccia)<L.roccia.r+18) return {t:'Parla con il capo sulla Roccia Alta',f:menuCapo};
+ if(dist(p,L.mucchio)<L.mucchio.r+16){
+  if(p.preda) return {t:'Lascia la preda nel mucchio',f:deposita};
+  if(G.cibo>0) return {t:`Mangia dal mucchio (${G.cibo} prede)`,f:mangiaMucchio};
+  return {t:'Il mucchio è vuoto!',f:()=>log('Il mucchio è vuoto: bisogna andare a caccia.')};
+ }
+ for(const k of TANE){ const d=L[k]; if(dist(p,d)<d.r){ // dentro una tana conta il luogo, non i gatti che ci sono
+  if(tanaGiusta(k,p)) return {t:'Dormi nella '+d.nome,f:()=>dormi(d)};
+  const c2=felcePerParlare(p,34); if(c2) return {t:'Parla con '+nome(c2),f:()=>menuGatto(c2)};
+  return {t:'Questa non è la tua tana',f:()=>log(`Questa è la ${d.nome}: non è la tua tana.`)};
+ }}
+ const c=felcePerParlare(p,34); if(c) return {t:'Parla con '+nome(c),f:()=>menuGatto(c)};
+ if(dist(p,L.lago)<L.lago.r+25&&p.rango==='apprendista'&&p.via==='guaritore') return {t:'Chiedi un sogno agli antenati stellati',f:cerimoniaGuaritore};
+ if(vicinoAcqua(p)) return {t:'Bevi',f:bevi};
+ const h=erbaVicina(); if(h>=0&&puoErbe()) return {t:'Raccogli le erbe',f:()=>raccogli(h)};
+ if(p.rango!=='gattino'&&(!p.preda||(p.carico||[]).length<2)&&!p.caccia){ const q=predaMirata(); if(q) return {t:'Insegui '+PREDE[q.tipo].nome,f:()=>{p.caccia={q,t:0};}}; }
+ return null;
+}
+function tanaGiusta(k,p){
+ if((p.incinta||(p.allatta&&G.t<p.allatta))&&k==='nursery') return true;
+ if(p.rango==='gattino') return k==='nursery';
+ if(p.rango==='guerriero') return k==='tanaGuerrieri';
+ if(p.rango==='guaritore') return k==='tanaGuaritore';
+ if(p.via==='guaritore') return k==='tanaGuaritore'||k==='tanaApprendisti';
+ return k==='tanaApprendisti';
+}
+function felcePerParlare(p,R){ let best=null,bd=R; for(const c of G.cats){ if(c.clan!=='felce') continue; const d=dist(p,c); if(d<bd){bd=d;best=c;} } return best; }
+function erbaVicina(){ const p=G.p; for(let i=0;i<ERBE.length;i++) if(G.erbe[i]<=G.t&&dist(p,ERBE[i])<28) return i; return -1; }
+
+function deposita(){ const p=G.p; avviaScena('annusa',[p],0.7,()=>{ const nP=1+(p.carico||[]).length; G.cibo+=nP; p.prede+=nP; avanzaMissione('caccia',nP); p.carico=[]; log(nP>1?`🐭 Hai portato ${nP} prede al mucchio. Il clan ti ringrazia! (prede portate: ${p.prede})`:`🐭 Hai portato ${PREDE[p.preda].nome} al mucchio. Il clan ti ringrazia! (prede portate: ${p.prede})`,'#c8f0a8'); nota('dono'); flo(p.x,p.y-30,nP>1?`+${nP} prede`:'+1 preda','#c8f0a8'); p.preda=null; }); }
+function mangiaMucchio(){ const p=G.p; if(p.fame>90){log('Non hai fame.');return;} p.pasto={tipo:pick(['topo','uccello','scoiattolo']),f:1}; avviaScena('divora',[p],1.2,()=>{ p.pasto=null; G.cibo=Math.max(0,G.cibo-1); p.fame=Math.min(100,p.fame+45); flo(p.x,p.y-30,'🍖 Gnam!'); }); }
+function mangiaPreda(){
+ const p=G.p;
+ if(p.preda){ const pr=p.preda; p.pasto={tipo:pr,f:1}; p.preda=(p.carico&&p.carico.length)?p.carico.shift():null; avviaScena('divora',[p],1.2,()=>{ p.pasto=null; p.fame=Math.min(100,p.fame+PREDE[pr].cibo); flo(p.x,p.y-30,'🍖 Gnam!'); if(p.rango!=='gattino'&&G.cibo<3) log('📜 Il codice dei guerrieri dice: prima si nutre il clan. E il mucchio è quasi vuoto…','#ffd27a'); });  /* la preda successiva resta in bocca */ return; }
+ if(puoErbe()&&p.erbe>0&&p.salute<100){ avviaScena('mangia',[p],1.0,()=>{ p.erbe--; p.salute=Math.min(100,p.salute+40); flo(p.x,p.y-30,'🌿 +40 salute','#9be07f'); }); return; }
+ log('Non hai niente in bocca.');
+}
+function bevi(){ const p=G.p; if(p.sete>95){log('Non hai sete.');return;} avviaScena('beve',[p],1.6,()=>{ p.sete=Math.min(100,p.sete+45); flo(p.x,p.y-30,'💧 Slurp','#9cd0ff'); }); }
+function dormi(d){ const p=G.p; avviaScena('dorme',[p],3,()=>{ G.t+=MOON; p.energia=100; p.fame=Math.max(0,p.fame-12); p.sete=Math.max(0,p.sete-12); p.salute=Math.min(100,p.salute+30); log('😴 Hai dormito nella '+d.nome+'. Dormendo, le lune passano più in fretta.'); }); }
+function raccogli(i){ const p=G.p; if(!puoErbe()){log('Solo i guaritori conoscono le erbe.');return;} if(p.erbe>=8){log('Non puoi portare altre erbe: usale prima.');return;} G.erbe[i]=G.t+40; avviaScena('annusa',[p],0.9,()=>{ p.erbe++; p.erbeTotali++; flo(p.x,p.y-30,'+1 🌿','#9be07f'); log(`🌿 Hai raccolto un'erba (${pick(['calendula','camomilla','borragine','tanaceto','achillea'])}). Ne hai ${p.erbe}.`,'#c8f0a8'); }); }
+function balzo(){
+ const p=G.p; if(p.balzo>0) return;
+ const nem=nemicoVicino(p,55);
+ if(nem){
+  if(p.rango==='gattino'){ log('Sei troppo piccol'+o(p)+' per combattere: corri nella nursery!','#ffd27a'); return; }
+  if(p.cd>0) return;
+  p.cd=0.45; p.energia=Math.max(0,p.energia-1.5); p.dir=Math.atan2(nem.y-p.y,nem.x-p.x); p.flip=nem.x<p.x?-1:1;
+  colpisci(p,nem); return;
+ }
+ if(p.rango!=='gattino'&&!p.preda){ const q=predaMirata(); if(q){ p.caccia={q,t:0}; return; } }
+ if(p.energia<5){log('Sei troppo stanc'+o(p)+' per balzare: dormi un po’.');return;}
+ p.energia-=2.5; p.balzo=0.35;
+}
+function predaMirata(){ const p=G.p; let best=null,bd=700; for(const q of prede){ if(q.morta||q.vola>0.2) continue; const d=dist(p,q); if(d<bd&&(d<120||vis(q.x,q.y,0))){bd=d;best=q;} } return best; }
+let MIRATA=null;
+function controllaPresa(){
+ const p=G.p;
+ if(dist(p,palla)<24){
+  palla.vx=Math.cos(p.dir)*230; palla.vy=Math.sin(p.dir)*230; p.balzo=0; p.giochi++; if(p.rango==='gattino') avviaScena('rotolo',[p],0.9);
+  if(p.giochi%3===1) log(pick(['Salti sulla palla di muschio!','Che balzo! Un giorno sarai un gran cacciatore.','La palla di muschio rotola via!']));
+  return;
+ }
+ for(const q of prede){
+  if(q.morta||q.vola>0.3) continue;
+  if(dist(p,q)<44+PREDE[q.tipo].r){
+   if(p.preda&&(p.carico||[]).length>=2){ log('Hai già tre prede in bocca: portale al mucchio (Spazio vicino al mucchio).'); p.balzo=0; return; }
+   if(p.preda) (p.carico=p.carico||[]).push(q.tipo); else p.preda=q.tipo; q.morta=true; p.balzo=0; p.caccia=null; avviaScena('cattura',[p],0.6,()=>{ if(p.fame<30&&p.preda) mangiaPreda(); }); // fino a tre prede in bocca; con la fame, la mangia subito
+   log(`🎯 Hai catturato ${PREDE[q.tipo].nome}! Portalo al mucchio delle prede.`,'#ffe08a'); nota('preda'); flo(p.x,p.y-30,'Presa!','#ffe08a');
+   return;
+  }
+ }
+}
+
+// ================== combattimento ==================
+let particelle=[], scossa=0;
+function effettiColpo(x,y,ang,col){
+ for(let i=0;i<8;i++){ const a=ang+rnd(-1.1,1.1); particelle.push({x,y,vx:Math.cos(a)*rnd(40,120),vy:Math.sin(a)*rnd(40,120)-35,t:0.8,tipo:'pelo',col}); }
+ particelle.push({x,y,ang,t:0.28,tipo:'graffio'});
+ for(let i=0;i<3;i++) particelle.push({x:x+rnd(-9,9),y:y+14,vx:rnd(-25,25),vy:rnd(-12,0),t:0.6,tipo:'polvere',r:rnd(3,6)});
+}
+function aggiornaParticelle(dt){ for(const q of particelle){ q.t-=dt; if(q.tipo==='testo'||q.tipo==='scintilla'){ q.x+=q.vx*dt; q.y+=q.vy*dt; } else if(q.vx!=null){ q.x+=q.vx*dt; q.y+=q.vy*dt; const k=Math.pow(0.08,dt); q.vx*=k; q.vy=q.vy*k+(q.tipo==='pelo'?70*dt:0); } } particelle=particelle.filter(q=>q.t>0); scossa=Math.max(0,scossa-dt); }
+function disegnaParticelle(){
+ for(const q of particelle){
+  if(q.tipo==='pelo'){ ctx.globalAlpha=Math.min(1,q.t*2); ell(q.x,q.y,2.4,1.1,q.col,ctx,q.t*9); }
+  else if(q.tipo==='testo'){ ctx.globalAlpha=Math.min(1,q.t/q.t0*1.8); ctx.font=`bold ${q.size}px system-ui`; ctx.textAlign='center'; ctx.fillStyle=q.col; ctx.fillText(q.txt,q.x,q.y); }
+  else if(q.tipo==='scintilla'){ ctx.globalAlpha=Math.min(1,q.t*1.5); circ(q.x,q.y,1.4,q.col); }
+  else if(q.tipo==='onda'){ ctx.globalAlpha=q.t*0.8; ctx.strokeStyle='#e0f2ff'; ctx.lineWidth=0.8; const rr=(1-q.t)*14+2; ctx.beginPath(); ctx.ellipse(q.x,q.y,rr,rr*0.4,0,0,6.283); ctx.stroke(); }
+  else if(q.tipo==='polvere'){ ctx.globalAlpha=q.t*0.55; circ(q.x,q.y,q.r*(1.7-q.t),'#d8c7a0'); }
+  else { ctx.globalAlpha=Math.min(1,q.t*4); ctx.strokeStyle='#fffbe8'; ctx.lineWidth=1.5; ctx.lineCap='round'; ctx.save(); ctx.translate(q.x,q.y); ctx.rotate(q.ang+0.9); ctx.beginPath(); for(let k=-1;k<=1;k++){ ctx.moveTo(-10,k*3.6-4); ctx.quadraticCurveTo(0,k*3.6+3,10,k*3.6-4); } ctx.stroke(); ctx.restore(); }
+ }
+ ctx.globalAlpha=1;
+}
+function colpisci(a,b){
+ { const ang=Math.atan2(b.y-a.y,b.x-a.x);
+   a.att=0.32; a.attTipo=a.attTipo==='graffio'?'morso':'graffio'; a.flip=b.x<a.x?-1:1; b.colpito=0.3;
+   b.vx=(b.vx||0)+Math.cos(ang)*150; b.vy=(b.vy||0)+Math.sin(ang)*150; a.vx=(a.vx||0)+Math.cos(ang)*70; a.vy=(a.vy||0)+Math.sin(ang)*70;
+   effettiColpo(b.x,b.y-14*scala(b),ang,b.colore);
+   if(a===G.p||b===G.p) scossa=Math.max(scossa,b===G.p?0.25:0.12); }
+ const d=Math.max(1,Math.round(forza(a)*rnd(0.7,1.3)*(b===G.p?0.6:1))); // il giocatore riceve colpi più leggeri
+ if(b===G.p&&G.dentro) return; // dentro una tana nessuno può colpire il giocatore
+ if(b===G.p) b.salute-=d; else b.hp-=d;
+ flo(b.x,b.y-22,'-'+d,b===G.p?'#ff6b6b':(b.clan==='felce'?'#ffb0a0':'#ffe08a'));
+ if(b===G.p) return;
+ if(b.clan!=='felce'){
+  if(b.stato==='pattuglia'||b.stato==='riposo'){b.stato='caccia';b.bersaglio=a.id;}
+  if(b.hp<=b.hpMax*0.25&&b.stato!=='fuga'){
+   b.stato='fuga'; log(`💨 ${nome(b)} del ${CLAN[b.clan].nome} scappa verso il suo campo!`,'#ffe08a');
+   if(a===G.p) G.p.vittorie++;
+   if(G.raid&&G.raid.bersaglio===b.clan){G.raid.sconfitti++; controllaRaid();}
+  }
+ } else if(b.hp<=b.hpMax*0.25&&b.stato!=='ferito'){
+  b.stato='ferito'; b.ferito=true; log(`🩹 ${nome(b)} è ferit${o(b)} e va nella tana del guaritore.`,'#ffb0a0'); if(G.raid){ G.raid.perdite++; controllaSconfitta(); }
+ }
+}
+function combatti(c,t,dt,vel){
+ if(dist(c,t)>32) muovi(c,t.x,t.y,vel,dt);
+ else if(c.cd<=0){ c.flip=t.x<c.x?-1:1; colpisci(c,t); c.cd=rnd(0.8,1.1); }
+ else { const a=Math.atan2(c.y-t.y,c.x-t.x)+dt*1.4*(c.id%2?1:-1); muovi(c,t.x+Math.cos(a)*26,t.y+Math.sin(a)*16,70,dt); c.flip=t.x<c.x?-1:1; } // si girano intorno
+}
+function nemicoVicino(c,R){ let best=null,bd=R; for(const e of G.cats){ if(e.clan==='felce'||e.stato==='fuga') continue; const d=dist(c,e); if(d<bd){bd=d;best=e;} } return best; }
+function ostileVicino(c,R){ // un gatto della Felce dentro il territorio di c
+ let best=null,bd=R; const p=G.p;
+ if(p.rango!=='gattino'&&!c.amico&&!G.dentro&&territorio(p.x,p.y)===c.clan){const d=dist(c,p); if(d<bd){bd=d;best=p;}}
+ for(const f of G.cats){ if(f.clan!=='felce'||f.stato==='ferito'||f.rango==='gattino') continue; if(territorio(f.x,f.y)!==c.clan) continue; const d=dist(c,f); if(d<bd){bd=d;best=f;} }
+ return best;
+}
+function felceVicino(c,R){ // il codice: nessuno fa del male ai gattini
+ let best=null,bd=R; const p=G.p;
+ if(p.rango!=='gattino'&&!c.amico&&!G.dentro){const d=dist(c,p); if(d<bd){bd=d;best=p;}}
+ for(const f of G.cats){ if(f.clan!=='felce'||f.stato==='ferito'||f.rango==='gattino') continue; const d=dist(c,f); if(d<bd){bd=d;best=f;} }
+ return best;
+}
+function invasoreVicino(c,R){ let best=null,bd=R; for(const e of G.cats){ if(e.clan==='felce'||e.stato==='fuga'||e.stato==='riposo'||e.amico||e.pacificoFino!=null) continue; if(territorio(e.x,e.y)!=='felce') continue; const d=dist(c,e); if(d<bd){bd=d;best=e;} } return best; }
+function sviene(){
+ const p=G.p;
+ p.salute=45; p.fame=Math.max(p.fame,40); p.sete=Math.max(p.sete,40); p.energia=Math.max(p.energia,40); p.preda=null; p.carico=[];
+ p.x=L.tanaGuaritore.x; p.y=L.tanaGuaritore.y+40; p.vx=p.vy=0; cam.init=false; G.t+=MOON*0.3; ultimoTerr='felce';
+ if(G.raid){ const cl=G.raid.bersaglio; fineRaid('😿 Sei fuori combattimento: la battaglia è persa.'); G.tens[cl]=40; annuncia('😿 Ritirata','#ff9a8a'); }
+ for(const c of G.cats) if(c.stato==='caccia'&&c.bersaglio===0){c.stato='pattuglia';puntoNemico(c);}
+ modale('Sei svenut'+o(p)+'…','Ti risvegli nella tana del guaritore, con l’odore delle erbe intorno. I tuoi compagni di clan ti hanno riportato al campo.<br><br><i>Ricorda: mangia, bevi, dormi, e non combattere da sol'+o(p)+' contro troppi nemici.</i>'+box('Il sonno e la morte','Nel <i>Fedone</i>, Socrate chiama la filosofia un esercizio a morire: imparare a separare l’anima dai desideri del corpo. Chi è passato vicino alla morte, dicono gli anziani, si sveglia più saggio.'),[{t:'Rialzarsi'}]);
+}
+
+// ================== cerimonie, dialoghi e sapienza del clan ==================
+// r: 0 = dai gattini in su, 1 = dagli apprendisti in su, 2 = guerrieri e guaritori, 3 = solo la via del guaritore
+const RACCONTI=[
+ {id:'caverna',r:0,tit:'La caverna',fonte:'Platone, Repubblica, libro VII',
+  t:'«La sera, nella nursery, vedi le ombre dei guerrieri sulle pareti della tana. Un filosofo antico, Platone, raccontò di prigionieri incatenati in una caverna fin dalla nascita: vedono soltanto le ombre proiettate sul muro, e le scambiano per le cose vere. Un giorno uno di loro si libera ed esce. La luce del sole lo acceca; poi, a poco a poco, vede le cose come sono. Quando torna giù, i compagni non gli credono. Crescere vuol dire uscire dalla caverna, e avere il coraggio di tornarci per raccontarlo.»',
+  q:{d:'Che cosa vedono i prigionieri della caverna?',r:['Le ombre delle cose','Il sole','Le stelle'],g:0}},
+ {id:'menone',r:0,tit:'Imparare è ricordare',fonte:'Platone, Menone',
+  t:'«Nessuno ti ha insegnato a balzare, eppure il tuo corpo lo sa. Platone pensava che l’anima, prima di nascere, avesse contemplato tutte le verità, e che imparare fosse ricordarle: la chiamava anamnesi, cioè reminiscenza. Nel dialogo intitolato Menone, Socrate fa scoprire a un giovane schiavo una verità di geometria senza spiegargliela, soltanto facendogli domande. Il buon maestro non riempie: risveglia.»',
+  q:{d:'Per Platone, che cosa vuol dire imparare?',r:['Ricordare ciò che l’anima sapeva già','Copiare il maestro','Ripetere a memoria'],g:0}},
+ {id:'gioco',r:0,tit:'Il cerchio del gioco',fonte:'Johan Huizinga, Homo ludens, 1938',
+  t:'«Ti sembra che la palla di muschio sia una cosa da piccoli? Uno studioso olandese, Johan Huizinga, scrisse che il gioco è più antico della cultura: anche gli animali giocano. Il gioco traccia un cerchio separato dal resto del mondo, con regole sue, e chi vi entra le rispetta. Il rito nasce nello stesso modo: anche la cerimonia sotto la Roccia Alta è un cerchio dove valgono regole diverse.»',
+  q:{d:'Che cosa hanno in comune, secondo Huizinga, il gioco e il rito?',r:['Un cerchio separato, con regole sue','Un premio per chi vince','Niente'],g:0}},
+ {id:'totem',r:0,tit:'Il totem della felce',fonte:'Émile Durkheim, Le forme elementari della vita religiosa, 1912',
+  t:'«Perché ci chiamiamo Clan della Felce? Molti popoli prendono il nome da un animale o da una pianta: il loro totem. Il sociologo Émile Durkheim scrisse che il totem è il simbolo del clan stesso: onorando la felce, il clan onora la propria unità. Durkheim distingueva il sacro, separato e protetto da divieti, dal profano, la vita di tutti i giorni. Per questo nessuno di noi calpesta i germogli di felce davanti al campo.»',
+  q:{d:'Per Durkheim, che cosa rappresenta il totem?',r:['Il clan stesso, la sua unità','Il cibo preferito del clan','Il nemico'],g:0}},
+ {id:'pelo',r:0,tit:'Il pelo e le parole',fonte:'Robin Dunbar, Grooming, Gossip and the Evolution of Language, 1996',
+  t:'«Quando ti lavi il pelo con un compagno, non ti pulisci soltanto: stringi un legame. Anche le scimmie passano ore a pulirsi a vicenda, e così il gruppo resta unito. Robin Dunbar, che studia i primati e gli esseri umani, pensa che il linguaggio sia nato per prendere il posto di questa cura: quando i gruppi diventarono troppo grandi per pulirsi tutti a vicenda, gli umani cominciarono a chiacchierare. Una chiacchiera raggiunge molti compagni insieme, una lingua sul pelo ne raggiunge uno solo.»',
+  q:{d:'Secondo Dunbar, che cosa ha preso il posto della pulizia reciproca del pelo negli esseri umani?',r:['Il linguaggio, a partire dalle chiacchiere','La caccia','Il sonno'],g:0}},
+ {id:'passaggio',r:1,tit:'Separazione, margine, aggregazione',fonte:'Arnold van Gennep, I riti di passaggio, 1909',
+  t:'«La tua cerimonia aveva tre tempi. Prima hai lasciato la nursery: è la separazione. Poi, per un momento, non eri più gattino e non ancora apprendista, ed eri senza nome: è il margine. Infine il clan ha gridato il tuo nome nuovo: è l’aggregazione. Arnold van Gennep trovò questi tre tempi nei riti di passaggio di popoli lontanissimi tra loro: nascita, iniziazione, nozze, funerali. Ogni volta che si cambia posto nella comunità, si attraversa una soglia.»',
+  q:{d:'Quali sono i tre tempi di un rito di passaggio?',r:['Separazione, margine, aggregazione','Nascita, vita, morte','Caccia, pasto, sonno'],g:0}},
+ {id:'magia',r:1,tit:'Le due leggi della magia',fonte:'James G. Frazer, Il ramo d’oro, 1890',
+  t:'«Perché hai toccato il naso del tuo mentore? James Frazer raccolse le usanze di moltissimi popoli e vi trovò due leggi del pensiero magico. La prima dice che il simile produce il simile: è la magia omeopatica, come chi imita la pioggia per farla cadere. La seconda dice che le cose state a contatto restano legate anche a distanza: è la magia contagiosa. Nel nostro rito, il tocco del naso fa passare in te qualcosa del tuo mentore.»',
+  q:{d:'Che cosa dice la legge della magia contagiosa?',r:['Ciò che è stato a contatto resta legato','Il simile produce il simile','La magia non esiste'],g:0}},
+ {id:'dono',r:1,tit:'Il dono delle prede',fonte:'Marcel Mauss, Saggio sul dono, 1925',
+  t:'«Perché la preda va al mucchio e non nella tua pancia? Marcel Mauss studiò il dono presso molti popoli e vi trovò tre obblighi: dare, ricevere, ricambiare. Il dono non è mai del tutto gratuito: crea un legame, perché chi riceve resta in debito e darà a sua volta. Il mucchio delle prede è il cuore del clan: ogni preda che porti ci lega gli uni agli altri.»',
+  q:{d:'Quali sono i tre obblighi del dono secondo Mauss?',r:['Dare, ricevere, ricambiare','Cacciare, mangiare, dormire','Chiedere, prendere, tenere'],g:0}},
+ {id:'cacciatori',r:1,tit:'Il cacciatore e la sua preda',fonte:'James G. Frazer, Il ramo d’oro',
+  t:'«Frazer racconta che molti popoli cacciatori onoravano l’animale ucciso: gli chiedevano perdono e ne trattavano le ossa con rispetto, perché il suo spirito non si vendicasse e la sua specie tornasse. Chi caccia vive della vita degli altri. Quando prendi un topo, ringrazialo: è questo che distingue un cacciatore da un ladro.»',
+  q:{d:'Perché molti popoli cacciatori onoravano l’animale ucciso?',r:['Perché il suo spirito non si vendicasse e la specie tornasse','Per farlo arrabbiare','Per gioco'],g:0}},
+ {id:'auriga',r:1,tit:'L’auriga e i due cavalli',fonte:'Platone, Fedro',
+  t:'«La fame, la sete e la stanchezza ti tirano ognuna da una parte. Platone paragonò l’anima a un carro alato: un auriga guida due cavalli. Uno è nobile e obbedisce: è l’animo coraggioso. L’altro è ribelle e tira verso ciò che desidera: sono gli appetiti. L’auriga è la ragione, che deve guidarli insieme verso l’alto. Un guerriero non è chi non ha fame, ma chi sa guidare la propria fame.»',
+  q:{d:'Nel Fedro, chi guida il carro dell’anima?',r:['La ragione, cioè l’auriga','Il cavallo ribelle','Il capo del clan'],g:0}},
+ {id:'re',r:1,tit:'Il re del bosco',fonte:'James G. Frazer, Il ramo d’oro, capitolo I',
+  t:'«Frazer apre il suo grande libro con un enigma. Nel bosco sacro di Diana, a Nemi, vicino a Roma, viveva un sacerdote chiamato re del bosco. Girava giorno e notte con la spada in pugno attorno a un albero, perché chi avesse colto un ramo di quell’albero, il ramo d’oro, e lo avesse ucciso, avrebbe preso il suo posto. Il potere del capo è sacro, ma non gli appartiene: passa da un capo all’altro, come la vita del bosco passa da una stagione all’altra.»',
+  q:{d:'Come si diventava re del bosco a Nemi?',r:['Cogliendo il ramo d’oro e uccidendo il re','Per elezione','Per eredità'],g:0}},
+ {id:'axis',r:1,tit:'Il centro del mondo',fonte:'Mircea Eliade, Il sacro e il profano, 1957',
+  t:'«Perché le cerimonie si fanno sempre sotto la Roccia Alta? Lo storico delle religioni Mircea Eliade notò che molti popoli hanno un centro del mondo: una montagna, un albero, un palo sacro che unisce la terra al cielo. Lo chiamava axis mundi, l’asse del mondo. Attorno al centro lo spazio non è più uguale dappertutto: diventa un mondo ordinato. La Roccia Alta è il nostro centro.»',
+  q:{d:'Che cos’è l’axis mundi per Eliade?',r:['Il centro che unisce la terra al cielo','Un’arma','Il confine con un altro clan'],g:0}},
+ {id:'soglia',r:1,tit:'Il confine e la soglia',fonte:'Arnold van Gennep, I riti di passaggio, 1909',
+  t:'«I segni d’odore lungo il confine non sono soltanto un avvertimento. Van Gennep osservò che varcare un confine è già un passaggio: molti popoli compiono un rito sulla soglia di una casa, di un villaggio, di un territorio. Chi entra nel territorio di un altro clan esce dal proprio mondo ordinato: per questo i guerrieri varcano il confine in silenzio, all’erta.»',
+  q:{d:'Per Van Gennep, che cos’è varcare un confine?',r:['Un passaggio, spesso segnato da un rito','Una cosa senza importanza','Un gioco'],g:0}},
+ {id:'guardiani',r:2,tit:'I guardiani e la giustizia',fonte:'Platone, Repubblica, libri I e II',
+  t:'«Platone voleva che i guardiani della città fossero come cani di razza: dolci con gli amici, feroci con i nemici. Ma prima ancora si chiese che cosa sia la giustizia. Il sofista Trasimaco rispondeva: la giustizia è l’utile del più forte. Socrate gli mostrò che il giusto è più felice dell’ingiusto, perché ha un’anima in ordine. Prima di guidare un assalto, chiediti se è giusto, non soltanto se puoi vincerlo.»',
+  q:{d:'Che cosa sosteneva Trasimaco?',r:['Che la giustizia è l’utile del più forte','Che il giusto è più felice','Che i clan non hanno bisogno di giustizia'],g:0}},
+ {id:'liminale',r:2,tit:'La veglia e la communitas',fonte:'Victor Turner, Il processo rituale, 1969',
+  t:'«Nella notte della veglia non eri più apprendista e non ancora guerriero. L’antropologo Victor Turner chiamò questo stato liminalità, dal latino limen, soglia: chi sta sulla soglia non è né di qua né di là, è senza rango e senza nome. Proprio lì nasce la communitas, un legame tra uguali più profondo delle gerarchie di ogni giorno. Per questo i guerrieri ricordano per sempre chi ha vegliato con loro.»',
+  q:{d:'Che cos’è la liminalità per Turner?',r:['Lo stato di chi è sulla soglia, tra due condizioni','Il rango più alto del clan','La paura del buio'],g:0}},
+ {id:'simposio',r:2,tit:'La scala dell’amore',fonte:'Platone, Simposio',
+  t:'«Nel Simposio, Socrate riferisce l’insegnamento di una sacerdotessa, Diotima. L’amore è una scala: si comincia amando un solo corpo bello, poi la bellezza di tutti i corpi, poi la bellezza delle anime, delle leggi e dei saperi, fino a contemplare la Bellezza in sé, che non nasce e non muore. Chi sceglie un compagno sale il primo gradino di una scala molto più alta.»',
+  q:{d:'Dove porta la scala dell’amore di Diotima?',r:['Alla Bellezza in sé','A un solo compagno per sempre','Alla guerra'],g:0}},
+ {id:'stelle',r:2,tit:'Le anime e le stelle',fonte:'Platone, Timeo',
+  t:'«Guarda il cielo stanotte. Nel Timeo, Platone racconta che il dio artefice, il demiurgo, creò tante anime quante sono le stelle, e assegnò a ciascuna anima la sua stella. Chi vive con giustizia, alla fine della vita, torna ad abitare la propria stella. Anche noi diciamo che gli antenati vegliano dalle stelle: molti popoli hanno cercato i loro morti nel cielo.»',
+  q:{d:'Nel Timeo, dove torna l’anima di chi ha vissuto con giustizia?',r:['Alla sua stella','Nella caverna','Al mucchio delle prede'],g:0}},
+ {id:'sciamano',r:3,tit:'Morte e rinascita dello sciamano',fonte:'Mircea Eliade, Lo sciamanismo e le tecniche arcaiche dell’estasi, 1951',
+  t:'«Il sogno al Lago d’Argento non è un caso. Eliade studiò gli sciamani della Siberia e di molti altri popoli: la loro iniziazione passa spesso per una malattia o un sogno, in cui il futuro guaritore muore simbolicamente, viene smembrato e ricomposto, e rinasce capace di viaggiare tra il mondo dei vivi e quello degli spiriti. Il guaritore è colui che è già passato dall’altra parte.»',
+  q:{d:'Che cosa accade spesso nell’iniziazione dello sciamano?',r:['Una morte simbolica e una rinascita','Una battaglia','Un banchetto'],g:0}},
+ {id:'fedone',r:3,tit:'Prepararsi a morire',fonte:'Platone, Fedone',
+  t:'«Nel Fedone, Socrate passa l’ultimo giorno della sua vita a parlare con gli amici, prima di bere la cicuta. Dice che chi fa filosofia si esercita a morire: separa l’anima dal corpo e dai suoi desideri, per pensare con l’anima sola. Per questo non ha paura. Un guaritore vede morire molti gatti: deve sapere che cosa dire, e che cosa pensare, quando arriva il momento.»',
+  q:{d:'Che cosa diceva Socrate della filosofia, nel Fedone?',r:['Che è un esercizio a morire','Che è un gioco','Che serve a vincere le battaglie'],g:0}},
+ {id:'er',r:3,tit:'Il mito di Er',fonte:'Platone, Repubblica, libro X',
+  t:'«Er era un guerriero caduto in battaglia, che tornò in vita dodici giorni dopo e raccontò ciò che aveva visto. Le anime dei morti scelgono la loro vita futura: chi ha vissuto con saggezza sceglie bene, chi si è lasciato guidare dai desideri sceglie male. Poi attraversano la pianura del Lete, l’oblio, bevono al fiume Amelete e dimenticano tutto prima di rinascere. Per questo, dice Platone, bisogna imparare a scegliere fin da questa vita.»',
+  q:{d:'Che cosa fanno le anime nel mito di Er, prima di rinascere?',r:['Scelgono la vita futura, poi dimenticano','Combattono tra loro','Restano stelle per sempre'],g:0}},
+];
+const NOTE={
+ preda:'Prima preda! Molti popoli cacciatori, scrive Frazer, chiedevano perdono all’animale ucciso. L’anziano conosce questa storia.',
+ dono:'Hai fatto il tuo primo dono al clan. Dare, ricevere, ricambiare: sono i tre obblighi del dono secondo Marcel Mauss.',
+ confine:'Hai varcato una soglia. Per Van Gennep ogni confine attraversato è già un piccolo rito di passaggio.',
+ notte:'È notte. Nel Timeo di Platone ogni anima ha la sua stella: gli antenati del clan vegliano da lassù.',
+ axis:'La Roccia Alta è il centro del campo. Per Mircea Eliade molti popoli hanno un centro del mondo, un asse che unisce la terra al cielo.',
+};
+const MASSIME=['«Conosci te stesso»: era scritto sul tempio di Apollo a Delfi.','«Una vita senza ricerca non è degna di essere vissuta», disse Socrate ai suoi giudici (Platone, Apologia di Socrate).','«È meglio subire un’ingiustizia che commetterla», sostiene Socrate nel Gorgia di Platone.','Nel Lachete di Platone, il coraggio diventa una forma di sapere: sapere che cosa si deve temere e che cosa no.','«So di non sapere»: così si riassume, di solito, la saggezza di Socrate nell’Apologia.'];
+function nota(k){ const p=G.p; p.note=p.note||{}; if(p.note[k]) return; p.note[k]=1; log('📜 '+NOTE[k],'#e8d9a8'); }
+const sentiti=()=>G.p.sentiti||(G.p.sentiti=[]);
+const livello=p=>p.rango==='gattino'?0:p.rango==='apprendista'?1:2;
+function disponibili(){ const p=G.p, gu=p.rango==='guaritore'||p.via==='guaritore'; return RACCONTI.filter(l=>l.r===3?gu:l.r<=livello(p)); }
+const box=(tit,t)=>`<div class="sapere"><b>📜 ${tit}</b><br>${t}</div>`;
+function racconto(anz){
+ const nuovi=disponibili().filter(l=>!sentiti().includes(l.id));
+ if(!nuovi.length) return modale(nome(anz),'«Per ora ti ho raccontato tutto ciò che puoi capire. Torna quando avrai cambiato nome: ci saranno storie nuove.»',[{t:'Va bene'}]);
+ const l=nuovi[(((G.p.vite||1)-1)*3+(G.t|0))%nuovi.length]; // a rotazione: ogni vita, e ogni volta, l'anziano comincia da un racconto diverso
+ avviaScena('racconto',[G.p,anz],2,()=>{ sentiti().push(l.id); spirito(12,'racconto'); avanzaMissione('ascolta'); log(`📜 Hai ascoltato il racconto «${l.tit}». (racconti: ${sentiti().length})`,'#e8d9a8');
+  modale('📜 '+l.tit,`<i>${nome(anz)} si accoccola accanto a te e chiude gli occhi.</i><br><br>${l.t}<div class="fonte">Fonte: ${l.fonte}</div>`,[{t:'Grazie, '+(anz.sesso==='f'?'anziana':'anziano')}]); });
+}
+function prova(titolo,intro,ok){
+ const sap=RACCONTI.filter(l=>sentiti().includes(l.id)); const l=pick(sap);
+ modale(titolo,`${intro}<br><br><b>«${l.q.d}»</b>`,shuffle([0,1,2]).map(i=>({t:l.q.r[i],f:()=>{
+  if(i===l.q.g){ log('📜 Hai superato la prova della sapienza.','#e8d9a8'); ok(); }
+  else modale(titolo,`«No. Ripensa al racconto «${l.tit}», e torna quando avrai meditato.»`,[{t:'Tornerò'}]); }})));
+}
+function requisiti(){
+ const p=G.p,l=lune(p),n=sentiti().length;
+ if(p.convocato&&p.rango==='apprendista') return [{b:'lune',t:'Avere 12 lune',v:`${l}/12`,ok:l>=12}]; // convocato dal capo dopo tre battaglie vinte (js/leggende.js)
+ if(p.rango==='gattino') return [{b:'lune',t:'Avere 6 lune',v:`${l}/6`,ok:l>=6},{b:'racconti',t:'Ascoltare un racconto dell’anziano',v:`${Math.min(n,1)}/1`,ok:n>=1}];
+ if(p.rango==='apprendista'){
+  const R={b:'racconti',t:'Ascoltare 3 racconti dell’anziano',v:`${Math.min(n,3)}/3`,ok:n>=3};
+  if(p.via==='guerriero') return [{b:'lune',t:'Avere 12 lune',v:`${l}/12`,ok:l>=12},{b:'prede',t:'Portare 3 prede al mucchio',v:`${p.prede}/3`,ok:p.prede>=3},{b:'allenamenti',t:'Allenarsi 3 volte con il mentore',v:`${p.allenamenti}/3`,ok:p.allenamenti>=3},R];
+  return [{b:'lune',t:'Avere 12 lune',v:`${l}/12`,ok:l>=12},{b:'erbe',t:'Raccogliere 5 erbe',v:`${p.erbeTotali}/5`,ok:p.erbeTotali>=5},{b:'cure',t:'Curare 3 gatti feriti',v:`${p.cure}/3`,ok:p.cure>=3},R];
+ }
+ return [];
+}
+const reqHtml=()=>requisiti().map(r=>`<div class="${r.ok?'ok':'no'}">${r.ok?'✔':'✘'} ${r.t} (${r.v})</div>`).join('');
+function capo(){ return G.cats.find(c=>c.clan==='felce'&&c.leader); }
+function anziano(){ return G.cats.find(c=>c.clan==='felce'&&c.rango==='anziano'); }
+function menuCapo(){
+ const p=G.p, nc=nome(capo()); nota('axis');
+ if(p.rango==='gattino'){
+  if(!requisiti().every(r=>r.ok)) return modale(nc,`«Non è ancora il tuo tempo, ${nome(p)}.»<br><br>${reqHtml()}<br><i>${anziano()?nome(anziano())+', l’anziano del clan, siede vicino alla tana dei guerrieri: avvicinati e chiedigli un racconto (Spazio).':''}</i>`,[{t:'Va bene'}]);
+  return avviaScena('cerimonia',partecipanti(),3.6,separazione);
+ }
+ if(p.rango==='apprendista'){
+  if(p.via==='guerriero'){
+   const ok=requisiti().every(r=>r.ok);
+   return modale(nc,(ok?'«Il tuo mentore dice che sei pront'+o(p)+'. Vuoi affrontare la cerimonia del guerriero?»':'«Non sei ancora pront'+o(p)+'. Ecco che cosa ti manca:»')+'<br><br>'+reqHtml(),
+    ok?[{t:'🌟 Cerimonia del guerriero',f:()=>avviaScena('cerimonia',partecipanti(),3.6,cerimoniaGuerriero)},{t:'Più tardi'}]:[{t:'Ho capito'}]);
+  }
+  return modale(nc,'«Quando sarai pront'+o(p)+', va’ al Lago d’Argento, in fondo al bosco a nord-ovest: là gli antenati stellati parlano ai guaritori.»<br><br>'+reqHtml(),[{t:'Ho capito'}]);
+ }
+ const bt=[];
+ if(p.rango==='guerriero'&&!G.raid&&!p.vecchio){
+  bt.push({t:'⚔️ Guidare un assalto al Clan della Nebbia (nord-est)',f:()=>iniziaRaid('nebbia')});
+  bt.push({t:'⚔️ Guidare un assalto al Clan delle Pietre (sud-est)',f:()=>iniziaRaid('pietre')});
+ }
+ if(G.raid) bt.push({t:'🏳️ Annullare l’assalto',f:()=>fineRaid('Hai annullato l’assalto.')});
+ bt.push({t:'Chiudi'});
+ const n=G.cats.filter(c=>c.clan==='felce');
+ let t=`«Benvenut${o(p)}, ${nome(p)}.»<br><br>Nel mucchio ci sono <b>${G.cibo}</b> prede. Il clan conta ${n.filter(c=>c.rango==='guerriero').length} guerrieri, ${n.filter(c=>c.rango==='apprendista').length} apprendisti e ${n.filter(c=>c.rango==='gattino').length} gattini.`;
+ if(p.rango==='guaritore') t+='<br><br>«I guaritori non guidano assalti: il tuo compito è curare il clan.»';
+ t+=curiosita();
+ modale(nc,t,bt);
+}
+// --- la cerimonia dell'apprendista, in tre tempi ---
+function separazione(){
+ const p=G.p, nc=nome(capo()), madre=gatto(G.madre);
+ modale('🌑 Primo tempo: la separazione',`${nc} sale sulla Roccia Alta: «Che tutti i gatti abbastanza grandi da cacciare si riuniscano sotto la Roccia Alta!»<br><br>«Oggi ${nome(p)} lascia la nursery. Da questa notte non dormirà più accanto a ${madre?nome(madre):'sua madre'}.»${madre?' '+nome(madre)+' ti lecca la testa un’ultima volta.':''}<br><br>«Quale strada sceglie?»`
+  +box('Separazione','Ogni rito di passaggio comincia staccando chi passa dalla sua condizione di prima (Arnold van Gennep, <i>I riti di passaggio</i>, 1909).'),
+  [{t:'⚔️ La strada del guerriero',f:()=>margine('guerriero')},{t:'🌿 La strada del guaritore',f:()=>margine('guaritore')},{t:'Non ancora'}]);
+}
+function margine(via){
+ const p=G.p;
+ modale('🌗 Secondo tempo: il margine',`Avanzi da sol${o(p)} nel cerchio, sotto la Roccia. Nessuno pronuncia il tuo nome: per un istante non sei più gattin${o(p)} e non sei ancora apprendista. Senti gli occhi di tutto il clan su di te.`
+  +box('Margine','Chi sta sulla soglia non è né di qua né di là: è senza nome e senza rango. L’antropologo Victor Turner chiamò questo stato liminalità, dal latino <i>limen</i>, soglia (<i>Il processo rituale</i>, 1969).'),
+  [{t:'Restare in silenzio',f:()=>diventaApprendista(via)}]);
+}
+function diventaApprendista(via){
+ const p=G.p; p.rango='apprendista'; p.via=via;
+ const m=via==='guaritore'?G.cats.find(c=>c.clan==='felce'&&c.rango==='guaritore'):pick(G.cats.filter(c=>c.clan==='felce'&&c.rango==='guerriero'&&!c.leader&&!c.regina));
+ p.mentore=m?m.id:null;
+ const ilm=m.sesso==='f'?'la tua mentore':'il tuo mentore';
+ const cosa=via==='guerriero'
+  ?'Ora puoi uscire dal campo. Vai a caccia (Spazio vicino a una preda: il gatto la insegue da solo), porta le prede al mucchio, allenati con '+ilm+' e ascolta i racconti dell’anziano.'
+  :'Ora puoi uscire dal campo. Raccogli le erbe nel bosco (i fiorellini, Spazio), cura i gatti feriti (Spazio vicino a un gatto con 🩹), ascolta i racconti dell’anziano, e quando sarai pront'+o(p)+' va’ al Lago d’Argento.';
+ modale('🌕 Terzo tempo: l’aggregazione',`«Da questo momento, fino a quando non avrai guadagnato il tuo nome da ${via}, ti chiamerai <b>${nome(p)}</b>. ${nome(m)} sarà ${ilm}.»<br><br>Tocchi il naso di ${nome(m)}. Il clan grida: «${nome(p)}! ${nome(p)}!»`
+  +box('Aggregazione','Il nome nuovo e il tocco del naso ti fanno entrare nel gruppo. Per James Frazer, ciò che è stato a contatto resta legato: è la legge della magia contagiosa (<i>Il ramo d’oro</i>, 1890).')
+  +`<br><b>Che cosa fare ora:</b> ${cosa}`,[{t:'Evviva!'}]);
+ log(`🌟 Sei diventat${o(p)} ${nome(p)}!`,'#ffe08a');
+}
+// --- la cerimonia del guerriero ---
+function cerimoniaGuerriero(){
+ prova('🌑 La prova della sapienza',`${nome(capo())}: «Un guerriero non è fatto soltanto di artigli. Prima di darti il tuo nome, rispondimi.»`,nomeGuerriero);
+}
+function nomeGuerriero(){
+ const p=G.p, nc=nome(capo()), opz=shuffle(SUFFISSI).slice(0,4);
+ modale('🌗 Il nome del guerriero',`${nc}: «Io, capo del Clan della Felce, chiedo ai nostri antenati stellati di guardare questo apprendista. Ha imparato il codice dei guerrieri, e lo affido a voi.»<br><br>«${nome(p)}, prometti di rispettare il codice e di proteggere il clan, anche a costo della vita?» — «Lo prometto.»<br><br>Quale nome ti dà il capo?`
+  +box('Il nome','Per molti popoli, scrive Frazer nel <i>Ramo d’oro</i>, il nome è una parte viva della persona: per questo a volte lo si tiene segreto. Cambiare nome è diventare un altro.'),
+  opz.map(s=>({t:p.prefisso+' '+s,f:()=>{
+   p.suffisso=s; p.rango='guerriero'; p.via=null; G.t+=MOON*0.3; p.energia=Math.max(10,p.energia-25);
+   log(`🌟 Il clan grida il tuo nuovo nome: «${nome(p)}! ${nome(p)}!»`,'#ffe08a');
+   effetto('La veglia: tutta la notte di guardia al campo, in silenzio. Sei sulla soglia.',3.4,()=>modale('🌕 All’alba: l’aggregazione',`All’alba i guerrieri ti circondano e ti sfiorano il fianco con la coda. Ora sei <b>${nome(p)}</b>.`
+    +box('Communitas','Chi ha vegliato sulla soglia resta legato agli altri da un vincolo tra uguali: Victor Turner lo chiamò <i>communitas</i>. L’anziano ha nuovi racconti per te.')
+    +`<br>Ora puoi:<br>• dormire nella tana dei guerrieri;<br>• guidare un assalto contro un altro clan (Roccia Alta);<br>• diventare compagn${o(p)} di un guerriero amico e avere dei gattini (lavatevi il pelo a vicenda, poi Spazio vicino a lui o a lei).`,[{t:'Avanti!'}]));
+  }})));
+}
+// --- la cerimonia del guaritore ---
+function cerimoniaGuaritore(){
+ const p=G.p;
+ if(!requisiti().every(r=>r.ok)) return modale('Lago d’Argento','L’acqua brilla, ma gli antenati tacciono: non sei ancora pront'+o(p)+'.<br><br>'+reqHtml(),[{t:'Tornerò'}]);
+ avviaScena('beve',[p],1.6,riva);
+}
+function riva(){ const p=G.p;
+ prova('🌑 Sulla riva del Lago d’Argento','Dall’acqua sale una voce: «Chi vuole parlare con gli antenati deve prima sapere.»',()=>{
+  modale('🌗 Il sogno',`Bevi l’acqua gelida e ti addormenti sulla riva. Nel sogno cadi nell’acqua nera e ti senti sciogliere, come se morissi. Poi i gatti di stelle ti ricompongono, pelo per pelo, e ti rimettono in piedi: «Ora conosci la strada tra i vivi e gli antenati.»`
+   +box('Morte e rinascita','Per Mircea Eliade l’iniziazione dello sciamano passa spesso per una morte simbolica e una rinascita (<i>Lo sciamanismo e le tecniche arcaiche dell’estasi</i>, 1951).'),
+   [{t:'Ascoltare gli antenati',f:()=>{
+    const opz=shuffle(SUFF_GUAR).slice(0,4);
+    modale('🌕 Il nome dato dalle stelle','«Ogni anima ha la sua stella, e ora tu conosci la tua.» Quale nome ti danno gli antenati?'
+     +box('Le stelle','Nel <i>Timeo</i> Platone racconta che ogni anima ha la sua stella, e che chi vive con giustizia vi ritorna.'),
+     opz.map(s=>({t:p.prefisso+' '+s,f:()=>{
+      p.suffisso=s; p.rango='guaritore'; p.via=null; G.t+=MOON*0.3;
+      log(`✨ Ora sei ${nome(p)}, ${rangoTesto(p)} del Clan della Felce. L’anziano ha nuovi racconti per te.`,'#ffe08a');
+      effetto('Ti svegli al chiaro di luna. Gli antenati ti hanno parlato.',2.6);
+     }})));
+   }}]);
+ });
+}
+const FRASI={gattino:['«Giochiamo alla caccia?»','«Da grande sarò il guerriero più forte del bosco!»'],apprendista:['«Il mio mentore dice che balzo troppo presto.»','«Hai visto quanti topi vicino allo stagno?»'],guerriero:['«Il codice dei guerrieri ci rende forti.»','«Tieni d’occhio il confine: le pattuglie nemiche sono vicine.»','«Il fiume si attraversa sui sassi del guado.»'],guaritore:['«La calendula aiuta le ferite a guarire.»','«Gli antenati stellati vegliano su di noi.»'],anziano:['«Siediti accanto a me: ho una storia per te.»','«Ho visto più lune di quante stelle conterai stanotte.»']};
+function allenati(m){
+ const p=G.p; if(p.energia<20){log('Sei troppo stanc'+o(p)+' per allenarti: dormi un po’.');return;}
+ avviaScena('allena',[p,m],2.4,()=>{ p.energia-=18; p.allenamenti++; log(`⚔️ Allenamento n. ${p.allenamenti}: diventi più forte (forza ${forza(p)}).`,'#c8f0a8'); log(`📜 Tra un balzo e l’altro, ${nome(m)} ti dice: ${pick(MASSIME)}`,'#e8d9a8'); });
+}
+function cura(c){
+ const p=G.p; if(p.erbe<=0){log('Non hai erbe: raccoglile nel bosco (Spazio vicino ai fiori).');return;}
+ avviaScena('cura',[p,c],3.2,()=>{ p.erbe--; p.cure++; avanzaMissione('cura'); c.hp=c.hpMax; c.ferito=false; c.stato='campo'; nuovoPuntoCampo(c); c.amicizia++; log(`🌿 Hai curato ${nome(c)}. (cure fatte: ${p.cure})`,'#c8f0a8'); flo(c.x,c.y-30,'Guarit'+o(c)+'!','#9be07f'); });
+}
+function compagni(c){
+ const p=G.p;
+ if(c.amicizia<3) return modale(nome(c),`«Ti voglio bene, ma ci conosciamo ancora poco.»<br><br><i>Amicizia ${c.amicizia}/3: lavatevi il pelo a vicenda più spesso.</i>`,[{t:'Va bene'}]);
+ p.compagno=c.id;
+ log(`💞 Tu e ${nome(c)} siete compagni!`,'#ffd0f0');
+ avviaScena('naso',[p,c],2.6,()=>modale('💞 Compagni',`${nome(c)} accetta, e vi strofinate il muso. Da oggi siete compagni.<br><br>Quando vorrete, potrete chiedere di avere dei gattini (parla con ${c.sesso==='f'?'lei':'lui'}).`
+  +box('La scala dell’amore','Nel <i>Simposio</i> di Platone, la sacerdotessa Diotima insegna che l’amore per un solo essere è il primo gradino di una scala che sale fino alla Bellezza in sé. L’anziano conosce questa storia.'),[{t:'Che bello!'}]));
+}
+const RITI_NASCITA=[
+ 'Nell’antica Atene, pochi giorni dopo la nascita, si celebravano le Anfidromie: il neonato veniva portato di corsa intorno al focolare di casa, ed entrava così nella famiglia.',
+ 'A Roma il nome si dava nel giorno della purificazione, il dies lustricus: l’ottavo giorno per le bambine, il nono per i maschi. Al neonato si appendeva al collo un amuleto, la bulla.',
+ 'Per Arnold van Gennep anche la nascita è un rito di passaggio: la madre si separa per un tempo dalla vita comune, e il neonato viene a poco a poco accolto nella comunità, spesso con il nome (I riti di passaggio, 1909).',
+];
+function cucciolata(){ if(!puoEvento()&&!(G.cats.filter(c=>c.clan==='felce').length<10&&!occupato()&&!scena&&!paused&&!momentoSacro())){ G.prossimaNascita=G.t+20; return; } // una cosa alla volta (js/leggende.js)
+ const f=G.cats.filter(c=>c.clan==='felce');
+ if(f.filter(c=>c.rango==='gattino').length>=5) return;
+ const madre=f.find(c=>c.regina&&c.sesso==='f'&&c.rango==='guerriero')||pick(f.filter(c=>c.sesso==='f'&&c.rango==='guerriero'&&!c.leader&&G.p.compagno!==c.id&&c.stato==='campo'));
+ if(!madre) return;
+ if(!madre.regina){ madre.regina=true; madre.reginaFino=G.t+MOON*6; }
+ const n=1+Math.floor(Math.random()*3), nomi=[]; let primo=null;
+ for(let i=0;i<n;i++){ const k=nuovoGatto('felce','gattino',{lune:0,colore:Math.random()<0.6?madre.colore:undefined,x:L.nursery.x+rnd(-18,18),y:L.nursery.y+rnd(-10,14)}); nomi.push(nome(k)); primo=primo||k; }
+ annuncia('🐾 Sono nati dei cuccioli!','#ffd0f0');
+ scintille(L.nursery.x,L.nursery.y,'#ffd0f0',14);
+ log(`🐾 Nella nursery ${nome(madre)} ha avuto ${n===1?'un cucciolo':n+' cuccioli'}: ${nomi.join(', ')}. Vai a conoscerli!`,'#ffd0f0');
+ log('📜 '+RITI_NASCITA[(G.nNascite=(G.nNascite||0)+1)%RITI_NASCITA.length],'#e8d9a8');
+ G.daVedere={madre:madre.id,kit:primo.id,fino:G.t+MOON};
+}
+function iniziaRaid(cl){ iniziaGuerra(cl,false); }
+function fineRaid(msg){ for(const c of G.cats) if(c.stato==='segui'){c.stato='campo';nuovoPuntoCampo(c);} G.raid=null; if(msg) log(msg,'#ffd27a'); }
+function controllaRaid(){
+ const r=G.raid; if(r.sconfitti<r.necessari) return;
+ const cl=r.bersaglio; let t;
+ if(G.conq[cl]<3){ G.conq[cl]++; t=`Il ${CLAN[cl].nome} si ritira! Il confine si sposta: una nuova striscia di bosco diventa del Clan della Felce. Più territorio, più prede.`; }
+ else t=`Il ${CLAN[cl].nome} si ritira! Il confine è già al limite, ma il clan nemico ha imparato a rispettarvi.`;
+ fineRaid(null); G.tens[cl]=0; annuncia('🏆 Vittoria!'); G.p.battaglie=(G.p.battaglie||0)+1;
+ log('🏆 Vittoria contro il '+CLAN[cl].nome+'!','#ffe08a');
+ modale('🏆 Vittoria!',t+'<br><br>Torna al campo: il clan ti aspetta.'+aneddoto()+box('Dopo la battaglia','Nella <i>Repubblica</i>, Platone chiede che i vincitori non saccheggino i vinti e non ne oltraggino i caduti: anche la guerra ha un limite.'),[{t:'Evviva!'}]);
+}
+
+// ================== scene animate ==================
+let scena=null, zf=1, banda=0, banner=null, fumetti=[], tConsiglio=0;
+const giaDetti={};
+const PRIMO_PIANO=['pelo','gioco','naso','dorme','rotolo','racconto'];
+function setPosa(c,tipo,dur){ if(c.posa!==tipo){c.posa=tipo;c.posaT=0;} c.posaFine=dur?G.t+dur:0; }
+function fronte(a,b,d){ const dir=a.flip||1; b.x=a.x+dir*d; b.y=a.y+1; a.flip=dir; b.flip=-dir; }
+function testo(x,y,txt,col,size=9,vy=-18,t=1.3){ particelle.push({tipo:'testo',x,y,txt,col,size,vx:rnd(-5,5),vy,t,t0:t}); }
+function scintille(x,y,col,n=6){ for(let i=0;i<n;i++) particelle.push({tipo:'scintilla',x:x+rnd(-8,8),y:y+rnd(-6,6),vx:rnd(-10,10),vy:rnd(-30,-10),t:rnd(0.6,1.1),col}); }
+function avviaScena(tipo,attori,dur,fine,dati={}){
+ if(scena) return; for(const c of attori){ c.vx=0; c.vy=0; c.vel=0; }
+ scena={tipo,attori,dur,t:0,fine,dati,em:0,pp:PRIMO_PIANO.includes(tipo)||((tipo==='beve'||tipo==='mangia')&&G.p.rango==='gattino')};
+ if(SCENE[tipo].inizio) SCENE[tipo].inizio(scena);
+}
+const ogni=(sc,int,f)=>{ if(sc.em<=0){ sc.em=int; f(); } };
+function aggiornaScena(dt){
+ const sc=scena; sc.t+=dt; sc.em-=dt; SCENE[sc.tipo].passo(sc,dt);
+ if(sc.t>=sc.dur){ scena=null; if(sc.tipo!=='cerimonia') for(const c of sc.attori) if(!c.posaFine) c.posa=null; sc.fine&&sc.fine(); }
+}
+const zampette=(c,t)=>{ c.att=Math.max(0,0.32-((t*2.5)%1)*0.32); c.attTipo='graffio'; };
+const SCENE={
+ pelo:{inizio(sc){fronte(sc.attori[0],sc.attori[1],19);},
+  passo(sc){const [p,c]=sc.attori,pr=sc.t<sc.dur/2; setPosa(p,pr?'lecca':'leccato'); setPosa(c,pr?'leccato':'lecca'); ogni(sc,0.4,()=>{const q=pr?c:p; testo(q.x,q.y-42*scala(q),'♥','#ff8fb0',9);});}},
+ gioco:{inizio(sc){const [a,b]=sc.attori; fronte(a,b,34); sc.dati.cx=(a.x+b.x)/2; sc.dati.cy=a.y;},
+  passo(sc,dt){const [a,b]=sc.attori,t=sc.t,d=sc.dati;
+   if(t<0.9){ setPosa(a,'agguato'); setPosa(b,'siede'); }
+   else if(t<1.3){ setPosa(a,'balzello'); a.x+=(b.x-a.x)*Math.min(1,dt*7); }
+   else if(t<2.9){ setPosa(a,'rotola'); setPosa(b,'rotola'); const an=t*4.5; a.x=d.cx+Math.cos(an)*7; a.y=d.cy+Math.sin(an)*3; b.x=d.cx-Math.cos(an)*7; b.y=d.cy-Math.sin(an)*3; a.flip=Math.cos(an)>0?-1:1; b.flip=-a.flip;
+    ogni(sc,0.28,()=>testo(d.cx+rnd(-12,12),d.cy-24,pick(['♥','✦','♪']),pick(['#ff8fb0','#ffe08a','#bfe8ff']),9)); }
+   else { a.x=d.cx-12; b.x=d.cx+12; a.y=b.y=d.cy; a.flip=1; b.flip=-1; const turno=t<3.7; setPosa(a,turno?'siede':'zampata'); setPosa(b,turno?'zampata':'siede'); zampette(turno?b:a,t); ogni(sc,0.35,()=>testo(d.cx,d.cy-28,'♥','#ff8fb0',10)); }}},
+ rotolo:{passo(sc){ const p=sc.attori[0]; setPosa(p,'rotola'); ogni(sc,0.3,()=>testo(p.x,p.y-22,'♪','#bfe8ff',9)); }},
+ allena:{inizio(sc){fronte(sc.attori[0],sc.attori[1],30);},
+  passo(sc){const [p,m]=sc.attori,turno=Math.floor(sc.t/0.6)%2, at=turno?m:p, di=turno?p:m; setPosa(at,'lotta'); setPosa(di,'balzello'); at.att=Math.max(0,0.32-(sc.t%0.6)/0.6*0.32); at.attTipo=turno?'morso':'graffio';
+   ogni(sc,0.6,()=>particelle.push({x:di.x,y:di.y-16,ang:at.x<di.x?0:Math.PI,t:0.25,tipo:'graffio'})); ogni(sc,0.3,()=>testo((p.x+m.x)/2+rnd(-14,14),p.y-40,pick(['💥','⚔️','✦']),'#ffe08a',12));}},
+ mangia:{passo(sc){ const p=sc.attori[0]; setPosa(p,'mangia'); ogni(sc,0.45,()=>testo(p.x+p.flip*16,p.y-8,'·','#c9a477',9,-8,0.6)); }},
+ beve:{inizio(sc){const p=sc.attori[0]; sc.dati.mx=p.x+p.flip*26*scala(p);},
+  passo(sc){ const p=sc.attori[0]; setPosa(p,'beve'); ogni(sc,0.32,()=>particelle.push({tipo:'onda',x:sc.dati.mx,y:p.y-1,t:0.9})); }},
+ dorme:{passo(sc){ const p=sc.attori[0]; setPosa(p,'dorme'); ogni(sc,0.55,()=>testo(p.x+6*p.flip,p.y-18,'z','#e8f0ff',7+rnd(0,4),-12,1.6)); }},
+ racconto:{inizio(sc){const [p,an]=sc.attori; fronte(an,p,26);},
+  passo(sc){const [p,an]=sc.attori; setPosa(an,'racconta'); setPosa(p,'ascolta'); ogni(sc,0.5,()=>testo(an.x+an.flip*8,an.y-44*scala(an),pick(['…','✦','☾']),'#f5e7c4',9,-10));}},
+ cura:{inizio(sc){fronte(sc.attori[0],sc.attori[1],22);},
+  passo(sc){const [p,c]=sc.attori; setPosa(p,'cura'); setPosa(c,'curato'); ogni(sc,0.2,()=>scintille(c.x,c.y-10,'#9be07f',2));}},
+ naso:{inizio(sc){fronte(sc.attori[0],sc.attori[1],17);},
+  passo(sc){const [p,c]=sc.attori; setPosa(p,'naso'); setPosa(c,'naso'); ogni(sc,0.25,()=>testo((p.x+c.x)/2+rnd(-6,6),p.y-40,'♥','#ff8fb0',8+rnd(0,5)));}},
+ annusa:{passo(sc){ const p=sc.attori[0]; setPosa(p,'annusa'); ogni(sc,0.2,()=>scintille(p.x+p.flip*22,p.y-4,'#c58cff',1)); }},
+ cerimonia:{inizio(sc){ const R=L.roccia, cx=R.x, cy=R.y+78, altri=sc.attori.filter(c=>c!==G.p&&!c.leader);
+   altri.forEach((c,i)=>{ const an=Math.PI*(0.08+0.84*(altri.length>1?i/(altri.length-1):0.5)); c.posto=[cx+Math.cos(an)*100,cy+Math.sin(an)*42]; });
+   G.p.posto=[cx,cy+12]; const k=sc.attori.find(c=>c.leader); if(k) k.posto=[R.x,R.y+24]; },
+  passo(sc,dt){ for(const c of sc.attori){ if(!c.posto) continue; const arr=Math.hypot(c.posto[0]-c.x,c.posto[1]-c.y)<7;
+    if(!arr){ c.posa=null; muovi(c,c.posto[0],c.posto[1],130,dt); } else { setPosa(c,'siede'); c.flip=c.leader?(G.p.x<c.x?-1:1):(c.x<L.roccia.x?1:-1); }
+    if(c.leader&&arr) c.elev=Math.min(94,(c.elev||0)+dt*150); }
+   if(sc.dati.grido&&sc.t>sc.dur-1.4) ogni(sc,0.25,()=>{ const k=capo(); if(k) testo(k.x+rnd(-8,8),k.y-(k.elev||0)-46,pick(['!','‼','⚔']),'#ffe08a',12); }); }},
+};
+
+// ================== consigli, curiosità, obiettivi ==================
+function parla(c,txt,dur=6){ fumetti=fumetti.filter(f=>f.id!==c.id); fumetti.push({id:c.id,txt,t:dur}); }
+function consiglio(k,txt,cd=40){
+ if(!G||G.t<tConsiglio||(giaDetti[k]&&G.t<giaDetti[k])) return;
+ if(G.raid&&!k.startsWith('guerra')) return;
+ giaDetti[k]=G.t+cd; tConsiglio=G.t+20; // un consiglio alla volta, non troppo spesso
+ const p=G.p; let c=p.mentore!=null?gatto(p.mentore):null;
+ if(!c||dist(c,p)>260){ c=null; let bd=260; for(const q of G.cats){ if(q.clan!=='felce'||q.rango==='gattino') continue; const d=dist(q,p); if(d<bd){bd=d;c=q;} } }
+ if(c){ parla(c,txt); log(`💬 ${nome(c)}: «${txt}»`,'#cfe8ff'); } else { parla(p,'💭 '+txt); log('💭 '+txt,'#cfe8ff'); }
+}
+function aggiornaFumetti(dt){ for(const f of fumetti) f.t-=dt; fumetti=fumetti.filter(f=>f.t>0); if(banner){ banner.t-=dt; if(banner.t<=0) banner=null; } }
+function righe(txt,maxW){ const out=[]; let r=''; for(const w of txt.split(' ')){ const t=r?r+' '+w:w; if(ctx.measureText(t).width>maxW&&r){ out.push(r); r=w; } else r=t; } if(r) out.push(r); return out; }
+function disegnaFumetti(){
+ ctx.font='bold 19px system-ui'; // fumetti grandi e leggibili (12 novembre 2026)
+ for(const f of fumetti){ const c=gatto(f.id); if(!c||dist(c,G.p)>520) continue;
+  const s=scala(c), [x,y]=aSchermo(c.x,c.y,(c.tipo&&VISITATORI[c.tipo]?VISITATORI[c.tipo].h*0.02+0.1:0.6*s+0.15)+(c.elev||0)*0.02), R=righe(f.txt,340), w=Math.max(...R.map(r=>ctx.measureText(r).width))+26, h=R.length*25+16, bx=clamp(x-w/2,6,W-w-6), by=clamp(y-h-16,56,H-185-h); // il fumetto resta sempre dentro lo schermo
+  ctx.globalAlpha=Math.min(1,f.t*2); ctx.fillStyle='rgba(255,250,235,0.96)'; ctx.beginPath(); ctx.roundRect(bx,by,w,h,12); ctx.fill(); ctx.strokeStyle='rgba(90,60,20,.55)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-9,by+h); ctx.lineTo(x+9,by+h); ctx.lineTo(x,by+h+13); ctx.fill();
+  ctx.fillStyle='#2a2418'; ctx.textAlign='left'; R.forEach((r,i)=>ctx.fillText(r,bx+13,by+26+i*25)); ctx.globalAlpha=1; }
+}
+function annuncia(txt,col='#ffe08a'){ banner={txt,col,t:2.6}; }
+const CURIOSITA=[
+ ['Nelle campagne europee dell’Ottocento, racconta Frazer, molti contadini credevano che nel grano vivesse uno spirito, che fuggiva davanti ai mietitori fino all’ultimo covone. In alcune regioni lo immaginavano come un gatto, e chi tagliava l’ultimo covone veniva chiamato «il gatto».','Frazer, Il ramo d’oro'],
+ ['Con l’ultimo covone del raccolto si faceva spesso una bambola di spighe, chiamata la Vecchia o la Madre del grano, che si conservava in casa fino al raccolto seguente.','Frazer, Il ramo d’oro'],
+ ['Molti popoli scaricavano i mali della comunità su un animale o su una persona, che poi veniva cacciata: è il capro espiatorio. Il nome viene dal rito ebraico descritto nel Levitico, dove un capro portava nel deserto i peccati del popolo.','Frazer, Il ramo d’oro; Levitico 16'],
+ ['Nella notte di San Giovanni, in mezza Europa, si accendevano grandi falò e i giovani vi saltavano sopra: si credeva che il fuoco proteggesse dalle malattie e aiutasse il raccolto.','Frazer, Il ramo d’oro'],
+ ['In Scozia e in Irlanda, all’inizio di maggio, si accendevano i fuochi di Beltane, e a volte si facevano passare le mandrie tra due fuochi per proteggerle.','Frazer, Il ramo d’oro'],
+ ['A Roma il flamine di Giove, il sacerdote del dio, viveva tra moltissimi divieti: non poteva montare a cavallo né vedere un esercito schierato, non poteva avere nodi nelle vesti né portare un anello che non fosse spezzato.','Aulo Gellio, Notti attiche; Frazer, Il ramo d’oro'],
+ ['Frazer riporta che l’antico imperatore del Giappone non doveva toccare la terra con i piedi, e che il sole non doveva splendere sulla sua testa: la sua forza sacra andava custodita, come una carica pericolosa.','Frazer, Il ramo d’oro'],
+ ['In molte fiabe un mago o un gigante non può morire perché ha nascosto la sua anima fuori dal corpo: dentro un uovo, dentro un’anatra, dentro una cassa sepolta su un’isola. Frazer vi riconosce una credenza antica: l’anima si può custodire altrove.','Frazer, Il ramo d’oro'],
+ ['Nel mito nordico il dio Baldr poteva essere ferito soltanto dal vischio, l’unica pianta a cui nessuno aveva fatto giurare di risparmiarlo. Frazer pensava che il ramo d’oro di Nemi fosse proprio un ramo di vischio.','Snorri Sturluson, Edda; Frazer, Il ramo d’oro'],
+ ['Plinio il Vecchio racconta che i druidi della Gallia salivano sulla quercia vestiti di bianco e tagliavano il vischio con un falcetto d’oro.','Plinio il Vecchio, Storia naturale, libro XVI'],
+ ['Molti popoli credevano che nel sonno l’anima uscisse dal corpo e andasse in giro: per questo non si doveva svegliare di colpo chi dormiva, perché l’anima poteva non fare in tempo a tornare.','Frazer, Il ramo d’oro'],
+ ['Per molti popoli l’ombra o il riflesso nell’acqua erano una parte dell’anima: ferirli o perderli poteva far ammalare la persona.','Frazer, Il ramo d’oro'],
+ ['Durante i Saturnali, a dicembre, i Romani rovesciavano l’ordine del mondo: gli schiavi sedevano a tavola, i padroni li servivano, e si sceglieva un re per burla.','Frazer, Il ramo d’oro'],
+ ['Le donne greche seminavano in piccoli vasi grano e lattuga, che crescevano in fretta e appassivano subito: erano i giardini di Adone. Poi li gettavano in mare, piangendo il dio morto giovane.','Frazer, Il ramo d’oro'],
+ ['Nelle feste di maggio si portava in paese un albero o un ramo verde e si sceglievano un re e una regina di maggio: Frazer vi vedeva antichi culti degli spiriti degli alberi.','Frazer, Il ramo d’oro'],
+ ['Per la magia contagiosa, capelli e unghie tagliati restano legati alla persona: molti popoli li nascondevano con cura, perché un nemico non potesse usarli contro di loro.','Frazer, Il ramo d’oro'],
+ ['Frazer racconta di popoli presso i quali il re non doveva invecchiare: quando la sua forza calava, veniva messo a morte, perché la forza della natura non declinasse con lui. Tra gli esempi cita gli Shilluk del Nilo Bianco.','Frazer, Il ramo d’oro'],
+ ['Nel potlatch, presso alcuni popoli della costa nord-occidentale dell’America, un capo poteva regalare o perfino distruggere grandi ricchezze per accrescere il proprio prestigio e mettere in difficoltà i rivali.','Marcel Mauss, Saggio sul dono, 1925'],
+ ['Nelle isole Trobriand collane di conchiglie rosse giravano di isola in isola in un senso, e bracciali di conchiglie bianche nel senso opposto: è il kula. Nessuno teneva gli oggetti a lungo: contava farli circolare.','Bronisław Malinowski, Argonauti del Pacifico occidentale, 1922'],
+ ['Claude Lévi-Strauss osservò che un divieto di sposarsi tra parenti stretti esiste in tutte le società umane, e lo lesse come una regola di scambio: obbliga ogni famiglia a cercare alleanze fuori di sé.','Claude Lévi-Strauss, Le strutture elementari della parentela, 1949'],
+ ['Erodoto racconta che in Egitto, quando un gatto moriva in una casa, gli abitanti si radevano le sopracciglia in segno di lutto. I gatti erano sacri alla dea Bastet e venivano mummificati.','Erodoto, Storie, libro II'],
+ ['Nella mitologia nordica la dea Freyja viaggiava su un carro trainato da due gatti.','Snorri Sturluson, Edda'],
+ ['Nel Fedone, Socrate dice che i cigni, quando sentono vicina la morte, cantano più forte e più bello che mai: non per dolore, ma per la gioia di raggiungere il dio che servono.','Platone, Fedone'],
+ ['Ai misteri di Eleusi, in onore di Demetra e di sua figlia Persefone, gli iniziati giuravano il segreto: per secoli nessuno rivelò che cosa vi si vedesse.','tradizione greca antica'],
+ ['Molti popoli dell’Indonesia celebravano due funerali: uno subito dopo la morte e uno, anni dopo, quando restavano soltanto le ossa. Per Robert Hertz anche la morte è un passaggio lento, non un istante.','Robert Hertz, La rappresentazione collettiva della morte, 1907'],
+ ['L’usanza di portare in braccio la sposa oltre la soglia di casa, secondo Van Gennep, segna il passaggio da una casa all’altra: la soglia è un confine sacro, che non si attraversa senza un rito.','Arnold van Gennep, I riti di passaggio, 1909'],
+];
+function curiosita(){ const p=G.p; p.cur=(p.cur||0); const [t,f]=CURIOSITA[p.cur%CURIOSITA.length]; p.cur++; return box('Lo sapevi?',`${t} <i>(${f})</i>`); }
+function obiettivo(){
+ const p=G.p;
+ if(G.raid){ const r=G.raid; return {t:`⚔️ Battaglia contro il ${CLAN[r.bersaglio].nome}: ${r.sconfitti}/${r.necessari} nemici in fuga · ${r.perdite||0}/${r.maxPerdite||3} dei nostri feriti`,come:'Segui la freccia ⚔ fino al campo di battaglia. Vicino a un nemico premi Spazio più volte; se la tua salute scende, allontanati un momento.'}; }
+ if(G.cats.some(c=>c.stato==='assalto')) return p.rango==='gattino'?{t:'⚠️ Nemici al campo!',come:'Corri nella nursery: i guerrieri ci difendono.'}:{t:'⚠️ Nemici al campo!',come:'Raggiungi i nemici (nome rosso con ⚔) e premi Spazio vicino a loro: difendi il mucchio delle prede.'};
+ if(p.sete<30) return {t:'💧 Hai sete: vai a bere!',come:'Bevi al fiume, allo stagno o alla pozzanghera del campo: avvicinati all’acqua e premi Spazio. Senza acqua la salute scende.'};
+ if(p.fame<30) return {t:'🍖 Hai fame: vai a mangiare!',come:'Mangia dal mucchio delle prede, al centro del campo (Spazio), oppure caccia una preda e mangiala. Senza cibo la salute scende.'};
+ if(p.energia<25) return {t:'😴 Sei stanc'+o(p)+': vai a dormire!',come:'Dormi nella tua tana (Spazio): l’energia torna piena e il tempo passa più in fretta.'};
+ if(p.incinta) return {t:`🤰 Aspetti dei cuccioli (ancora ${Math.max(1,Math.ceil((G.attesaGattini-G.t)/MOON))} lun${Math.ceil((G.attesaGattini-G.t)/MOON)>1?'e':'a'})`,come:'Riposa vicino alla nursery, mangia e bevi bene. Non andrai in battaglia: i guerrieri portano le prede anche per te.'};
+ if(p.allatta&&G.t<p.allatta) return {t:'🍼 Allatti i tuoi cuccioli',come:'Resta vicina alla nursery: i cuccioli hanno bisogno di te. Puoi lavarli e giocare con loro (Spazio vicino a loro).'};
+ { const m=gatto(p.compagno); if(m&&m.incinta) return {t:`🐾 ${nome(m)} aspetta i vostri cuccioli`,come:'Porta prede al mucchio per lei e resta vicino al campo: quando nasceranno, corri alla nursery.'}; }
+ if(G.colonia&&!G.colonia.partita) return {t:'🌱 Saluta chi parte per la nuova colonia',come:'Vai alla Roccia Alta: il clan si raduna per il commiato di chi va a fondare il '+G.colonia.nome+'.'};
+ if(G.cerimonia&&gatto(G.cerimonia.id)) return {t:'🌟 Cerimonia alla Roccia Alta',come:`${nome(gatto(G.cerimonia.id))} sta per diventare ${G.cerimonia.r}. Raggiungi la Roccia Alta: il clan ti aspetta per cominciare il rito, e potrai parteciparvi.`};
+ if(G.daVedere&&G.t<G.daVedere.fino) return {t:'🐾 Sono nati dei cuccioli',come:'Vai nella nursery a conoscerli: è la tana dei rovi, in basso a sinistra nel campo.'};
+ if(p.preda) return {t:'🐭 Hai una preda in bocca',come:'Portala al mucchio, al centro del campo (Spazio): è il tuo dono al clan.'};
+ const req=requisiti().find(r=>!r.ok&&r.b!=='lune')||requisiti().find(r=>!r.ok); // prima ciò che si può fare; le lune passano da sole
+ if(req){ const m=gatto(p.mentore);
+  const COME={lune:p.rango==='gattino'?'Il tempo passa giocando, mangiando e dormendo nella nursery.':'Il tempo passa: dormire nella tua tana lo fa correre.',
+   racconti:'Parla con l’anziano del clan, seduto vicino alla tana dei guerrieri (Spazio). Le storie servono per la prova della sapienza nelle cerimonie e, da grande, per istruire i cuccioli.',
+   prede:'Esci dal campo e avvicinati a un topo o a un coniglio: quando compare «Spazio: caccia», premi Spazio e il gatto lo inseguirà da solo.',
+   allenamenti:`Allenati con ${m?nome(m):'il tuo mentore'} (Spazio vicino a lui o a lei).`,
+   erbe:'Cerca i fiorellini nel bosco del nostro territorio e premi Spazio.',
+   cure:'Quando un gatto torna ferito 🩹, avvicinati e premi Spazio per curarlo.'};
+  return {t:`🎯 ${req.t} (${req.v})`,come:COME[req.b]}; }
+ if(p.rango==='gattino') return {t:'🌟 Sei pront'+o(p)+'!',come:'Torna al campo: l’anziano ti chiamerà per la cerimonia.'};
+ if(p.rango==='apprendista') return {t:'🌟 Sei pront'+o(p)+'!',come:'Resta al campo: l’anziano ti chiamerà per la cerimonia.'};
+ const cl=G.tens.nebbia>=G.tens.pietre?'nebbia':'pietre';
+ if(p.rango==='guerriero'){
+  if(G.tens[cl]>70) return {t:`🔥 Tensione alta con il ${CLAN[cl].nome}`,come:'Presto il capo chiamerà i guerrieri: resta vicino al campo e preparati (mangia, bevi, dormi).'};
+  if((p.lezioni||0)<3&&G.cats.some(c=>c.clan==='felce'&&c.rango==='gattino')) return {t:'🎓 Insegna ai cuccioli',come:'Vai nella nursery e parla con un gattino: puoi raccontare ai cuccioli le storie dell’anziano o insegnare loro a cacciare.'};
+  if(!p.compagno) return {t:'💞 Trova un compagno',come:'Lavati il pelo più volte con un guerriero amico della tua età, poi proponigli di avere dei cuccioli insieme: può dire di sì o, gentilmente, di no.'};
+  return {t:'⚔️ Proteggi il clan',come:'Caccia per il mucchio e sorveglia il confine. Quando il capo chiama alle armi, raggiungi la Roccia Alta; puoi anche chiedergli tu un assalto.'}; }
+ if((p.lezioni||0)<3&&G.cats.some(c=>c.clan==='felce'&&c.rango==='gattino')) return {t:'🎓 Insegna ai cuccioli',come:'Vai nella nursery e parla con un gattino: puoi raccontare ai cuccioli le storie dell’anziano o insegnare loro a cacciare.'};
+ return {t:'🌿 Cura il clan',come:'Raccogli erbe, cura i feriti dopo le battaglie e ascolta i racconti dell’anziano.'};
+}
+
+// ================== la guerra ==================
+const luogoBattaglia=cl=>({x:bordo(cl)+115,y:cl==='nebbia'?330:1470});
+function tensione(cl,n,motivo){ G.tens[cl]=clamp(G.tens[cl]+n,0,100); if(motivo) G.motivo[cl]=motivo; }
+function partecipanti(){ const cm=CLAN.felce.campo; return [G.p,...G.cats.filter(c=>c.clan==='felce'&&!c.ferito&&c.stato==='campo'&&dist(c,cm)<cm.r+30)]; }
+function chiamataAlleArmi(cl){
+ G.tens[cl]=60; const p=G.p, m=G.motivo[cl]||'continua a sconfinare nel nostro territorio';
+ annuncia('📯 Chiamata alle armi!','#ff9a8a');
+ log(`📯 ${nome(capo())} chiama il clan: il ${CLAN[cl].nome} ${m}!`,'#ff8a7a');
+ if(p.rango==='gattino'||p.incinta||p.vecchio){ battagliaLontana(cl); if(p.incinta) log('🤰 Aspetti dei cuccioli: resti al campo, al sicuro.','#ffd0f0'); return; }
+ modale('📯 Chiamata alle armi',`Un lungo richiamo risuona nel bosco. ${nome(capo())} è sulla Roccia Alta: «Il ${CLAN[cl].nome} ${m}! Guerrieri e apprendisti, al confine!»<br><br>Se ti unisci, il clan si raduna sotto la Roccia Alta e parte per il campo di battaglia, oltre il guado.`
+  +box('Guerrieri e tabù','Nel <i>Ramo d’oro</i> Frazer descrive i divieti che molti popoli imponevano ai guerrieri, soprattutto al ritorno dalla battaglia: dovevano purificarsi prima di rientrare nella vita del villaggio.'),
+  [{t:'⚔️ Unirsi alla battaglia',f:()=>iniziaGuerra(cl,true)},{t:'Restare al campo',f:()=>battagliaLontana(cl)}]);
+}
+function battagliaLontana(cl){ G.lontana={cl,quando:G.t+MOON*0.6}; log(`⚔️ I guerrieri partono verso il ${CLAN[cl].nome}${G.p.rango==='gattino'?'; tu resti nella nursery':' senza di te'}.`,'#ffd27a'); }
+function esitoLontano(){
+ const cl=G.lontana.cl; G.lontana=null;
+ if(Math.random()<0.5+0.04*G.cats.filter(c=>c.clan==='felce'&&c.rango==='guerriero').length){ if(G.conq[cl]<3) G.conq[cl]++; G.tens[cl]=0; annuncia('🏆 Il clan ha vinto!'); log(`🏆 I guerrieri tornano vincitori dal ${CLAN[cl].nome}!`,'#ffe08a'); modale('🔥 Il ritorno dei guerrieri',`I guerrieri tornano vincitori dal ${CLAN[cl].nome}: una striscia di bosco è nostra. La sera, intorno al mucchio delle prede, raccontano.`+aneddoto(),[{t:'Ascoltare ancora le loro voci'}]); }
+ else { G.cibo=Math.max(0,G.cibo-2); G.tens[cl]=40; const w=G.cats.find(c=>c.clan==='felce'&&c.rango==='guerriero'&&!c.ferito&&!c.leader); if(w){w.hp=w.hpMax*0.3;w.ferito=true;w.stato='ferito';} annuncia('😿 Sconfitta','#ff9a8a'); log(`😿 I guerrieri tornano sconfitti: il ${CLAN[cl].nome} ci ha preso due prede.`,'#ff9a8a'); modale('🔥 Il ritorno dei guerrieri',`I guerrieri tornano sconfitti, con il pelo arruffato. Il ${CLAN[cl].nome} ci ha preso due prede. Ma la sera, intorno al mucchio, raccontano lo stesso.`+aneddoto(),[{t:'Ascoltare in silenzio'}]); }
+}
+function iniziaGuerra(cl,chiamata){
+ const p=G.p;
+ if(!chiamata&&p.incinta) return modale(nome(capo()),'«Aspetti dei cuccioli: non è il momento di combattere. Riposa nella nursery.»',[{t:'Va bene'}]);
+ if(!chiamata&&(p.energia<30||p.salute<50)) return modale(nome(capo()),'«Sei troppo stanc'+o(p)+' o ferit'+o(p)+'. Mangia, bevi e dormi prima di guidare un assalto.»',[{t:'Va bene'}]);
+ avviaScena('cerimonia',partecipanti(),3.4,()=>{
+  const cand=G.cats.filter(c=>c.clan==='felce'&&(c.rango==='guerriero'||c.rango==='apprendista')&&!c.regina&&!c.ferito&&(chiamata||!c.leader)).sort((a,b)=>((b.amicizia>=3)-(a.amicizia>=3))||dist(a,p)-dist(b,p)).slice(0,chiamata?4:3);
+  cand.forEach((c,i)=>{c.stato='segui';c.slot=i%OFF.length;c.posa=null;c.elev=0;});
+  const luogo=chiamata?luogoBattaglia(cl):{x:CLAN[cl].campo.x-170,y:CLAN[cl].campo.y};
+  G.raid={bersaglio:cl,sconfitti:0,necessari:3,perdite:0,maxPerdite:3,uscito:false,luogo};
+  G.cats.filter(c=>c.clan===cl&&!c.leader&&c.stato!=='fuga').slice(0,4).forEach((c,i)=>{c.stato='schierato'; c.posto=[luogo.x+50+(i%2)*28,luogo.y-40+i*26];});
+  annuncia(chiamata?'⚔️ Al confine!':'⚔️ All’assalto!');
+  log(`⚔️ Parte la battaglia contro il ${CLAN[cl].nome}!`,'#ffd27a');
+  modale('⚔️ '+(chiamata?'In marcia verso il confine':'Assalto al '+CLAN[cl].nome),`${nome(capo())} lancia il grido di guerra dalla Roccia Alta. ${cand.length?cand.map(c=>nome(c)+(c.amicizia>=3?' 💚':'')).join(', ')+(cand.length>1?' ti seguono.':' ti segue.'):''} ${cand.some(c=>c.amicizia>=3)?'Gli amici (💚) combattono meglio accanto a te.':'Nessuno di loro è tuo amico: coltiva l’amicizia, e la prossima volta combatteranno meglio accanto a te.'} Il gatto andrà da solo verso il campo di battaglia e combatterà da solo: le frecce ti ridanno il controllo, Spazio ti rimanda nella mischia.<br><br><b>Obiettivo:</b> segui la freccia ⚔ fino al campo di battaglia. Metti in fuga <b>3 guerrieri</b> del ${CLAN[cl].nome} (Spazio vicino a loro, più volte) prima che loro mettano fuori combattimento 3 dei nostri. Se torni al campo, la battaglia finisce.`
+   +box('Prima di combattere','Platone voleva guardiani «come cani di razza»: dolci con gli amici, feroci con i nemici. Ma si chiedeva anche quando una guerra è giusta (<i>Repubblica</i>, libri I e II).'),[{t:'Andiamo!',f:()=>{ G.p.auto={tipo:'marcia',percorso:percorsoVerso(G.raid.luogo)}; }}]);
+ },{grido:true});
+}
+function controllaSconfitta(){
+ const r=G.raid; if(!r||r.perdite<r.maxPerdite) return;
+ const cl=r.bersaglio; fineRaid(null); G.tens[cl]=40; G.cibo=Math.max(0,G.cibo-2);
+ annuncia('😿 Ritirata','#ff9a8a'); log(`😿 Ritirata: il ${CLAN[cl].nome} ci prende due prede.`,'#ff9a8a');
+ modale('😿 Ritirata',`Tre dei nostri sono feriti: ${nome(capo())} ordina la ritirata. Il ${CLAN[cl].nome} si prende due prede dal nostro mucchio.<br><br>Cura i feriti e riposa. La prossima volta combattete vicini: due contro uno si vince.`+aneddoto()
+  +box('Il ritorno','Chi torna dalla battaglia, scrive Frazer, per molti popoli è ancora «carico» della guerra: deve purificarsi prima di rientrare tra gli altri.'),[{t:'Torniamo a casa'}]);
+}
+
+// ================== interazioni di amicizia ==================
+SCENE.lotta=SCENE.allena;
+SCENE.coro={inizio(sc){ const [p,c]=sc.attori; c.x=p.x-(p.flip||1)*22; c.y=p.y+3; c.flip=p.flip||1; },
+ passo(sc){ for(const c of sc.attori){ setPosa(c,'canta'); } ogni(sc,0.3,()=>{ const c=pick(sc.attori); testo(c.x+c.flip*6,c.y-46*scala(c),pick(['♪','♫','♩']),pick(['#ffe08a','#bfe8ff','#ffb0d0']),10,-22,1.6); }); }};
+SCENE.sonnellino={inizio(sc){ const [p,c]=sc.attori; c.x=p.x+(p.flip||1)*18; c.y=p.y+2; c.flip=-(p.flip||1); },
+ passo(sc){ for(const c of sc.attori) setPosa(c,'dorme'); ogni(sc,0.6,()=>{ const c=pick(sc.attori); testo(c.x,c.y-16,'z','#e8f0ff',7+rnd(0,4),-12,1.6); }); }};
+SCENE.narra={inizio(sc){ fronte(sc.attori[0],sc.attori[1],26); },
+ passo(sc){ const [p,c]=sc.attori; setPosa(p,'racconta'); setPosa(c,'ascolta'); ogni(sc,0.5,()=>testo(p.x+p.flip*8,p.y-40*scala(p),pick(['…','✦','☾']),'#f5e7c4',9,-10)); }};
+PRIMO_PIANO.push('coro','sonnellino','carezza'); // cattura e pasto senza primo piano: devono restare fluidi
+SCENE.cattura={passo(sc){ const p=sc.attori[0]; setPosa(p,sc.t<0.6?'annusa':'siede'); if(sc.t<0.6) ogni(sc,0.15,()=>testo(p.x+p.flip*22,p.y-12,pick(['!','✦']),'#ffe08a',9,-14,0.6)); else ogni(sc,0.45,()=>testo(p.x,p.y-44,'✦','#ffe08a',10)); }};
+SCENE.divora={passo(sc){ const p=sc.attori[0]; setPosa(p,'mangia'); if(p.pasto) p.pasto.f=1-sc.t/sc.dur; ogni(sc,0.35,()=>{ testo(p.x+p.flip*24,p.y-6,'·','#c9a477',10,-10,0.6); if(Math.random()<0.45) testo(p.x,p.y-38,pick(['Gnam!','Crunch','Mmm…']),'#fff3c4',8,-14,1); }); }};
+const REAZIONI=[c=>`${nome(c)} ti ha ascoltato con le orecchie dritte: «Me la racconti di nuovo, una sera?»`,c=>`${nome(c)} resta in silenzio, poi chiede: «E tu ci credi?»`,c=>`${nome(c)} fa le fusa: «La racconterò ai gattini.»`,c=>`${nome(c)} sbadiglia, ma sorride: «Le storie dell’anziano sono più belle quando le racconti tu.»`];
+function amicizia(c,tipo){
+ const p=G.p, piu=(n,msg)=>{ c.amicizia+=n; p.energia=Math.max(0,p.energia-2); log(`${msg} (amicizia ${c.amicizia})`,'#ffd0f0'); };
+ switch(tipo){
+  case 'pelo': return avviaScena('pelo',[p,c],2.8,()=>piu(1,`👅 Tu e ${nome(c)} vi lavate il pelo a vicenda.`));
+  case 'gioco': { const tenero=c.rango==='gattino'||p.rango==='gattino';
+   return avviaScena(tenero?'gioco':'lotta',[p,c],tenero?4.4:2.6,()=>{ p.giochi++; if(p.rango==='gattino'&&c.rango==='gattino') avanzaMissione('gioca'); piu(1,tenero?`🧶 Tu e ${nome(c)} avete giocato a rotolarvi nel muschio.`:`🤼 Tu e ${nome(c)} avete fatto la lotta per gioco, senza artigli.`); }); }
+  case 'coro': spirito(4,'coro'); return avviaScena('coro',[p,c],3.2,()=>piu(1,`🎵 Tu e ${nome(c)} miagolate insieme, con il muso rivolto al cielo.`));
+  case 'strusciarsi': return avviaScena('naso',[p,c],2.2,()=>piu(1,`😽 Tu e ${nome(c)} vi strusciate la testa e vi scambiate l’odore.`));
+  case 'sonnellino': return avviaScena('sonnellino',[p,c],3.2,()=>{ p.energia=Math.min(100,p.energia+20); piu(1,`💤 Tu e ${nome(c)} sonnecchiate vicini.`); });
+  case 'dono': { const pr=p.preda; return avviaScena('annusa',[p],0.9,()=>{ p.preda=(p.carico&&p.carico.length)?p.carico.shift():null; c.amicizia+=2; if(c.rango==='anziano') avanzaMissione('anziano'); log(`🎁 Hai regalato ${PREDE[pr].nome} a ${nome(c)}. (amicizia ${c.amicizia})`,'#ffd0f0'); log('📜 Un dono crea un legame: chi riceve ricambierà, scriveva Marcel Mauss.','#e8d9a8'); }); }
+ }
+}
+function scegliStoria(c){
+ const op=shuffle(RACCONTI.filter(l=>sentiti().includes(l.id))).slice(0,4);
+ modale('📖 Quale storia racconti a '+nome(c)+'?','Hai imparato queste storie dall’anziano. Raccontarle è il modo in cui un clan si ricorda di sé.',[...op.map(l=>({t:l.tit,f:()=>narra(c,l)})),{t:'Nessuna, per ora'}]);
+}
+function narra(c,l){
+ avviaScena('narra',[G.p,c],2.2,()=>{ c.amicizia++; log(`📖 Hai raccontato a ${nome(c)} «${l.tit}». (amicizia ${c.amicizia})`,'#ffd0f0');
+  modale(`📖 Racconti «${l.tit}»`,`<i>Ti siedi davanti a ${nome(c)} e cominci, con la voce dell’anziano ancora nelle orecchie:</i><br><br>${l.t}<div class="fonte">Fonte: ${l.fonte}</div><br>${pick(REAZIONI)(c)}`,[{t:'Fine della storia'}]); });
+}
+function menuGatto(c){
+ const p=G.p, bt=[], ob=obiettivo();
+ let t=`${nome(c)} è ${c.sesso==='f'?'una':'un'} ${rangoTesto(c)} di ${lune(c)} lune. Amicizia: ${c.amicizia?'💚'.repeat(Math.min(c.amicizia,6)):'non vi conoscete ancora'}<br>`;
+ if(c.id===G.madre) t+='È tua madre. ';
+ if(p.mentore===c.id) t+=`È ${c.sesso==='f'?'la tua mentore':'il tuo mentore'}. `;
+ if(p.compagno===c.id) t+=`💞 È ${c.sesso==='f'?'la tua compagna':'il tuo compagno'}. `;
+ if(c.figlio) t+=`🐾 È ${c.sesso==='f'?'tua figlia':'tuo figlio'}. `;
+ if(c.ferito) t+=`🩹 È ferit${o(c)} e ha bisogno di erbe. `;
+ t+='<br><i>'+pick(FRASI[c.rango])+'</i>';
+ t+=`<div class="pic" style="margin-top:6px">💡 ${ob.t}</div>`+curiositaBreve();
+ if(c.rango==='anziano'){ const n=disponibili().filter(l=>!sentiti().includes(l.id)).length; bt.push({t:'📜 Chiedere un racconto',f:()=>racconto(c)}); }
+ if(c.leader) bt.push({t:'🗣️ Chiedere una cerimonia o un assalto',f:menuCapo});
+ if(p.rango==='apprendista'&&p.mentore===c.id){
+  if(p.via==='guerriero') bt.push({t:'⚔️ Allenarsi',f:()=>allenati(c)});
+  else bt.push({t:'🌿 Imparare le erbe',f:()=>modale(nome(c),'«Le erbe crescono nel bosco del nostro territorio: cerca i fiorellini viola, gialli e bianchi, e raccoglili con Spazio. Ricrescono dopo un po’. Quando un gatto torna ferito 🩹, avvicinati e curalo con Spazio. Con Spazio, lontano da tutto, puoi usare un’erba su di te.»'+box('Il guaritore','In molti popoli chi cura è anche chi parla con gli spiriti: lo sciamano. Chiedi all’anziano la sua storia quando sarai più grande.'),[{t:'Grazie'}])});
+ }
+ if(c.ferito&&puoErbe()) bt.push({t:`🌿 Curare ${nome(c)} (hai ${p.erbe} erbe)`,f:()=>cura(c)});
+ for(const o of opzioniAmore(c)) bt.push(o); // proposte di cuccioli con il consenso (js/leggende.js)
+ if(p.allievo===c.id&&c.rango==='apprendista') bt.push({t:'⚔️ Allenare il tuo allievo',f:()=>avviaScena('allena',[p,c],2.4,()=>{ c.forza+=1; c.bonus=(c.bonus||0)+1; c.amicizia++; avanzaMissione('allievo'); log(`⚔️ Hai allenato ${nome(c)}: diventa più forte (forza ${c.forza}).`,'#c8f0a8'); })});
+ if((p.rango==='guerriero'||p.rango==='guaritore')&&c.rango==='gattino'){ if(sentiti().length) bt.push({t:'📖 Riunire i cuccioli e raccontare una storia',f:insegnaStoria}); bt.push({t:'🐾 Insegnare ai cuccioli a cacciare',f:insegnaCaccia}); }
+ // l'amicizia: quattro proposte che cambiano ogni volta
+ const pool=[{t:'👅 Lavarsi il pelo a vicenda',f:()=>amicizia(c,'pelo')},
+  {t:(c.rango==='gattino'||p.rango==='gattino')?'🧶 Giocare insieme':'🤼 Fare la lotta per gioco',f:()=>amicizia(c,'gioco')},
+  {t:'🎵 Miagolare in coro',f:()=>amicizia(c,'coro')},
+  {t:'😽 Strusciarsi testa contro testa',f:()=>amicizia(c,'strusciarsi')},
+  {t:'💤 Fare un sonnellino vicini',f:()=>amicizia(c,'sonnellino')}];
+ if(sentiti().length) pool.push({t:'📖 Raccontare una storia',f:()=>scegliStoria(c)});
+ if(c.rango!=='gattino') pool.push({t:'❓ Chiedere un consiglio',f:()=>{ parla(c,ob.come,8); log(`💬 ${nome(c)}: «${ob.come}»`,'#cfe8ff'); }});
+ const scelte=shuffle(pool).slice(0,4);
+ if(p.preda) scelte.unshift({t:`🎁 Regalare ${PREDE[p.preda].nome}`,f:()=>amicizia(c,'dono')});
+ bt.push(...scelte,{t:'Chiudi'});
+ modale(nome(c),t,bt);
+}
+
+// ================== visitatori da altri mondi ==================
+const VISITATORI={
+ elfo:{nome:'l’elfa del Nord',icona:'🧝',h:92,mantello:['#2f6a4a','#62a070'],pelle:'#f2d9c4',capelli:'#ead67e',gambe:'#3a4a32',
+  saluti:['Che bel gatto! Vieni qui, piccolo.','Gli elfi amano i gatti: camminano senza rumore, come noi.'],
+  storie:[
+   {tit:'La terra degli elfi',t:'«Noi elfi della luce veniamo dall’Álfheimr, la terra degli elfi. Gli antichi popoli del Nord raccontavano che gli dèi l’avevano regalata al dio Freyr quando gli spuntò il primo dente: era il dono che si fa ai bambini per il primo dentino.»',f:'Edda poetica, Grímnismál'},
+   {tit:'La notte del sacrificio agli elfi',t:'«Nell’antica Svezia, in autunno, le famiglie offrivano un sacrificio agli elfi, l’álfablót, e quella notte chiudevano la porta agli stranieri. Un poeta di nome Sigvatr, in viaggio, bussò proprio allora: fu respinto di casa in casa, e lo raccontò in versi pieni di freddo e di stupore.»',f:'Sigvatr Þórðarson, Austrfararvísur (XI secolo)'},
+   {tit:'Il colpo d’elfo',t:'«Nell’Inghilterra antica, un dolore improvviso al fianco si chiamava colpo d’elfo: si credeva che gli elfi scagliassero piccole frecce invisibili. Per guarire si recitavano formule magiche, come quella intitolata Contro la fitta improvvisa.»',f:'incantesimo anglosassone Wið færstice'},
+  ]},
+ nano:{nome:'il nano delle montagne',icona:'⛏️',h:58,mantello:['#7a3b22','#b0623a'],pelle:'#e8c4a4',capelli:'#a8642a',gambe:'#4a3424',
+  saluti:['Ohé, micio! Fai la guardia alla foresta?','Per tutte le pietre del monte, che pelo morbido!'],
+  storie:[
+   {tit:'Da dove vengono i nani',t:'«Sai da dove veniamo noi nani? Snorri racconta che nascemmo come vermi nella carne del gigante Ymir, con cui gli dèi costruirono il mondo. Poi gli dèi ci diedero intelligenza e figura umana, e ci mandarono a vivere nella terra e nelle rocce.»',f:'Snorri Sturluson, Edda, Gylfaginning'},
+   {tit:'Il nastro fatto di cose impossibili',t:'«Per legare il lupo Fenrir, i nani forgiarono un nastro morbido come seta, Gleipnir, con sei cose: il rumore dei passi del gatto, la barba della donna, le radici della montagna, i tendini dell’orso, il respiro del pesce e la saliva dell’uccello. Per questo, dice Snorri, quelle cose oggi non esistono più. Ascolta: i tuoi passi non fanno rumore!»',f:'Snorri Sturluson, Edda, Gylfaginning'},
+   {tit:'Il nano che diventò pietra',t:'«Il nano Alvíss voleva sposare la figlia del dio Thor. Thor lo interrogò tutta la notte sui nomi delle cose in tutti i mondi, e Alvíss, che sapeva tutto, rispose a ogni domanda. Ma intanto sorse il sole: la luce del giorno lo colpì e lo trasformò in pietra. Il sapere non basta, se non sai quando fermarti.»',f:'Edda poetica, Alvíssmál'},
+  ]},
+ folletto:{nome:'il folletto del focolare',icona:'🍄',h:40,mantello:['#6a4a2a','#94703e'],pelle:'#f0cfb0',capelli:'#c0392b',gambe:'#4a3a2a',
+  saluti:['Psst! Ho una storia per te, micetto.','Un gatto! Sei tu che bevi il latte dalla mia ciotola?'],
+  storie:[
+   {tit:'Il brownie e la ciotola di latte',t:'«Nelle case di Scozia viveva un brownie, un piccolo spirito di casa: di notte finiva i lavori lasciati a metà, in cambio di una ciotola di latte o di panna. Ma guai a regalargli dei vestiti: si offendeva, o si sentiva pagato, e se ne andava per sempre.»',f:'folklore scozzese'},
+   {tit:'Il munaciello di Napoli',t:'«A Napoli si racconta del munaciello, un piccolo spirito vestito da frate che abita le case antiche. A chi gli è simpatico lascia monete nascoste; a chi non gli piace nasconde le cose e fa dispetti. Per questo, a Napoli, quando qualcosa sparisce, c’è chi sorride e dice che è stato lui.»',f:'folklore napoletano'},
+   {tit:'I bambini scambiati',t:'«In Irlanda e in Scozia si diceva che il piccolo popolo potesse rubare un neonato e lasciare al suo posto uno dei suoi: il bambino scambiato. Per proteggere le culle, vicino si metteva un oggetto di ferro, perché il piccolo popolo non lo sopporta.»',f:'folklore irlandese e scozzese'},
+  ]},
+};
+function spawnVisitatore(){ G.prossimoVisitatore=1e12; return; // in Gattini 3D niente visitatori umani (richiesta del 12 novembre 2026)
+ const p=G.p, tipi=Object.keys(VISITATORI), tipo=tipi[(G.nVisite||0)%tipi.length]; G.nVisite=(G.nVisite||0)+1;
+ const cm=CLAN.felce.campo; let x=cm.x+70, y=cm.y+40;
+ if(p.rango!=='gattino') for(let k=0;k<30;k++){ const a=rnd(0,6.283), d=rnd(220,380); x=clamp(p.x+Math.cos(a)*d,60,940); y=clamp(p.y+Math.sin(a)*d,60,1740); if(!acqua(x,y)&&!inCampo(x,y,20)) break; }
+ G.visitatore={tipo,x,y,cx:x,cy:y,tx:x,ty:y,flip:1,fine:G.t+MOON*1.6,storie:0,id:-1,t:0};
+ const T=VISITATORI[tipo]; annuncia(`✨ ${T.icona} Un visitatore nel bosco!`,'#e8d9ff');
+ log(`✨ Nel bosco è comparso ${T.nome}. Segui il segno ✨ e avvicinati: ha storie da raccontare.`,'#e8d9ff');
+}
+function aggiornaVisitatore(dt){
+ const p=G.p;
+ if(!G.visitatore){ if(G.t>(G.prossimoVisitatore??MOON*1.5)) spawnVisitatore(); return; }
+ const v=G.visitatore, T=VISITATORI[v.tipo]; v.t+=dt;
+ if(scena&&scena.dati.v===v) return;
+ v.kneel=Math.max(0,(v.kneel||0)-dt*2); v.accarezza=false;
+ if(v.parte){ v.alpha=(v.alpha??1)-dt*0.5; if(v.alpha<=0){ G.visitatore=null; G.prossimoVisitatore=G.t+MOON*rnd(2.5,4); } return; }
+ if(G.t>v.fine||v.storie>=T.storie.length){ v.parte=true; log(`✨ ${cap(T.nome)} saluta e scompare tra gli alberi.`,'#e8d9ff'); return; }
+ if(dist(v,p)<150){ v.flip=p.x<v.x?-1:1; v.vel=0; if(!v.salutato){ v.salutato=true; parla(v,pick(T.saluti),5); } return; }
+ const dx=v.tx-v.x, dy=v.ty-v.y, dd=Math.hypot(dx,dy);
+ if(dd<4){ const a=rnd(0,6.283); v.tx=v.cx+Math.cos(a)*70; v.ty=v.cy+Math.sin(a)*50; v.vel=0; }
+ else { const s=Math.min(dd,26*dt); v.x+=dx/dd*s; v.y+=dy/dd*s; v.flip=dx<0?-1:1; v.vel=26; v.passo=(v.passo||0)+s*0.18; }
+}
+SCENE.carezza={inizio(sc){ const p=G.p, v=sc.dati.v, T=VISITATORI[v.tipo]; v.x=p.x-T.h*0.36; v.y=p.y-2; v.flip=1; p.flip=-1; v.vel=0; },
+ passo(sc,dt){ const p=G.p, v=sc.dati.v; v.kneel=Math.min(1,(v.kneel||0)+dt*3); v.accarezza=sc.t>0.4; setPosa(p,sc.t<0.7?'siede':'leccato');
+  ogni(sc,0.4,()=>testo(p.x+rnd(-6,6),p.y-34,pick(['♥','rrr','♪']),pick(['#ff8fb0','#f5e7c4']),9)); }};
+function incontro(){
+ const v=G.visitatore, T=VISITATORI[v.tipo];
+ avviaScena('carezza',[G.p],3.2,()=>{ const s=T.storie[v.storie%T.storie.length]; v.storie++;
+  log(`✨ ${cap(T.nome)} ti ha accarezzato e ti ha raccontato «${s.tit}».`,'#e8d9ff');
+  modale(`${T.icona} ${cap(T.nome)} racconta: «${s.tit}»`,`<i>${cap(T.nome)} si inginocchia, ti gratta dietro le orecchie e comincia a parlare.</i><br><br>${s.t}<div class="fonte">Fonte: ${s.f}</div>`,[{t:'Fare le fusa'}]); },{v});
+}
+function disegnaVisitatore(v){
+ const T=VISITATORI[v.tipo], h=T.h, kn=v.kneel||0, sw=v.vel>5?Math.sin(v.passo||0):0, t=v.t||0, lg=v.tipo==='nano'?1.35:v.tipo==='folletto'?1.1:0.85;
+ ctx.save(); ctx.globalAlpha=v.alpha??1; ctx.translate(v.x,v.y);
+ ombra(ctx,0,0,h*0.24,h*0.07,0.35);
+ ctx.scale(v.flip||1,1);
+ const hipY=-h*(0.46-0.16*kn), shY=hipY-h*0.32; ctx.lineCap='round';
+ ctx.strokeStyle=T.gambe; ctx.lineWidth=h*0.075*lg;
+ const gamba=(dx,kx,ky,fx)=>{ ctx.strokeStyle=T.gambe; ctx.beginPath(); ctx.moveTo(dx,hipY); ctx.lineTo(kx,ky); ctx.lineTo(fx,0); ctx.stroke(); ell(fx+h*0.03,-h*0.015,h*0.055*lg,h*0.025,'#3a2a1a'); };
+ if(kn>0.5){ gamba(-h*0.03,-h*0.16,-h*0.03,-h*0.3); gamba(h*0.03,h*0.17,hipY+h*0.06,h*0.18); }
+ else { gamba(-h*0.03,-h*0.03-sw*h*0.07,hipY*0.5,-h*0.04-sw*h*0.12); gamba(h*0.03,h*0.03+sw*h*0.07,hipY*0.5,h*0.04+sw*h*0.12); }
+ ctx.strokeStyle=T.mantello[0]; ctx.lineWidth=h*0.06*lg; ctx.beginPath(); ctx.moveTo(-h*0.06,shY+h*0.03); ctx.lineTo(-h*0.1-sw*h*0.05,hipY+h*0.02); ctx.stroke();
+ const g=ctx.createLinearGradient(-h*0.15,shY,h*0.15,hipY); g.addColorStop(0,T.mantello[1]); g.addColorStop(1,T.mantello[0]);
+ ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(-h*0.09*lg,shY); ctx.lineTo(h*0.09*lg,shY); ctx.lineTo(h*0.14*lg,hipY+h*0.08); ctx.lineTo(-h*0.14*lg,hipY+h*0.08); ctx.closePath(); ctx.fill();
+ ctx.fillStyle='#3a2a1a'; ctx.fillRect(-h*0.12*lg,hipY-h*0.01,h*0.24*lg,h*0.025);
+ const hy=shY-h*0.1, r=h*0.085*(v.tipo==='folletto'?1.25:1);
+ if(v.tipo==='elfo') ell(-r*0.3,hy+r*0.7,r*1.1,r*1.9,T.capelli);
+ circ(0,hy,r,T.pelle);
+ if(v.tipo==='elfo'){ ctx.fillStyle=T.pelle; ctx.beginPath(); ctx.moveTo(-r*0.2,hy-r*0.1); ctx.lineTo(-r*1.6,hy-r*1.0); ctx.lineTo(-r*0.4,hy+r*0.35); ctx.fill(); ctx.fillStyle=T.capelli; ctx.beginPath(); ctx.arc(0,hy,r*1.03,Math.PI*1.05,Math.PI*1.95); ctx.fill(); }
+ if(v.tipo==='nano'){ ctx.fillStyle=T.capelli; ctx.beginPath(); ctx.moveTo(-r*0.9,hy); ctx.quadraticCurveTo(-r*0.6,hy+r*3.2,r*0.4,hy+r*3); ctx.quadraticCurveTo(r*1.15,hy+r*1.5,r*0.95,hy+r*0.2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#8a8a92'; ctx.beginPath(); ctx.arc(0,hy-r*0.15,r*1.08,Math.PI,0); ctx.fill(); ctx.fillRect(-r*1.2,hy-r*0.22,r*2.4,r*0.25); }
+ if(v.tipo==='folletto'){ ctx.fillStyle=T.capelli; ctx.beginPath(); ctx.moveTo(-r,hy-r*0.3); ctx.quadraticCurveTo(-r*0.2,hy-r*3.2,r*1.4,hy-r*2.6); ctx.quadraticCurveTo(r*0.6,hy-r*1.4,r,hy-r*0.3); ctx.closePath(); ctx.fill(); ell(r*0.45,hy+r*0.35,r*0.28,r*0.18,'rgba(230,110,110,0.5)'); }
+ const chiusi=v.accarezza&&Math.sin(t*1.3)>0.3;
+ if(chiusi){ ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=r*0.1; ctx.beginPath(); ctx.arc(r*0.45,hy-r*0.12,r*0.14,0.2,2.9); ctx.stroke(); } else circ(r*0.45,hy-r*0.1,r*0.13,'#2a2a3a');
+ ell(r*0.97,hy+r*0.15,r*0.14,r*0.2,mescola(T.pelle,SCURO,0.15));
+ ctx.strokeStyle='rgba(120,50,40,0.7)'; ctx.lineWidth=r*0.08; ctx.beginPath(); ctx.arc(r*0.55,hy+r*0.45,r*0.25,0.3,2.2); ctx.stroke();
+ ctx.strokeStyle=T.mantello[1]; ctx.lineWidth=h*0.06*lg;
+ const sx0=h*0.05, sy0=shY+h*0.03; let ax,ay;
+ if(v.accarezza){ const p=G.p; ax=(p.x-v.x)*(v.flip||1)+Math.sin(t*5)*5; ay=(p.y-v.y)-24*scala(p); } else { ax=h*0.08+sw*h*0.05; ay=hipY+h*0.02; }
+ ctx.beginPath(); ctx.moveTo(sx0,sy0); ctx.quadraticCurveTo((sx0+ax)/2+h*0.04,(sy0+ay)/2+h*0.06,ax,ay); ctx.stroke(); circ(ax,ay,h*0.035*lg,T.pelle);
+ ctx.restore();
+}
+
+
+// ================== aneddoti di guerra, dai classici ==================
+const ANEDDOTI=[
+ {t:'«Al guado, prima di colpire, ho visto un gattino nemico che tremava dietro sua madre, e mi sono fermato. Ho pensato a Ettore che, prima della battaglia, si toglie l’elmo dal pennacchio di crine perché il suo bambino, Astianatte, si spaventa a vederlo. Anche un guerriero è padre, e il figlio del nemico è un figlio.»',f:'Omero, Iliade, libro VI'},
+ {t:'«Dopo la battaglia, il capo della Nebbia è venuto da solo a chiedere di riportare a casa un suo ferito. Mi ha ricordato Priamo, il vecchio re di Troia, che entra di notte nella tenda di Achille e gli bacia le mani per riavere il corpo del figlio Ettore. Achille piange con lui. Anche i nemici possono piangere insieme.»',f:'Omero, Iliade, libro XXIV'},
+ {t:'«Un nemico mi ha chiesto: chi sei? E io ho risposto: nessuno. Come Ulisse con il ciclope Polifemo: gli disse di chiamarsi Nessuno, e quando il ciclope gridò aiuto, gli altri ciclopi capirono «Nessuno mi fa del male» e se ne andarono. L’astuzia vale più degli artigli.»',f:'Omero, Odissea, libro IX'},
+ {t:'«Ci siamo nascosti dentro un tronco cavo, vicino al loro campo, e siamo usciti al buio. Come i Greci nel cavallo di legno: i Troiani lo portarono dentro le mura credendolo un dono, e di notte i guerrieri nascosti aprirono le porte. Diffida dei doni che arrivano dal nemico.»',f:'Omero, Odissea, libro VIII; Virgilio, Eneide, libro II'},
+ {t:'«Il capo dice sempre una frase di un generale cinese antico, Sun Tzu: vincere cento battaglie non è l’abilità più alta; l’abilità più alta è sottomettere il nemico senza combattere. Oggi abbiamo combattuto: vuol dire che prima non siamo stati abbastanza saggi.»',f:'Sun Tzu, L’arte della guerra, capitolo III'},
+ {t:'«Conosci il nemico e conosci te stesso, e in cento battaglie non sarai in pericolo: lo scrisse Sun Tzu. Prima di attaccare li ho osservati a lungo: chi zoppicava, chi guardava sempre indietro. E ho guardato anche me: sapevo di essere stanco, e sono rimasto vicino ai compagni.»',f:'Sun Tzu, L’arte della guerra, capitolo III'},
+ {t:'«Eravamo soltanto in due a difendere il guado. Allora mi sono seduto bene in vista e ho cominciato a lavarmi il pelo, tranquillo. Si sono fermati, sospettosi, e se ne sono andati. L’ho imparato da Zhuge Liang: nel Romanzo dei Tre Regni, con una città senza soldati, apre le porte, sale sulle mura e suona la cetra. Il generale nemico teme un’imboscata e si ritira.»',f:'Luo Guanzhong, Il romanzo dei Tre Regni'},
+ {t:'«Gli artigli che ci hanno lanciato contro, li abbiamo usati noi. Zhuge Liang, rimasto senza frecce, mandò nella nebbia delle barche coperte di paglia verso il campo nemico: il nemico le crivellò di frecce, e lui tornò con migliaia di frecce nuove. Anche la forza dell’avversario si può prendere in prestito.»',f:'Luo Guanzhong, Il romanzo dei Tre Regni'},
+ {t:'«Erano molti più di noi, e uno ha detto: le loro code oscureranno il sole! Gli ho risposto come lo spartano Dienece alle Termopili, quando gli dissero che le frecce dei Persiani avrebbero oscurato il sole: “Meglio, combatteremo all’ombra”. Il coraggio sa anche ridere.»',f:'Erodoto, Storie, libro VII'},
+ {t:'«Tornando, quando abbiamo rivisto il nostro fiume, abbiamo gridato tutti insieme. Come i diecimila soldati greci di Senofonte, perduti per mesi in terre nemiche: quando dall’alto di un monte rividero il mare, gridarono «Thalatta! Thalatta!», il mare, il mare. Il ritorno è la parte più bella di ogni guerra.»',f:'Senofonte, Anabasi, libro IV'},
+ {t:'«Tra i nemici c’era un gatto nato nel nostro clan, passato alla Nebbia da giovane. Ho abbassato la zampa, come Arjuna nella Bhagavad Gita: davanti all’esercito avversario vede i suoi parenti e i suoi maestri, e lascia cadere l’arco. Il dio Krishna allora gli parla del dovere e dell’anima che non muore. Non tutte le domande si risolvono combattendo.»',f:'Bhagavad Gita, canti I e II'},
+ {t:'«Quando eravamo in difficoltà, ho chiamato aiuto subito. Non ho fatto come Rolando, nella Chanson de Roland: per orgoglio rifiuta di suonare il corno per chiamare l’esercito di Carlo Magno, e quando finalmente lo suona è troppo tardi. Chiedere aiuto non è vergogna.»',f:'Chanson de Roland'},
+ {t:'«Io e il mio compagno di tana abbiamo combattuto schiena contro schiena. Nell’Eneide, Niso ed Eurialo sono due amici troiani che escono di notte nel campo nemico; quando Eurialo viene catturato, Niso esce dal nascondiglio per salvarlo, e muoiono insieme. L’amicizia è la prima arma di un guerriero.»',f:'Virgilio, Eneide, libro IX'},
+];
+function aneddoto(){
+ const nar=pick(G.cats.filter(c=>c.clan==='felce'&&c.rango==='guerriero'&&!c.regina))||capo();
+ G.aned=(G.aned||0); const a=ANEDDOTI[G.aned%ANEDDOTI.length]; G.aned++;
+ return `<div class="sapere" style="border-left-color:#d98a5a"><b>🔥 Racconto di guerra di ${nome(nar)}</b><br>${a.t}<div class="fonte">Fonte: ${a.f}</div></div>`;
+}
+
+// ================== il protagonista adulto istruisce i cuccioli ==================
+function cuccioliVicini(){ return G.cats.filter(c=>c.clan==='felce'&&c.rango==='gattino'&&!c.ferito&&dist(c,G.p)<260); }
+function mettiInCerchio(sc){ const p=sc.attori[0], k=sc.attori.slice(1), dir=p.flip||1;
+ k.forEach((c,i)=>{ const an=(i-(k.length-1)/2)*0.55; c.x=p.x+dir*Math.cos(an)*30; c.y=p.y+Math.sin(an)*18+2; c.flip=-dir; }); }
+SCENE.lezione={inizio:mettiInCerchio,
+ passo(sc){ const [p,...k]=sc.attori; setPosa(p,'racconta'); p.flip=k[0].x<p.x?-1:1; for(const c of k){ setPosa(c,'ascolta'); c.flip=c.x<p.x?1:-1; }
+  ogni(sc,0.45,()=>{ const c=pick(k); testo(c.x,c.y-28,pick(['♥','✦','?','!']),pick(['#ff8fb0','#ffe08a','#bfe8ff']),9); }); }};
+SCENE.scuola={inizio(sc){ const p=sc.attori[0], dir=p.flip||1; sc.attori.slice(1).forEach((c,i)=>{ c.x=p.x-dir*(26+i*17); c.y=p.y+(i%2?5:-3); c.flip=dir; }); sc.dati.x0=sc.attori.map(c=>c.x); },
+ passo(sc,dt){ const [p,...k]=sc.attori, t=sc.t, dir=p.flip||1;
+  if(t<1.1){ setPosa(p,'agguato'); k.forEach((c,i)=>setPosa(c,t>0.25+i*0.15?'agguato':'siede')); }
+  else if(t<2.1){ const i0=Math.floor((t-1.1)/0.22);
+   setPosa(p,t<1.45?'balzello':'siede'); if(t<1.45) p.x+=dir*60*dt;
+   k.forEach((c,i)=>{ if(i<i0&&t<1.1+0.22*(i+1)+0.35){ setPosa(c,'balzello'); c.x+=dir*55*dt; } else if(i>=i0) setPosa(c,'agguato'); else setPosa(c,'siede'); }); }
+  else { setPosa(p,'siede'); k.forEach(c=>setPosa(c,'rotola')); ogni(sc,0.3,()=>{ const c=pick(k); testo(c.x,c.y-20,pick(['♥','♪','✦']),pick(['#ff8fb0','#bfe8ff','#ffe08a']),9); }); } }};
+PRIMO_PIANO.push('lezione','scuola');
+function insegnaStoria(){
+ const op=shuffle(RACCONTI.filter(l=>sentiti().includes(l.id))).slice(0,4);
+ modale('📖 Quale storia racconti ai cuccioli?','Gli anziani ti hanno insegnato queste storie: ora tocca a te tramandarle. Così un clan si ricorda di sé.',[...op.map(l=>({t:l.tit,f:()=>raccontaAiCuccioli(l)})),{t:'Nessuna, per ora'}]);
+}
+function raccontaAiCuccioli(l){
+ const p=G.p, k=cuccioliVicini().slice(0,4); if(!k.length){ log('Non ci sono cuccioli qui vicino: vai nella nursery.'); return; }
+ avviaScena('lezione',[p,...k],3.2,()=>{
+  for(const c of k) c.amicizia++; spirito(10,'tramanda');
+  modale(`📖 Racconti ai cuccioli «${l.tit}»`,`<i>${k.map(nome).join(', ')} ${k.length>1?'si accoccolano':'si accoccola'} davanti a te, con le orecchie dritte.</i><br><br>${l.t}<div class="fonte">Fonte: ${l.fonte}</div>`,
+   [{t:'❓ Fare una domanda ai cuccioli',f:()=>domandaAiCuccioli(l,k)},{t:'Basta così per stasera',f:()=>lezioneFatta()}]); });
+}
+function domandaAiCuccioli(l,k){
+ const c=pick(k), giusta=Math.random()<0.6, i=giusta?l.q.g:pick([0,1,2].filter(x=>x!==l.q.g));
+ modale('❓ La domanda',`Chiedi ai cuccioli: «${l.q.d}»<br><br>${nome(c)} alza la zampa: «${l.q.r[i]}!»<br><br>Che cosa gli rispondi?`,
+  [{t:'✔ Giusto, bravo!',f:()=>giudica(true)},{t:'✘ Non proprio…',f:()=>giudica(false)}]);
+ function giudica(dici){
+  const bene=dici===giusta;
+  if(bene){ c.amicizia++; lezioneFatta(); modale('🎓 Un buon maestro',giusta?`${nome(c)} gonfia il petto, felice. Gli altri cuccioli lo guardano con ammirazione.`:`Spieghi con pazienza: «${l.q.r[l.q.g]}». ${nome(c)} ci pensa, poi fa sì con la testa: ora ha capito.`,[{t:'Avanti'}]); }
+  else modale('🤔 Rifletti',`Non è così: la risposta giusta è «${l.q.r[l.q.g]}». Anche i maestri sbagliano: l’anziano ti direbbe di ripensare al racconto «${l.tit}».`,[{t:'Ho capito'}]);
+ }
+}
+function insegnaCaccia(){
+ const p=G.p, k=cuccioliVicini().slice(0,4); if(!k.length){ log('Non ci sono cuccioli qui vicino: vai nella nursery.'); return; }
+ avviaScena('scuola',[p,...k],3.6,()=>{ for(const c of k) c.amicizia++; lezioneFatta();
+  log(`🐾 I cuccioli hanno imitato il tuo agguato e il tuo balzo, poi sono finiti a rotolare nel muschio.`,'#ffd0f0');
+  log('📜 Tra i popoli cacciatori, ricordano gli etnologi, i bambini imparano soprattutto imitando i grandi e giocando alla caccia, molto prima di cacciare davvero.','#e8d9a8'); });
+}
+function lezioneFatta(){ G.p.lezioni=(G.p.lezioni||0)+1; avanzaMissione('educa'); log(`🎓 Hai insegnato qualcosa ai cuccioli. (lezioni date: ${G.p.lezioni})`,'#e8d9a8'); }
+
+// ================== battaglia guidata ==================
+function percorsoVerso(dest){ // passa dal guado se bisogna attraversare il fiume
+ const p=G.p, path=[];
+ if((p.x<FX0)!==(dest.x<FX0)){ const gy=GUADI.reduce((b,g)=>Math.abs(g-dest.y)<Math.abs(b-dest.y)?g:b,GUADI[0]), da=p.x<FX0;
+  path.push({x:da?FX0-28:FX1+28,y:gy},{x:da?FX1+28:FX0-28,y:gy}); }
+ path.push({x:dest.x,y:dest.y}); return path;
+}
+function assaltatoreVicino(c,R){ let best=null,bd=R; for(const e of G.cats){ if(e.stato!=='assalto') continue; const d=dist(c,e); if(d<bd){bd=d;best=e;} } return best; }
+function guidaAuto(){
+ const p=G.p, A=p.auto;
+ if(!G.raid&&A.tipo!=='difesa'){ p.auto=null; return null; }
+ const nem=A.tipo==='difesa'?assaltatoreVicino(p,450):nemicoVicino(p,A.tipo==='mischia'?330:170);
+ if(A.tipo==='marcia'){
+  if(nem){ p.auto={tipo:'mischia'}; annuncia('⚔️ Nella mischia!','#ffb0a0'); return null; }
+  const w=A.percorso[0]; if(!w){ p.auto={tipo:'mischia'}; return null; }
+  const dx=w.x-p.x, dy=w.y-p.y, d=Math.hypot(dx,dy); if(d<18){ A.percorso.shift(); return [0,0]; }
+  p.flip=dx<0?-1:1; p.dir=Math.atan2(dy,dx); return [dx/d*135,dy/d*135];
+ }
+ if(!nem){
+  if(A.tipo==='difesa'){ p.auto=null; return [0,0]; }
+  const Lb=G.raid.luogo, dx=Lb.x-p.x, dy=Lb.y-p.y, d=Math.hypot(dx,dy); return d>50?[dx/d*110,dy/d*110]:[0,0];
+ }
+ if(p.salute<25&&!A.ritira){ A.ritira=G.t+5; consiglio('guerra-ritira','Sei ferit'+o(p)+': arretra un momento, i compagni ti coprono. Poi torna nella mischia!',15); }
+ if(A.ritira){ if(G.t<A.ritira&&p.salute<45){ const dx=p.x-nem.x, dy=p.y-nem.y, d=Math.hypot(dx,dy)||1; return [dx/d*120,dy/d*120]; } A.ritira=0; }
+ const dx=nem.x-p.x, dy=nem.y-p.y, d=Math.hypot(dx,dy)||1; p.flip=dx<0?-1:1; p.dir=Math.atan2(dy,dx);
+ if(d<48){ if(p.cd<=0){ p.cd=0.55; p.energia=Math.max(0,p.energia-1); colpisci(p,nem); } return [0,0]; }
+ return [dx/d*140,dy/d*140];
+}
+function azioneGuerra(){ // durante una battaglia Spazio serve soltanto alla battaglia
+ const p=G.p; if(p.incinta) return null;
+ if(G.raid&&p.rango!=='gattino'){
+  const n=nemicoVicino(p,55); if(n) return {t:'attacca '+nome(n),f:()=>{ balzo(); p.auto={tipo:'mischia'}; }};
+  if(p.auto) return {t:null,f:()=>{}};
+  if(nemicoVicino(p,330)||dist(p,G.raid.luogo)<230) return {t:'entra nella mischia',f:()=>{ p.auto={tipo:'mischia'}; }};
+  return {t:'segui il clan verso la battaglia',f:()=>{ p.auto={tipo:'marcia',percorso:percorsoVerso(G.raid.luogo)}; }};
+ }
+ if(p.rango!=='gattino'&&!p.auto&&!p.vecchio){ const a=assaltatoreVicino(p,350); if(a&&!nemicoVicino(p,55)) return {t:'difendi il campo da '+nome(a),f:()=>{ p.auto={tipo:'difesa'}; }}; }
+ return null;
+}
+
+// ================== le iniziazioni del clan ==================
+SCENE.rito={inizio(sc){ const R=L.roccia, cx=R.x, cy=R.y+78, centro=sc.attori[0], altri=sc.attori.filter(c=>c!==centro&&!c.leader);
+  altri.forEach((c,i)=>{ const an=Math.PI*(0.08+0.84*(altri.length>1?i/(altri.length-1):0.5)); c.posto=[cx+Math.cos(an)*100,cy+Math.sin(an)*42]; });
+  centro.posto=[cx,cy-6]; const k=sc.attori.find(c=>c.leader); if(k) k.posto=[R.x,R.y+24]; },
+ passo:(sc,dt)=>SCENE.cerimonia.passo(sc,dt)};
+function nomeFuturo(c,r){ return nome({...c,rango:r,leader:false}); }
+function assistiCerimonia(){
+ const ce=G.cerimonia, c=gatto(ce.id); if(!c){ G.cerimonia=null; return; }
+ spirito(15,'rito');
+ c.stato='campo'; c.posa=null;
+ avviaScena('rito',[c,...partecipanti().filter(x=>x!==c)],3.6,()=>ritoPrimoTempo(c,ce.r));
+}
+function ritoPrimoTempo(c,r){
+ const nc=nome(capo()), madre=gatto(G.madre);
+ if(r==='apprendista') modale('🌑 Primo tempo: la separazione',`${nc} sale sulla Roccia Alta: «${nome(c)} ha compiuto sei lune. Da questa notte lascia la nursery.» Una regina gli lecca la testa per l’ultima volta.<br><br>Tu sei nel cerchio, con il clan: anche chi assiste fa parte del rito.`
+  +box('Separazione','Il primo tempo di ogni rito di passaggio stacca chi passa dalla sua condizione di prima (Van Gennep). Il gruppo che guarda dà al passaggio il suo valore: un rito senza testimoni non cambia nessuno.'),[{t:'Restare a guardare',f:()=>ritoSecondoTempo(c,r)}]);
+ else modale('🌑 Primo tempo: la prova',`${nc} interroga ${nome(c)} sul codice dei guerrieri e sulle storie del clan. L’apprendista risponde senza esitare: le storie dell’anziano gli sono servite.`
+  +box('Il sapere del clan','Nelle iniziazioni di molti popoli il giovane deve dimostrare di conoscere i miti e le regole del gruppo: per questo le storie si ascoltano, si ricordano e si tramandano.'),[{t:'Ascoltare in silenzio',f:()=>ritoSecondoTempo(c,r)}]);
+}
+function ritoSecondoTempo(c,r){
+ const p=G.p, nuovo=nomeFuturo(c,r);
+ if(r==='apprendista'){
+  const bt=[]; if(p.rango==='guerriero'&&(p.allievo==null||!gatto(p.allievo)||gatto(p.allievo).rango!=='apprendista')) bt.push({t:'🐾 Offrirti come mentore',f:()=>ritoTerzoTempo(c,r,'mentore')});
+  bt.push({t:'📣 Gridare il suo nome con il clan',f:()=>ritoTerzoTempo(c,r,'grido')});
+  modale('🌗 Secondo tempo: il margine',`${nome(c)} avanza da sol${o(c)} nel cerchio, senza nome. Poi ${nome(capo())} parla: «Da oggi ti chiamerai <b>${nuovo}</b>. Chi gli farà da mentore?»`
+   +box('Margine','Per un istante il cucciolo non è più gattino e non ancora apprendista: è sulla soglia (Turner). Il mentore è chi lo accompagnerà dall’altra parte.'),bt);
+ } else {
+  modale('🌗 Secondo tempo: il nome',`${nome(capo())}: «Da oggi sarai <b>${nuovo}</b>, guerriero del Clan della Felce.» Questa notte veglierà in silenzio sul campo.`
+   +box('La veglia','Chi veglia sulla soglia con un compagno resta legato a lui da un vincolo tra uguali, la communitas di Turner.'),
+   [{t:'🌙 Vegliare con lui tutta la notte',f:()=>ritoTerzoTempo(c,r,'veglia')},{t:'📣 Gridare il suo nome e tornare alla tana',f:()=>ritoTerzoTempo(c,r,'grido')}]);
+ }
+}
+function ritoTerzoTempo(c,r,scelta){
+ const p=G.p, era=nome(c); G.cerimonia=null; promuovi(c,r);
+ let t=`Il clan grida: «${nome(c)}! ${nome(c)}!»`;
+ if(scelta==='mentore'){ p.allievo=c.id; c.amicizia+=3; t+=`<br><br>Tocchi il naso di ${nome(c)}: ora sei ${p.sesso==='f'?'la sua mentore':'il suo mentore'}. Allenal${o(c)} (Spazio vicino a lui o a lei): diventerà più forte, e ti seguirà in battaglia.`; }
+ else if(scelta==='veglia'){ c.amicizia+=2; p.energia=Math.max(5,p.energia-20); G.t+=MOON*0.2; t+=`<br><br>Hai vegliato con ${nome(c)} fino all’alba. Da oggi siete legati (amicizia +2).`; }
+ else { c.amicizia+=1; t+=`<br><br>${nome(c)} ti guarda: ha sentito la tua voce nel coro (amicizia +1).`; }
+ log(`🌟 Hai assistito al rito: ${era} ora è ${nome(c)}.`,'#ffe08a');
+ modale('🌕 Terzo tempo: l’aggregazione',t+box('Aggregazione','Il nome nuovo, gridato da tutti, fa entrare chi è passato nel suo nuovo posto: è il terzo tempo di Van Gennep.'),[{t:'Evviva!'}]);
+}
+
+// ================== missioni ==================
+const MISSIONI={
+ caccia:{t:'Porta 2 prede al mucchio',n:2,perche:'Il mucchio nutre chi non può cacciare: i gattini, le regine che allattano, gli anziani. La tua parte conta.',ok:p=>p.rango!=='gattino'},
+ anziano:{t:'Porta una preda in dono all’anziano',n:1,perche:'Gli anziani hanno nutrito il clan quando erano giovani: ora tocca a noi. Il dono crea un legame che dura (Mauss).',ok:p=>p.rango!=='gattino'&&anziano()},
+ ascolta:{t:'Ascolta un racconto dell’anziano',n:1,perche:'Le storie sono la memoria del clan: servono per la prova della sapienza nelle cerimonie, e un giorno le racconterai ai più piccoli.',ok:p=>anziano()&&disponibili().some(l=>!sentiti().includes(l.id))},
+ educa:{t:'Insegna qualcosa ai cuccioli',n:1,perche:'Chi ha imparato deve tramandare: i cuccioli a cui racconti storie e insegni la caccia crescono forti, e ti restano amici anche da guerrieri.',ok:p=>(p.rango==='guerriero'||p.rango==='guaritore')&&G.cats.some(c=>c.clan==='felce'&&c.rango==='gattino')},
+ amicizia:{t:'',n:1,perche:'Gli amici combattono meglio accanto a te: in battaglia ti seguono per primi e colpiscono più forte. E solo con un amico si diventa compagni.',ok:p=>p.rango!=='gattino'},
+ pattuglia:{t:'Pattuglia il confine: raggiungi un guado sul fiume',n:1,perche:'Rinnovare i segni d’odore ricorda agli altri clan dove comincia il nostro territorio: la tensione scende e la guerra si allontana.',ok:p=>p.rango!=='gattino'},
+ cura:{t:'Cura un gatto ferito',n:1,perche:'Un ferito curato torna presto a cacciare e a difendere: il guaritore è il cuore silenzioso del clan.',ok:p=>puoErbe()&&G.cats.some(c=>c.clan==='felce'&&c.ferito)},
+ gioca:{t:'Gioca con un altro gattino',n:1,perche:'Giocando si impara: la lotta per finta insegna il balzo, e i compagni di gioco diventano i compagni di battaglia.',ok:p=>p.rango==='gattino'&&G.cats.some(c=>c.clan==='felce'&&c.rango==='gattino')},
+ allievo:{t:'Allena il tuo allievo',n:1,perche:'Un mentore forma il guerriero di domani: ciò che gli insegni oggi difenderà il clan quando tu sarai anziano.',ok:p=>p.allievo!=null&&gatto(p.allievo)&&gatto(p.allievo).rango==='apprendista'},
+};
+function nuovaMissione(){
+ const p=G.p, tipi=Object.keys(MISSIONI).filter(k=>MISSIONI[k].ok(p)&&k!==G.ultimaMissione); if(!tipi.length) return;
+ const k=pick(tipi), M=MISSIONI[k];
+ const dator=pick(G.cats.filter(c=>c.clan==='felce'&&['guerriero','anziano','guaritore'].includes(c.rango)&&!c.ferito&&dist(c,p)<400))||capo(); if(!dator) return;
+ let b=null; if(k==='amicizia'){ b=pick(G.cats.filter(c=>c.clan==='felce'&&c.rango!=='gattino'&&c.amicizia<3&&c!==dator)); if(!b) return; }
+ G.missione={k,n:M.n,fatto:0,da:dator.id,b:b?b.id:null,t:b?`Fai amicizia con ${nome(b)} (amicizia 3)`:M.t,fino:G.t+MOON*3};
+ G.ultimaMissione=k; parla(dator,'Ho una missione per te: '+G.missione.t.charAt(0).toLowerCase()+G.missione.t.slice(1)+'.',7);
+ log(`📋 Nuova missione da ${nome(dator)}: ${G.missione.t}. Perché: ${M.perche}`,'#bfe0ff');
+}
+function avanzaMissione(k,q=1){ const m=G.missione; if(!m||m.k!==k) return; m.fatto+=q; if(m.fatto>=m.n) completaMissione(); }
+function completaMissione(){
+ const m=G.missione, d=gatto(m.da); G.missione=null; G.prossimaMissione=G.t+15; if(d) d.amicizia++;
+ if(m.k==='pattuglia') for(const cl of ['nebbia','pietre']) tensione(cl,-15);
+ annuncia('📋 Missione compiuta!','#bfe0ff');
+ log(`📋 Missione compiuta: ${m.t}.${d?' '+nome(d)+' ti ringrazia (amicizia +1).':''}${m.k==='pattuglia'?' La tensione con gli altri clan scende.':''}`,'#bfe0ff');
+}
+function controllaMissione(){
+ const p=G.p, m=G.missione;
+ if(!m){ if(!G.raid&&!G.cerimonia&&G.t>(G.prossimaMissione??20)&&puoEvento()) nuovaMissione(); return; }
+ if(G.t>m.fino||!MISSIONI[m.k].ok(p)){ G.missione=null; G.prossimaMissione=G.t+10; return; }
+ if(m.k==='amicizia'){ const b=gatto(m.b); if(!b){ G.missione=null; return; } if(b.amicizia>=3) completaMissione(); }
+ if(m.k==='pattuglia'&&GUADI.some(g=>Math.abs(p.y-g)<45)&&p.x>FX0-70&&p.x<FX1+70) completaMissione();
+}
+
+// ================== bisogni: avvisi chiari ==================
+const BISOGNI=[['fame','🍖 Hai fame!','Hai fame: vai a mangiare al mucchio delle prede, al centro del campo, oppure caccia e mangia una preda.'],
+ ['sete','💧 Hai sete!','Hai sete: vai a bere al fiume, allo stagno o alla pozzanghera del campo.'],
+ ['energia','😴 Sei stanco!','Sei stanco: vai a dormire nella tua tana. Dormendo le lune passano più in fretta.']];
+function controllaBisogni(){
+ const p=G.p; p.avvisi=p.avvisi||{};
+ for(const [k,ban,txt] of BISOGNI){
+  if(p[k]<30&&!p.avvisi[k]){ p.avvisi[k]=1; annuncia(k==='energia'?(p.sesso==='f'?'😴 Sei stanca!':ban):ban,'#ffc08a'); consiglio('bisogno-'+k,txt,20); }
+  if(p[k]<15&&p.avvisi[k]===1){ p.avvisi[k]=2; annuncia(k==='energia'?(p.sesso==='f'?'😴 Sei stanca!':ban):ban,'#ff8a7a'); log('⚠️ '+txt+' Se aspetti ancora, la salute comincia a scendere.','#ff9a8a'); }
+  if(p[k]>50) p.avvisi[k]=0;
+ }
+}
+
+
+// ================== una nuova colonia ==================
+const NOMI_COLONIA=['Clan del Ruscello','Clan del Cardo','Clan della Ghianda','Clan dell’Erica','Clan del Vento Alto'];
+function controllaColonia(){
+ const p=G.p;
+ if(G.colonia){ const co=G.colonia, gu=gatto(co.guida);
+  if(!co.partita){ if(!gu){ G.colonia=null; return; } if(G.t>co.fino) partenza(); else if(!scena&&!paused&&!G.raid&&!G.cerimonia&&dist(p,L.roccia)<130) commiato(); }
+  return; }
+ const f=G.cats.filter(c=>c.clan==='felce');
+ if(f.length<=13||G.raid||scena||G.cerimonia||!puoEvento()) return;
+ const esclusi=new Set([p.compagno,p.allievo,p.mentore,G.madre].filter(x=>x!=null));
+ const cand=f.filter(c=>(c.rango==='guerriero'||c.rango==='apprendista')&&!c.leader&&!c.regina&&!c.figlio&&!c.ferito&&!esclusi.has(c.id)&&c.stato==='campo').sort((a,b)=>lune(a)-lune(b)).slice(0,4);
+ if(cand.length<2) return;
+ const guida=cand.find(c=>c.rango==='guerriero')||cand[0]; segnaEvento();
+ G.colonia={ids:cand.map(c=>c.id),guida:guida.id,nome:pick(NOMI_COLONIA),fino:G.t+MOON*0.8};
+ for(const c of cand) c.partente=true;
+ parla(guida,'Siamo troppi per questo bosco: andiamo a fondare una nuova colonia!',7);
+ annuncia('🌱 Una nuova colonia!','#c8f0a8');
+ log(`🌱 ${nome(guida)} annuncia: «Siamo troppi: andiamo a fondare una nuova colonia!» Con ${guida.sesso==='f'?'lei':'lui'} partiranno ${cand.filter(c=>c!==guida).map(nome).join(', ')}. Vai alla Roccia Alta a salutarli.`,'#c8f0a8');
+}
+function commiato(){
+ const co=G.colonia, part=co.ids.map(gatto).filter(Boolean), gu=gatto(co.guida), p=G.p;
+ avviaScena('rito',[gu,...partecipanti().filter(c=>c!==gu&&!c.partente),...part.filter(c=>c!==gu)],3.4,()=>{
+  const saluta=dono=>{ log(dono?'🎁 Hai dato una preda a chi parte: il dono accompagna il viaggio.':'🫡 Hai augurato buon viaggio a chi parte.','#c8f0a8'); partenza(); };
+  const bt=[]; if(p.preda) bt.push({t:`🎁 Dare loro ${PREDE[p.preda].nome} per il viaggio`,f:()=>{ p.preda=(p.carico&&p.carico.length)?p.carico.shift():null; part.forEach(c=>c.amicizia++); saluta(true); }});
+  bt.push({t:'🫡 Augurare buon viaggio',f:()=>saluta(false)});
+  modale('🌱 Il commiato',`${nome(capo())}, dalla Roccia Alta: «${part.map(nome).join(', ')} lasciano il Clan della Felce per fondare una nuova colonia oltre le colline. Si chiamerà <b>${co.nome}</b>. Portano con sé le nostre storie e il nostro codice.»<br><br>${nome(gu)} tocca il naso del capo, poi si volta verso il bosco.`
+   +box('Fondare una colonia','Quando una città greca fondava una colonia, i coloni portavano con sé il fuoco preso dal focolare comune della madrepatria, per accendere quello della città nuova. Alcuni popoli dell’Italia antica conoscevano la «primavera sacra»: i giovani nati in un certo anno, diventati adulti, partivano per fondare nuove comunità, a volte seguendo un animale sacro.'),bt);
+ });
+}
+function partenza(){
+ const co=G.colonia; co.partita=true;
+ for(const id of co.ids){ const c=gatto(id); if(!c) continue; c.stato='colonia'; c.tx=12; c.ty=clamp(c.y+rnd(-150,150),60,WH-60); c.posa=null; c.elev=0; }
+ log(`🌱 I fondatori del ${co.nome} si incamminano verso ovest.`,'#c8f0a8');
+}
+function congedaPartiti(){
+ if(!G.cats.some(c=>c.partito)) return;
+ G.cats=G.cats.filter(c=>!c.partito);
+ if(G.colonia&&G.colonia.partita&&!G.cats.some(c=>c.stato==='colonia')){ log(`🌱 Sono usciti dal bosco. Un giorno, forse, si sentirà parlare del ${G.colonia.nome}.`,'#c8f0a8'); annuncia('🌱 Buon viaggio!','#c8f0a8'); G.colonia=null; }
+}
+
+// ================== i cuccioli del protagonista ==================
+const MARGINE_GRAVIDANZA=box('Un tempo di margine','Per Arnold van Gennep la gravidanza e il parto sono un passaggio: la futura madre viene in parte separata dalla vita comune, con divieti e cure speciali, e vi rientra dopo la nascita (<i>I riti di passaggio</i>, 1909).');
+function avereCuccioli(m){
+ const p=G.p; G.attesaGattini=G.t+MOON*2;
+ if(p.sesso==='f'){ p.incinta=true;
+  log(`🤰 Tu e ${nome(m)} aspettate dei cuccioli: nasceranno tra due lune.`,'#ffd0f0');
+  modale('🤰 Aspetti dei cuccioli',`Tu e ${nome(m)} aspettate dei cuccioli: nasceranno tra due lune.<br><br>In questo tempo ti muoverai con calma, dormirai nella nursery con le regine e non andrai in battaglia: i guerrieri porteranno le prede al mucchio anche per te.`+MARGINE_GRAVIDANZA,[{t:'Andare verso la nursery'}]); }
+ else { m.incinta=true; m.regina=true; m.reginaFino=G.t+MOON*5;
+  log(`🐾 ${nome(m)} aspetta i vostri cuccioli: nasceranno tra due lune.`,'#ffd0f0');
+  modale('🐾 Aspettate dei cuccioli',`${nome(m)} aspetta i vostri cuccioli: nasceranno tra due lune. Da oggi riposa nella nursery con le altre regine.<br><br>Porta prede al mucchio per lei; quando nasceranno, corri alla nursery a conoscerli.`+MARGINE_GRAVIDANZA,[{t:'Che gioia!'}]); }
+}
+function nascita(){
+ G.attesaGattini=null; const p=G.p, m=gatto(p.compagno);
+ const n=1+Math.floor(Math.random()*3), nomi=[], kits=[];
+ for(let i=0;i<n;i++){ const k=nuovoGatto('felce','gattino',{lune:0,figlio:true,colore:pick([p.colore,m?m.colore:p.colore]),x:L.nursery.x+rnd(-20,20),y:L.nursery.y+rnd(-10,15)}); nomi.push(nome(k)); kits.push(k); }
+ p.figli+=n; if(m) m.incinta=false;
+ const finestra=()=>modale('🐾 Sono nati i tuoi cuccioli!',`Nella nursery, al caldo, ci sono ${n===1?'un cucciolo':n+' cuccioli'}: <b>${nomi.join(', ')}</b>.<br><br>Crescono con il clan: a sei lune diventeranno apprendisti, e potrai assistere alla loro cerimonia.`
+  +box('Il primo rito','Anche la nascita è un passaggio: Van Gennep descrive i riti con cui molti popoli accolgono il neonato e gli danno un nome, facendolo entrare nella comunità.'),[{t:'Che belli!'}]);
+ log(`🐾 Sono nati i tuoi cuccioli: ${nomi.join(', ')}!`,'#ffd0f0');
+ if(p.sesso==='f'){ p.incinta=false; p.allatta=G.t+MOON*2;
+  effetto('Ti ritiri nella nursery, al riparo. Lì, nel silenzio, nascono i tuoi cuccioli…',3,()=>{ p.x=L.nursery.x-12; p.y=L.nursery.y+30; p.flip=1; p.vx=p.vy=0; cam.init=false; const k=kits[0]; k.x=p.x+19; k.y=p.y+1; avviaScena('pelo',[p,k],3.2,finestra); }); }
+ else { annuncia('🐾 Sono nati i tuoi cuccioli!','#ffd0f0'); G.daVedere={madre:m?m.id:kits[0].id,kit:kits[0].id,fino:G.t+MOON}; finestra(); }
+}
+
+// ================== intelligenza dei gatti ==================
+function muovi(c,x,y,v,dt){
+ const gd=tappaGuado(c,{x,y}), dx=gd.x-c.x,dy=gd.y-c.y,d=Math.hypot(dx,dy); c.mosso=true;
+ if(acqua(c.x,c.y)) v*=0.55;
+ const want=Math.min(v,d*2.5), tvx=d>0.5?dx/d*want:0, tvy=d>0.5?dy/d*want:0, k=1-Math.exp(-dt*7);
+ c.vx=(c.vx||0)+(tvx-(c.vx||0))*k; c.vy=(c.vy||0)+(tvy-(c.vy||0))*k;
+ c.x+=c.vx*dt; c.y+=c.vy*dt; if(Math.abs(c.vx)>6) c.flip=c.vx<0?-1:1;
+ return d<6;
+}
+function nuovoPuntoCampo(c){
+ let b,r;
+ if(c.leader){b={x:L.roccia.x,y:L.roccia.y+48};r=22;} else if(c.rango==='anziano'){b={x:372,y:935};r=12;} else if(c.rango==='guaritore'){b=L.tanaGuaritore;r=45;}
+ else if(c.rango==='gattino'||c.regina){b=L.nursery;r=c.rango==='gattino'?70:40;} else {b=CLAN.felce.campo;r=170;}
+ const a=rnd(0,6.283),d=rnd(0,r); c.tx=b.x+Math.cos(a)*d; c.ty=b.y+Math.sin(a)*d;
+}
+function puntoFelce(c){ for(let k=0;k<20;k++){const x=rnd(40,960),y=rnd(40,1760); if(!acqua(x,y)){c.tx=x;c.ty=y;return;}} }
+function puntoNemico(c){
+ const cm=CLAN[c.clan].campo;
+ if(Math.random()<0.5){ const a=rnd(0,6.283),d=rnd(0,cm.r); c.tx=cm.x+Math.cos(a)*d; c.ty=cm.y+Math.sin(a)*d; }
+ else { c.tx=rnd(bordo(c.clan)+30,WW-30); c.ty=c.clan==='nebbia'?rnd(30,870):rnd(930,WH-30); }
+}
+function aggiornaFelce(c,dt){
+ if(c.elev) c.elev=Math.max(0,c.elev-dt*150);
+ if(c.posa&&!c.posaFine&&c.stato!=='gioca') c.posa=null; c.posto=null;
+ if(c.stato==='ferito'){
+  const tx=L.tanaGuaritore.x+((c.id%5)-2)*12, ty=L.tanaGuaritore.y+12;
+  const arrivato=muovi(c,tx,ty,60,dt); c.dorme=arrivato; c.hp+=(arrivato?1.2:0.3)*dt;
+  if(c.hp>=c.hpMax*0.85){c.ferito=false;c.stato='campo';nuovoPuntoCampo(c);}
+  return;
+ }
+ c.dorme=false;
+ c.hp=Math.min(c.hpMax,c.hp+0.5*dt);
+ const combattente=(c.rango==='guerriero'||c.rango==='apprendista')&&!c.regina;
+ if(combattente&&c.stato!=='segui'&&c.stato!=='difesa'&&c.stato!=='colonia'){ const inv=invasoreVicino(c,550); if(inv){c.stato='difesa';c.bersaglio=inv.id;c.soffia=0.6;} }
+ switch(c.stato){
+  case 'difesa':{ const t=gatto(c.bersaglio); if(!t||t.stato==='fuga'||t.stato==='riposo'||territorio(t.x,t.y)!=='felce'){c.stato='campo';nuovoPuntoCampo(c);} else combatti(c,t,dt,135); break; }
+  case 'segui':{ const nem=nemicoVicino(c,170); if(nem) combatti(c,nem,dt,150); else { const of=OFF[c.slot||0], tx=G.p.x+of[0]*G.p.flip, ty=G.p.y+of[1]; if(Math.hypot(tx-c.x,ty-c.y)>12) muovi(c,tx,ty,dist(c,G.p)>120?175:135,dt); } break; }
+  case 'pattuglia': if(muovi(c,c.tx,c.ty,80,dt)){ if(c.tappe>0){c.tappe--;puntoFelce(c);} else {c.stato='ritorno';c.tx=L.mucchio.x+rnd(-15,15);c.ty=L.mucchio.y+rnd(-15,15);} } break;
+  case 'ritorno': if(muovi(c,c.tx,c.ty,80,dt)){
+   const tot=G.conq.nebbia+G.conq.pietre;
+   if(Math.random()<0.5+0.08*tot&&portaAlMucchio(c)){G.cibo++; flo(c.x,c.y-25,'+1 🐭','#c8f0a8');}
+   if(Math.random()<0.2){ c.hp=Math.round(c.hpMax*0.35); c.stato='ferito'; c.ferito=true; const cl=pick(['nebbia','pietre']); log(`🩹 ${nome(c)} torna ferit${o(c)}: una pattuglia del ${CLAN[cl].nome} l’ha attaccat${o(c)} al confine.`,'#ffb0a0'); tensione(cl,8,'ha ferito un nostro guerriero di pattuglia'); }
+   else {c.stato='campo';nuovoPuntoCampo(c);}
+  } break;
+  case 'colonia': if(muovi(c,c.tx,c.ty,75,dt)||c.x<20) c.partito=true; break;
+  case 'gioca':{ const b=gatto(c.gioco&&c.gioco.con), t=G.t-(c.gioco?c.gioco.inizio:0);
+   if(!b||b.stato!=='gioca'||t>c.gioco.dur){ c.stato='campo'; c.posa=null; nuovoPuntoCampo(c); break; }
+   const fase=t%3, chaser=(Math.floor(t/3)+c.gioco.ruolo)%2===0;
+   if(fase<0.7){ setPosa(c,chaser?'agguato':'siede'); c.flip=b.x<c.x?-1:1; }
+   else if(fase<1.1){ if(chaser){ setPosa(c,'balzello'); muovi(c,b.x,b.y,110,dt); } else setPosa(c,'siede'); }
+   else if(fase<2.1){ setPosa(c,'rotola'); if(chaser&&Math.random()<dt*2) testo(c.x,c.y-20,pick(['♥','✦','♪']),pick(['#ff8fb0','#ffe08a','#bfe8ff']),8); }
+   else { c.posa=null; if(chaser) muovi(c,b.x,b.y,65,dt); else { const a=Math.atan2(c.y-b.y,c.x-b.x)+0.6; muovi(c,c.x+Math.cos(a)*30,c.y+Math.sin(a)*30,60,dt); } }
+   if(dist(c,L.nursery)>110){ c.x+=(L.nursery.x-c.x)*0.05; c.y+=(L.nursery.y-c.y)*0.05; }
+   break; }
+  case 'palla':{ if(G.t>c.giocoFine){c.stato='campo';nuovoPuntoCampo(c);break;}
+   if(dist(c,palla)<13){ const a=rnd(0,6.283); palla.vx=Math.cos(a)*130; palla.vy=Math.sin(a)*130; setPosa(c,'rotola',0.8); testo(c.x,c.y-20,'♪','#bfe8ff',8); c.attesa=0.8; c.stato='campo'; c.tx=c.x; c.ty=c.y; }
+   else muovi(c,palla.x,palla.y,70,dt); break; }
+  default:
+   c.attesa-=dt; c.dorme=c.attesa>0&&eNotte(); if(c.attesa>0) break;
+   if(muovi(c,c.tx,c.ty,c.rango==='gattino'?55:45,dt)){
+    c.attesa=rnd(1.5,5)*(eNotte()?4:1)*(c.rango==='anziano'?4:1);
+    if(c.rango==='gattino'){ const am=G.cats.find(k=>k!==c&&k.clan==='felce'&&k.rango==='gattino'&&k.stato==='campo'&&dist(k,c)<160);
+     if(am&&Math.random()<0.45){ const g={inizio:G.t,dur:rnd(6,10)}; c.stato=am.stato='gioca'; c.gioco={...g,con:am.id,ruolo:0}; am.gioco={...g,con:c.id,ruolo:1}; break; }
+     if(Math.random()<0.35){ c.stato='palla'; c.giocoFine=G.t+6; break; } }
+    if(c.rango==='guerriero'&&!c.leader&&!c.regina&&G.p.compagno!==c.id&&Math.random()<0.18){c.stato='pattuglia';c.tappe=1+Math.floor(Math.random()*2);puntoFelce(c);}
+    else nuovoPuntoCampo(c);
+   }
+ }
+}
+function aggiornaNemico(c,dt){
+ const cm=CLAN[c.clan].campo; c.dorme=c.stato==='riposo';
+ switch(c.stato){
+  case 'fuga': if(muovi(c,cm.x,cm.y,150,dt)){c.stato='riposo';} break;
+  case 'riposo':{ c.hp+=5*dt; if(c.hp>=c.hpMax){c.hp=c.hpMax;c.stato='pattuglia';puntoNemico(c);} else if(G.raid&&G.raid.bersaglio===c.clan){const h=ostileVicino(c,120); if(h){c.stato='caccia';c.bersaglio=h.id;}} break; }
+  case 'assalto':{ const h=felceVicino(c,45); if(h) combatti(c,h,dt,100); else if(muovi(c,L.mucchio.x,L.mucchio.y,100,dt)){ if(G.cibo>0){G.cibo--; log(`😾 ${nome(c)} ruba una preda dal mucchio e scappa!`,'#ff8a7a'); tensione(c.clan,20,'ha rubato le prede del nostro mucchio');} c.stato='fuga'; } break; }
+  case 'schierato':{ if(!G.raid||G.raid.bersaglio!==c.clan||!c.posto){ c.stato='pattuglia'; c.posto=null; puntoNemico(c); break; }
+   const h=felceVicino(c,170); if(h) combatti(c,h,dt,115); else if(muovi(c,c.posto[0],c.posto[1],90,dt)) c.flip=-1; break; }
+  case 'caccia':{ const t=gatto(c.bersaglio);
+   if(!t||(t!==G.p&&t.stato==='ferito')||dist(c,t)>320||territorio(t.x,t.y)!==c.clan){c.stato='pattuglia';puntoNemico(c);break;}
+   combatti(c,t,dt,115); break; }
+  default:{
+   c.hp=Math.min(c.hpMax,c.hp+1*dt);
+   const h=ostileVicino(c,180); if(h&&G.cats.filter(e=>e.stato==='caccia'&&e.bersaglio===h.id).length<2){c.stato='caccia';c.bersaglio=h.id;c.soffia=0.8;flo(c.x,c.y-34,'Ffff!','#ffb0a0'); if(h===G.p) tensione(c.clan,3,'attacca i nostri gatti appena passano il fiume'); break;}
+   c.attesa-=dt; if(c.attesa>0) break;
+   if(muovi(c,c.tx,c.ty,60,dt)){c.attesa=rnd(1,4);puntoNemico(c);}
+  }
+ }
+}
+
+// ================== ciclo di gioco ==================
+function aggiornaGiocatore(dt){
+ const p=G.p, ox=p.x, oy=p.y;
+ const su=keys.ArrowUp||keys.KeyW, giu=keys.ArrowDown||keys.KeyS, sx=keys.ArrowLeft||keys.KeyA, de=keys.ArrowRight||keys.KeyD;
+ let dx=(de?1:0)-(sx?1:0), dy=(giu?1:0)-(su?1:0);
+ if(window.R3D&&(dx||dy)){ const r=R3D.ruota(dx,dy); dx=r[0]; dy=r[1]; }
+ p.acq=!!(keys.ShiftLeft||keys.ShiftRight);
+ let sp=p.rango==='gattino'?100:(p.incinta?85:130); if(p.acq) sp=60; if(acqua(p.x,p.y)) sp*=0.5; if(p.energia<10) sp*=0.7;
+ const inScena=scena&&scena.attori.includes(p); if(!inScena&&p.posa&&!p.posaFine){p.posa=null;p.posto=null;}
+ if(inScena){ p.acq=false; }
+ else if(p.balzo>0){ p.balzo-=dt; p.x+=Math.cos(p.dir)*250*dt; p.y+=Math.sin(p.dir)*250*dt; controllaPresa(); if(p.balzo<=0){p.vx=Math.cos(p.dir)*70;p.vy=Math.sin(p.dir)*70; if(!p.preda&&p.rango!=='gattino'&&prede.some(q=>dist(q,p)<90)) consiglio('mancato','Balza solo quando la preda è a un passo: il balzo è corto. Avvicinati acquattato, poi Spazio.');} }
+ else { let tvx=0,tvy=0;
+  if((dx||dy)&&p.caccia) p.caccia=null;
+  if((dx||dy)&&p.auto){ p.auto=null; log('Hai ripreso il controllo del gatto. Premi Spazio per tornare nella battaglia.'); }
+  if(p.auto&&!p.caccia&&p.balzo<=0){ const v=guidaAuto(); if(v){ const ac=acqua(p.x,p.y)?0.5:1; tvx=v[0]*ac; tvy=v[1]*ac; } }
+  if(p.caccia){ const q=p.caccia.q; p.caccia.t+=dt;
+   if(q.morta||p.caccia.t>14||!prede.includes(q)){ p.caccia=null; if(!p.preda) consiglio('scappata','Ti è sfuggita! Prova con una preda più vicina, e avvicinati piano.',20); }
+   else { const ddx=q.x-p.x, ddy=q.y-p.y, dq=Math.hypot(ddx,ddy)||1; p.dir=Math.atan2(ddy,ddx); p.flip=ddx<0?-1:1;
+    if(dq<60&&p.energia>=3){ p.energia-=2; p.balzo=0.35; } else { const v=175*(acqua(p.x,p.y)?0.5:1); tvx=ddx/dq*v; tvy=ddy/dq*v; } } }
+  if(dx||dy){ const l=Math.hypot(dx,dy); tvx=dx/l*sp; tvy=dy/l*sp; p.dir=Math.atan2(dy,dx); if(dx) p.flip=dx<0?-1:1; }
+  const k=1-Math.exp(-dt*((dx||dy)?8:10)); p.vx=(p.vx||0)+(tvx-(p.vx||0))*k; p.vy=(p.vy||0)+(tvy-(p.vy||0))*k; p.x+=p.vx*dt; p.y+=p.vy*dt; }
+ if(!inScena&&nelFiume(p.x)&&acqua(p.x,p.y)){ // la corrente trascina verso valle
+  p.y+=48*dt; p.energia=Math.max(0,p.energia-1.2*dt);
+  if(Math.random()<dt*6) particelle.push({tipo:'onda',x:p.x+rnd(-10,10),y:p.y,t:0.9});
+  if(G.t>avvisoFiume){ avvisoFiume=G.t+8; annuncia('🌊 Il fiume ti trascina!','#9cd0ff'); consiglio('fiume','La corrente è forte! Attraversa il fiume sui sassi del guado, dove l’acqua è bassa: li vedi sulla mappa.',30); } }
+ p.x=clamp(p.x,10,WW-10); p.y=clamp(p.y,10,WH-10);
+ vincoloTana(p,ox,oy,dt);
+ p.cd-=dt;
+ if(p.rango==='gattino'){
+  const cm=CLAN.felce.campo, d=dist(p,cm);
+  if(d>cm.r+8){ p.x=cm.x+(p.x-cm.x)/d*(cm.r+8); p.y=cm.y+(p.y-cm.y)/d*(cm.r+8);
+   if(G.t>avvisoBordo){avvisoBordo=G.t+5; log('🚫 I gattini non possono uscire dal campo! Aspetta di diventare apprendista.','#ffd27a');} }
+ }
+ p.fame=Math.max(0,p.fame-0.08*dt); p.sete=Math.max(0,p.sete-0.1*dt); p.energia=Math.max(0,p.energia-0.065*dt); // bisogni a un quarto della velocità iniziale (12 novembre 2026, due volte)
+ if(p.fame<=0||p.sete<=0||p.energia<=0) p.salute-=1.2*dt;
+ else if(p.fame>30&&p.sete>30) p.salute=Math.min(100,p.salute+0.6*dt);
+ if(p.salute<=0) sviene();
+}
+function aggiornaPrede(dt){
+ const p=G.p;
+ for(const q of prede){
+  const T=PREDE[q.tipo], ox=q.x, oy=q.y;
+  { const dq=dist(q,p), R=(p.acq?24:70)*(q.lenta?0.6:1); q.sosp=dq<R*1.7;
+    if(dq<R){ if(!(q.allarme>0)&&p.rango!=='gattino'){ if(q.tipo==='uccello') consiglio('uccello','Gli uccelli volano via subito: per cominciare, caccia i topi, sono più lenti.'); else if(!p.acq&&!p.caccia) consiglio('rumore','Quando una preda è vicina, premi Spazio: la inseguirai e la prenderai da solo. Se ti avvicini acquattato (Maiusc), scappa meno.'); else consiglio('vicino','Ti ha sentito: premi subito Spazio per inseguirla!'); } q.allarme=2; } }
+  if(q.allarme>0){
+   q.allarme-=dt;
+   if(q.tipo==='uccello'){ q.vola+=dt*((p.caccia&&p.caccia.q===q)?0.25:0.8); q.x+=30*dt; q.f=1; q.ph=(q.ph||0)+dt*3; if(q.vola>1.3) q.morta=true; continue; }
+   const a=Math.atan2(q.y-p.y,q.x-p.x), lento=((p.caccia&&p.caccia.q===q)?0.3:0.9)*(q.lenta?0.55:1); q.x+=Math.cos(a)*T.v*lento*dt; q.y+=Math.sin(a)*T.v*lento*dt; // inseguita, la preda rallenta molto
+  } else {
+   q.t-=dt; if(q.t<=0){ q.t=rnd(1,3); const a=rnd(0,6.283),s=q.tipo==='uccello'?rnd(0,8):rnd(0,25); q.vx=Math.cos(a)*s; q.vy=Math.sin(a)*s; }
+   q.x+=q.vx*dt; q.y+=q.vy*dt;
+  }
+  { const mx=q.x-ox,my=q.y-oy; if(Math.abs(mx)>0.02) q.f=mx<0?-1:1; q.sp=Math.hypot(mx,my)/dt; q.ph=(q.ph||0)+q.sp*dt/3; }
+  if(q.x<5||q.y<5||q.x>WW-5||q.y>WH-5||acqua(q.x,q.y)||inCampo(q.x,q.y,10)) q.morta=true;
+ }
+ prede=prede.filter(q=>!q.morta);
+}
+function tick1(){
+ for(const c of G.cats){ const l=lune(c);
+  let r=null; if(c.rango==='gattino'&&l>=6) r='apprendista'; else if(c.rango==='apprendista'&&l>=12) r='guerriero';
+  if(!r) continue;
+  if(c.clan!=='felce'){ promuovi(c,r); continue; }
+  if(!G.cerimonia&&puoEvento()){ segnaEvento(); G.cerimonia={id:c.id,r,fino:G.t+MOON*1.2}; annuncia('🌟 Una cerimonia ti aspetta!'); log(`🌟 ${nome(c)} è pront${o(c)} per diventare ${r}. Il clan si raduna alla Roccia Alta: vai ad assistere, e partecipa!`,'#ffe08a'); } }
+ if(G.cerimonia){ const c=gatto(G.cerimonia.id);
+  if(!c) G.cerimonia=null;
+  else if(G.t>G.cerimonia.fino){ const r=G.cerimonia.r; G.cerimonia=null; promuovi(c,r); log('(Il rito si è svolto senza di te.)','#ccc'); }
+  else if(!scena&&!paused&&!G.raid&&dist(G.p,L.roccia)<130) assistiCerimonia(); }
+ controllaMissione(); controllaBisogni(); controllaColonia(); congedaPartiti();
+ G.pasto++; if(G.pasto>=40){ G.pasto=0; if(G.cibo>0) G.cibo--; else log('🍂 Il mucchio delle prede è vuoto: il clan ha fame! Andate a caccia.','#ffb37a'); }
+ if(G.t>G.prossimoAssalto&&!inCaccia()&&!momentoSacro()){ // niente assalti mentre si caccia (js/leggende.js)
+  G.prossimoAssalto=G.t+MOON*rnd(2.5,4.5);
+  if(!G.raid){ const cl=pick(['nebbia','pietre']); const cand=G.cats.filter(c=>c.clan===cl&&!c.leader&&c.stato==='pattuglia').slice(0,3);
+   if(cand.length>=2){ cand.forEach(c=>{c.stato='assalto';}); tensione(cl,10,'ha attaccato il nostro campo'); annuncia('⚠️ Nemici al campo!','#ff9a8a'); log(`⚠️ Una pattuglia del ${CLAN[cl].nome} attraversa il fiume e attacca il campo!`,'#ff8a7a'); flo(G.p.x,G.p.y-40,'⚠️ Attacco!','#ff8a7a'); } }
+ }
+ for(const cl of ['nebbia','pietre']){ if(!G.raid) tensione(cl,0.15);
+  if(G.tens[cl]>=100&&!G.raid&&!G.lontana&&!scena&&!paused&&!inCaccia()&&!momentoSacro()){ chiamataAlleArmi(cl); break; } }
+ if(G.lontana&&G.t>G.lontana.quando&&!scena&&!momentoSacro()) esitoLontano();
+ { const p=G.p; if(p.rango!=='gattino'&&!p.preda&&!G.raid&&territorio(p.x,p.y)==='felce'&&dist(p,CLAN.felce.campo)>220&&requisiti().some(r=>r.b==='prede'&&!r.ok)) consiglio('caccia','Cerca i topi nell’erba del nostro bosco: quando ne vedi uno vicino, premi Spazio e lo inseguirai.',50);
+   if(p.preda) consiglio('porta','Porta la preda al mucchio, al centro del campo: è il tuo dono al clan.',60); }
+ if(G.attesaGattini&&G.t>=G.attesaGattini&&!G.raid&&!scena&&!momentoSacro()) nascita();
+ if(G.t>G.prossimaNascita){ G.prossimaNascita=G.t+MOON*rnd(2,4); cucciolata(); }
+ for(const c of G.cats) if(c.reginaFino&&G.t>c.reginaFino){ c.regina=false; c.reginaFino=0; }
+ if(G.daVedere&&!scena&&!paused&&dist(G.p,L.nursery)<95){ const m=gatto(G.daVedere.madre), k=gatto(G.daVedere.kit); G.daVedere=null;
+  if(m&&k){ m.x=L.nursery.x-10; m.y=L.nursery.y+30; avviaScena('pelo',[m,k],3,()=>log(`🐾 ${nome(m)} lava ${nome(k)} con la lingua. Il piccolo fa le fusa a occhi chiusi.`,'#ffd0f0')); } }
+ if(G.raid){ const tr=territorio(G.p.x,G.p.y); if(tr!=='felce'&&tr!=='fiume') G.raid.uscito=true;
+  if(G.raid.uscito&&dist(G.p,CLAN.felce.campo)<CLAN.felce.campo.r) fineRaid('Sei tornat'+o(G.p)+' al campo: l’assalto è finito.'); }
+ const tr=territorio(G.p.x,G.p.y);
+ if(tr!=='fiume'&&tr!==ultimoTerr){ if(tr==='felce') log('Sei di nuovo nel territorio del tuo clan.'); else { log(`🚩 Hai superato il confine: questo è il territorio del ${CLAN[tr].nome}. Attento alle pattuglie!`,'#ffd27a'); nota('confine'); } ultimoTerr=tr; }
+ if(prede.length<70) spawnPreda();
+ if(eNotte()) nota('notte');
+ if(++tSave>=10){tSave=0;salva();}
+}
+function promuovi(c,r){
+ const vecchio=nome(c); c.rango=r; c.via=r==='apprendista'?'guerriero':null; stat(c);
+ if(c.clan==='felce') log(`🌟 Cerimonia sotto la Roccia Alta: ${vecchio} ora si chiama ${nome(c)}!`,'#ffe08a');
+}
+function aggiorna(dt){
+ G.t+=dt;
+ const p=G.p, px=p.x, py=p.y;
+ aggiornaGiocatore(dt); if(scena) aggiornaScena(dt); velocita(p,px,py,dt); anima(p,dt); if(paused) return;
+ aggiornaVisitatore(dt);
+ for(const c of G.cats){ const x0=c.x,y0=c.y; c.mosso=false; c.cd-=dt;
+  if(scena&&scena.attori.includes(c)){} else if(c.clan==='felce') aggiornaFelce(c,dt); else aggiornaNemico(c,dt);
+  if(nelFiume(c.x)&&acqua(c.x,c.y)) c.y=Math.min(WH-10,c.y+30*dt);
+  if(!c.mosso){ const k=Math.exp(-dt*9); c.vx=(c.vx||0)*k; c.vy=(c.vy||0)*k; c.x+=c.vx*dt; c.y+=c.vy*dt; }
+  velocita(c,x0,y0,dt); anima(c,dt); }
+ // i gatti non si sovrappongono: si spingono a vicenda
+ { const T=[G.p,...G.cats]; for(let i=0;i<T.length;i++) for(let j=i+1;j<T.length;j++){ const a=T[i],b=T[j], dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy), mn=(scala(a)+scala(b))*15;
+   if(!(a.posa||b.posa)&&d>0.01&&d<mn){ const ux=dx/d,uy=dy/d,pu=mn-d; if(a===G.p){ b.x+=ux*pu; b.y+=uy*pu; } else { a.x-=ux*pu/2; a.y-=uy*pu/2; b.x+=ux*pu/2; b.y+=uy*pu/2; } } } }
+ aggiornaPrede(dt);
+ palla.x+=palla.vx*dt; palla.y+=palla.vy*dt; const f=Math.pow(0.25,dt); palla.vx*=f; palla.vy*=f;
+ { const cm=CLAN.felce.campo, d=dist(palla,cm); if(d>140){ palla.x=cm.x+(palla.x-cm.x)/d*140; palla.y=cm.y+(palla.y-cm.y)/d*140; palla.vx*=-0.5; palla.vy*=-0.5; } }
+ tSec+=dt; if(tSec>=1){tSec-=1; tick1();}
+}
+function aggiornaFloats(dt){ for(const f of floats){f.t-=dt;f.y-=20*dt;} floats=floats.filter(f=>f.t>0); }
+
+// ================== disegno ==================
+let DPR=Math.min(2,window.devicePixelRatio||1), mediaDt=0.016, tLento=0;
+let W=960,H=640,ZOOM=1.6,ZV=1.6;
+const cam={x:0,y:0,vw:600,vh:400,init:false};
+function ridimensiona(){
+ const pw=($('panel').offsetWidth||300)+34;
+ W=Math.max(480,Math.floor(innerWidth-pw)); H=Math.max(360,Math.floor(innerHeight-20));
+ cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR); cv.style.width=W+'px'; cv.style.height=H+'px';
+ ZOOM=clamp(H/360,1.4,2.8); if(window.R3D) R3D.resize(W,H);
+}
+addEventListener('resize',ridimensiona);
+function aggiornaCamera(dt){ // in 3D: zoom dei primi piani e telecamera in terza persona
+ const pp=scena&&scena.pp, k0=1-Math.exp(-dt*3);
+ zf+=((pp?2.1:(scena&&scena.attori.length<=3?1.35:1))-zf)*k0; banda+=((pp?1:0)-banda)*(1-Math.exp(-dt*4));
+ let fx0=G.p.x, fy0=G.p.y;
+ let alt=(G.p.elev||0)*0.02;
+ if(scena){ const A=[...scena.attori]; if(scena.dati.v) A.push(scena.dati.v); fx0=A.reduce((s,c)=>s+c.x,0)/A.length; fy0=A.reduce((s,c)=>s+c.y,0)/A.length; alt=A.reduce((s,c)=>s+(c.elev||0),0)/A.length*0.02; }
+ else { const fo=window.fuocoCamera&&fuocoCamera(); if(fo){ fx0=(G.p.x+fo.x)/2; fy0=(G.p.y+fo.y)/2; alt=((G.p.elev||0)+(fo.elev||0))/2*0.02; } } // chi parla e il giocatore, insieme nell'inquadratura
+ if(window.R3D) R3D.aggiornaCamera(dt,fx0,fy0,zf,pp,alt);
+}
+const vis=(x,y,m)=>window.R3D?R3D.vis(x,y,m):false;
+const aSchermo=(x,y,alt=0)=>window.R3D?R3D.proietta(x,y,alt):[-999,-999];
+const lerp=(a,b,t)=>a+(b-a)*t;
+const L2=(p,q,t)=>[lerp(p[0],q[0],t),lerp(p[1],q[1],t)];
+const L3=(A,B,t)=>A.map((p,i)=>L2(p,B[i],t));
+function rgb(h){const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+const _mc={};
+function mescola(h1,h2,t){const k=h1+h2+t; if(_mc[k]) return _mc[k]; const a=rgb(h1),b=rgb(h2); return _mc[k]=`rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`;}
+const SCURO='#1a1410',CHIARO='#fff6e6',BIANCO='#f4f0e6';
+function circ(x,y,r,col,g=ctx){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,6.2832);g.fill();}
+function ell(x,y,rx,ry,col,g=ctx,rot=0){g.fillStyle=col;g.beginPath();g.ellipse(x,y,rx,ry,rot,0,6.2832);g.fill();}
+function scritta(t,x,y,col='#fff',font='13px system-ui',al='center'){ctx.font=font;ctx.textAlign=al;ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,0.75)';ctx.lineJoin='round';ctx.strokeText(t,x,y);ctx.fillStyle=col;ctx.fillText(t,x,y);}
+let OMBRA=null;
+function ombra(g,x,y,rx,ry,a=0.3){ if(rx<=0||ry<=0) return;
+ if(g===ctx&&OMBRA){ g.globalAlpha=a/0.3; g.drawImage(OMBRA,x-rx,y-ry,rx*2,ry*2); g.globalAlpha=1; return; } g.save(); g.translate(x,y); g.scale(1,ry/rx); const gr=g.createRadialGradient(0,0,0,0,0,rx); gr.addColorStop(0,`rgba(0,0,0,${a})`); gr.addColorStop(0.6,`rgba(0,0,0,${a*0.6})`); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.beginPath(); g.arc(0,0,rx,0,6.2832); g.fill(); g.restore(); }
+const eNotte=()=>{const f=(G.t%MOON)/MOON; return f>0.66&&f<0.97;};
+
+// ---------- il suolo, disegnato una volta sola ----------
+let SUOLO=null;
+function preparaSuolo(){
+ const c=document.createElement('canvas'); c.width=WW; c.height=WH; const g=c.getContext('2d'); const r=mulberry32(99);
+ g.fillStyle='#4a7a3a'; g.fillRect(0,0,FX0,WH);
+ g.fillStyle='#5d7a66'; g.fillRect(FX1,0,WW-FX1,900);
+ g.fillStyle='#8a826e'; g.fillRect(FX1,900,WW-FX1,900);
+ const PAL={f:['#3f6e32','#57873f','#4d7d37','#62903f','#3b6530','#6b8a3a'],n:['#557262','#6a8573','#4d6a5a','#7a9180','#62806a'],p:['#7f7865','#968e79','#73705f','#a39a84','#8c8470']};
+ for(let i=0;i<6000;i++){ const x=r()*WW,y=r()*WH,rad=8+r()*45; const z=x<FX0?'f':(y<900?'n':'p'); g.globalAlpha=0.16; g.fillStyle=PAL[z][Math.floor(r()*PAL[z].length)]; g.beginPath(); g.ellipse(x,y,rad,rad*0.7,r()*3,0,6.283); g.fill(); }
+ g.globalAlpha=0.4; g.lineWidth=0.8;
+ for(let i=0;i<70000;i++){ const x=r()*WW,y=r()*WH;
+  if(x<FX0){ g.strokeStyle=r()<0.5?'#2f5a26':'#7aa852'; g.beginPath(); g.moveTo(x,y); g.lineTo(x+(r()-0.5)*3,y-2-r()*4); g.stroke(); }
+  else if(y<900){ g.fillStyle=r()<0.5?'#46604f':'#8aa592'; g.fillRect(x,y,1.5,1.5); }
+  else { g.fillStyle=r()<0.5?'#5f5a4c':'#b5ad98'; g.fillRect(x,y,2,1.5); } }
+ g.globalAlpha=1;
+ for(let i=0;i<700;i++){ const x=r()*FX0,y=r()*WH; const col=['#f2f0e0','#f5d45a','#c9a0e8'][Math.floor(r()*3)]; g.fillStyle=col; g.beginPath(); g.arc(x,y,1.1,0,6.283); g.fill(); }
+ let gb=g.createLinearGradient(FX0-34,0,FX0,0); gb.addColorStop(0,'rgba(165,146,104,0)'); gb.addColorStop(1,'rgba(165,146,104,1)'); g.fillStyle=gb; g.fillRect(FX0-34,0,34,WH);
+ gb=g.createLinearGradient(FX1,0,FX1+34,0); gb.addColorStop(0,'rgba(165,146,104,1)'); gb.addColorStop(1,'rgba(165,146,104,0)'); g.fillStyle=gb; g.fillRect(FX1,0,34,WH);
+ const gw=g.createLinearGradient(FX0,0,FX1,0); gw.addColorStop(0,'#4b7d96'); gw.addColorStop(0.15,'#2f6585'); gw.addColorStop(0.5,'#245777'); gw.addColorStop(0.85,'#2f6585'); gw.addColorStop(1,'#4b7d96'); g.fillStyle=gw; g.fillRect(FX0,0,FX1-FX0,WH);
+ for(const k of ['lago','stagno']){ const l=L[k], R=l.r+16; const gr=g.createRadialGradient(l.x,l.y,l.r*0.1,l.x,l.y,R);
+  gr.addColorStop(0,k==='lago'?'#3f86bd':'#24597d'); gr.addColorStop(l.r/R*0.92,k==='lago'?'#73afd6':'#3b7598'); gr.addColorStop(l.r/R,'#a8956a'); gr.addColorStop(1,'rgba(168,149,106,0)');
+  g.fillStyle=gr; g.beginPath(); g.arc(l.x,l.y,R,0,6.283); g.fill(); }
+ for(const k in CLAN){ const cm=CLAN[k].campo; const gr=g.createRadialGradient(cm.x,cm.y,10,cm.x,cm.y,cm.r+14); gr.addColorStop(0,'#c4ab7c'); gr.addColorStop(0.85,'#a88f61'); gr.addColorStop(1,'rgba(140,120,80,0)'); g.fillStyle=gr; g.beginPath(); g.arc(cm.x,cm.y,cm.r+14,0,6.283); g.fill();
+  for(let i=0;i<2500;i++){ const a=r()*6.283,d=Math.sqrt(r())*cm.r; g.fillStyle=r()<0.5?'rgba(110,88,55,0.35)':'rgba(225,205,165,0.35)'; g.fillRect(cm.x+Math.cos(a)*d,cm.y+Math.sin(a)*d,1.6,1.6);} }
+ { const l=L.pozza; g.fillStyle='#8a7550'; g.beginPath(); g.ellipse(l.x,l.y,l.r+4,l.r*0.8+4,0,0,6.283); g.fill(); const gr=g.createRadialGradient(l.x-4,l.y-3,1,l.x,l.y,l.r); gr.addColorStop(0,'#6aa6cf'); gr.addColorStop(1,'#336f98'); g.fillStyle=gr; g.beginPath(); g.ellipse(l.x,l.y,l.r,l.r*0.8,0,0,6.283); g.fill(); }
+ for(const gy of GUADI) for(let i=0;i<4;i++){ const x=FX0+10+i*20,y=gy+(i%2)*7-3; ombra(g,x+2,y+3,12,7,0.35); const gr=g.createRadialGradient(x-3,y-3,1,x,y,11); gr.addColorStop(0,'#d2cdbf'); gr.addColorStop(1,'#77736a'); g.fillStyle=gr; g.beginPath(); g.ellipse(x,y,10,7,0,0,6.283); g.fill(); }
+ SUOLO=c;
+}
+
+// ---------- gli sprite (alberi, tane, rocce) ----------
+const SP={alberi:[],pini:[],salici:[],felci:[],cespugli:[],cespNebbia:[],siepe:[],canne:[],rocce:[],arbusti:[],tane:{},roccia:null};
+function creaSprite(w,h,ox,oy,fn){ const c=document.createElement('canvas'); c.width=Math.ceil(w*2); c.height=Math.ceil(h*2); const g=c.getContext('2d'); g.scale(2,2); g.translate(ox,oy); fn(g); return {c,w,h,ox,oy}; }
+function disegnaSprite(s,x,y,sc=1,al=1){ if(al<1) ctx.globalAlpha=al; ctx.drawImage(s.c,x-s.ox*sc,y-s.oy*sc,s.w*sc,s.h*sc); if(al<1) ctx.globalAlpha=1; }
+function chioma(g,r,blobs,pal){
+ for(const [x,y,rr] of blobs) circ(x+2,y+4,rr,pal[0],g);
+ for(const [x,y,rr] of blobs){ const gr=g.createRadialGradient(x-rr*0.45,y-rr*0.5,1,x,y,rr); gr.addColorStop(0,pal[3]); gr.addColorStop(0.45,pal[2]); gr.addColorStop(1,pal[1]); g.fillStyle=gr; g.beginPath(); g.arc(x,y,rr*0.92,0,6.283); g.fill(); }
+}
+function spAlbero(seed,pal,salice){ const r=mulberry32(seed); return creaSprite(160,180,80,170,g=>{
+ ombra(g,14,0,56,16,0.4);
+ const tg=g.createLinearGradient(-9,0,9,0); tg.addColorStop(0,'#2a1b0e'); tg.addColorStop(0.45,'#73512e'); tg.addColorStop(1,'#1f150a');
+ g.fillStyle=tg; g.beginPath(); g.moveTo(-10,0); g.quadraticCurveTo(-5,-28,-6,-64); g.lineTo(6,-64); g.quadraticCurveTo(5,-28,10,0); g.closePath(); g.fill();
+ g.strokeStyle='rgba(20,12,5,0.5)'; g.lineWidth=0.8; for(let i=0;i<7;i++){const x=-6+r()*12; g.beginPath(); g.moveTo(x,-2); g.lineTo(x+(r()-0.5)*3,-52); g.stroke();}
+ g.strokeStyle='#4a3420'; g.lineWidth=4; g.lineCap='round'; g.beginPath(); g.moveTo(-7,-2); g.lineTo(-17,2); g.moveTo(7,-2); g.lineTo(16,3); g.moveTo(0,-45); g.lineTo(-22,-74); g.moveTo(0,-50); g.lineTo(20,-78); g.stroke();
+ const cy=-100, bl=[]; for(let i=0;i<24;i++){ const a=r()*6.283,d=Math.sqrt(r()); bl.push([Math.cos(a)*d*42,cy+Math.sin(a)*d*32,13+r()*12]); }
+ bl.sort((p,q)=>p[1]-q[1]); chioma(g,r,bl,pal);
+ for(let i=0;i<260;i++){ const a=r()*6.283,d=Math.sqrt(r()); g.globalAlpha=0.55; g.fillStyle=r()<0.4?pal[3]:pal[0]; g.beginPath(); g.ellipse(Math.cos(a)*d*52,cy+Math.sin(a)*d*42,2.4,1.4,r()*3,0,6.283); g.fill(); } g.globalAlpha=1;
+ if(salice){ g.lineWidth=1; for(let i=0;i<50;i++){ const x=(r()-0.5)*96,y=cy+(r()-0.3)*30; g.strokeStyle=r()<0.5?pal[2]:pal[3]; g.globalAlpha=0.75; g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+3,y+20,x+1,y+34+r()*16); g.stroke(); } g.globalAlpha=1; }
+});}
+function spPino(seed){ const r=mulberry32(seed); return creaSprite(100,190,50,180,g=>{
+ ombra(g,10,0,36,11,0.4);
+ g.fillStyle='#4a3020'; g.fillRect(-4,-32,8,32);
+ for(let i=0;i<6;i++){ const y=-26-i*21, w=40-i*6.2; const gr=g.createLinearGradient(-w,0,w,0); gr.addColorStop(0,'#173a20'); gr.addColorStop(0.35,'#2f6137'); gr.addColorStop(1,'#0f271a');
+  g.fillStyle=gr; g.beginPath(); g.moveTo(-w,y); g.quadraticCurveTo(0,y+7,w,y); g.lineTo(0,y-34); g.closePath(); g.fill();
+  g.strokeStyle='rgba(130,180,120,0.28)'; g.lineWidth=0.8; for(let k=0;k<9;k++){ const x=(r()-0.5)*w*1.4; g.beginPath(); g.moveTo(x,y-1); g.lineTo(x*0.6,y-13-r()*8); g.stroke(); } }
+});}
+function spFelce(seed){ const r=mulberry32(seed); return creaSprite(100,60,50,54,g=>{
+ ombra(g,0,0,28,8,0.3);
+ for(let i=0;i<11;i++){ const a=-Math.PI/2+(i-5)*0.28+(r()-0.5)*0.15, len=24+r()*14;
+  const ex=Math.cos(a)*len*1.15, ey=Math.sin(a)*len*0.85, mx=ex*0.5-Math.sin(a)*4, my=ey*0.5-7;
+  g.strokeStyle='#2b5220'; g.lineWidth=1.2; g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(mx,my,ex,ey); g.stroke();
+  for(let t=0.15;t<1;t+=0.065){ const u=1-t, px=2*u*t*mx+t*t*ex, py=2*u*t*my+t*t*ey, l=(1-t)*7+1.5, nx=-Math.sin(a), ny=Math.cos(a)*0.5;
+   g.strokeStyle=t<0.5?'#3d7a2c':'#62a244'; g.lineWidth=1.7; g.beginPath(); g.moveTo(px,py); g.lineTo(px+nx*l,py+ny*l-1.5); g.moveTo(px,py); g.lineTo(px-nx*l,py-ny*l-1.5); g.stroke(); } }
+});}
+function spCespuglio(seed,pal,spine){ const r=mulberry32(seed); return creaSprite(84,64,42,56,g=>{
+ ombra(g,4,0,34,9,0.34);
+ const bl=[]; for(let i=0;i<13;i++) bl.push([(r()-0.5)*46,-14-r()*19,8+r()*8]); bl.sort((a,b)=>a[1]-b[1]); chioma(g,r,bl,pal);
+ for(let i=0;i<80;i++){ g.globalAlpha=0.5; g.fillStyle=r()<0.5?pal[3]:pal[0]; g.beginPath(); g.ellipse((r()-0.5)*58,-6-r()*38,1.8,1.1,r()*3,0,6.283); g.fill(); } g.globalAlpha=1;
+ if(spine){ g.strokeStyle='#5a3d22'; g.lineWidth=0.9; for(let i=0;i<16;i++){ const x=(r()-0.5)*52,y=-8-r()*32; g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+(r()-0.5)*14,y-8,x+(r()-0.5)*18,y-3); g.stroke(); }
+  for(let i=0;i<9;i++) circ((r()-0.5)*46,-10-r()*28,1.6,r()<0.5?'#3a1030':'#7a1f3a',g); }
+});}
+function spCanne(seed){ const r=mulberry32(seed); return creaSprite(64,84,32,78,g=>{
+ ombra(g,0,0,22,6,0.28);
+ for(let i=0;i<18;i++){ const x=(r()-0.5)*28,h=40+r()*30,b=(r()-0.5)*12; g.strokeStyle=r()<0.5?'#6f8f5a':'#8fae72'; g.lineWidth=1.3; g.beginPath(); g.moveTo(x,0); g.quadraticCurveTo(x+b*0.3,-h*0.6,x+b,-h); g.stroke();
+  if(r()<0.35) ell(x+b*0.9,-h*0.85,1.8,5.5,'#6b4a2a',g,b*0.02); }
+ for(let i=0;i<7;i++){ const x=(r()-0.5)*24; g.strokeStyle='#5a7a48'; g.lineWidth=2; g.beginPath(); g.moveTo(x,0); g.quadraticCurveTo(x+6,-14,x+14*(r()<0.5?-1:1),-18); g.stroke(); }
+});}
+function spRoccia(seed,R){ const r=mulberry32(seed); return creaSprite(R*2.8,R*2,R*1.4,R*1.6,g=>{
+ ombra(g,R*0.15,0,R*1.2,R*0.34,0.4);
+ const pts=[]; for(let i=0;i<9;i++){ const a=Math.PI+i/8*Math.PI, rr=R*(0.75+r()*0.3); pts.push([Math.cos(a)*rr*1.1,Math.sin(a)*rr*0.95]); }
+ const gr=g.createLinearGradient(-R*0.5,-R,R*0.6,0); gr.addColorStop(0,'#cdc7b6'); gr.addColorStop(0.5,'#8e887a'); gr.addColorStop(1,'#56514a');
+ g.fillStyle=gr; g.beginPath(); g.moveTo(-R*1.1,2); for(const [x,y] of pts) g.lineTo(x,y); g.lineTo(R*1.1,2); g.closePath(); g.fill();
+ g.fillStyle='rgba(255,255,255,0.13)'; g.beginPath(); g.moveTo(pts[1][0],pts[1][1]); g.lineTo(pts[3][0],pts[3][1]); g.lineTo(0,-R*0.3); g.closePath(); g.fill();
+ g.fillStyle='rgba(0,0,0,0.16)'; g.beginPath(); g.moveTo(pts[5][0],pts[5][1]); g.lineTo(pts[7][0],pts[7][1]); g.lineTo(R*0.8,0); g.lineTo(R*0.1,-R*0.2); g.closePath(); g.fill();
+ g.strokeStyle='rgba(40,35,30,0.5)'; g.lineWidth=0.8; g.beginPath(); g.moveTo(-R*0.2,-R*0.7); g.lineTo(0,-R*0.35); g.lineTo(R*0.25,-R*0.15); g.stroke();
+ for(let i=0;i<12;i++) ell(-R*0.6+r()*R*0.7,-R*0.75+r()*R*0.3,2+r()*3,1.4,'rgba(90,130,60,0.55)',g);
+});}
+function spArbusto(seed){ const r=mulberry32(seed); return creaSprite(76,60,38,54,g=>{
+ ombra(g,2,0,26,7,0.3);
+ g.strokeStyle='#6a5236'; g.lineCap='round'; g.lineWidth=1.4; for(let i=0;i<15;i++){ const a=-Math.PI/2+(r()-0.5)*2.2,l=14+r()*24; g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(Math.cos(a)*l*0.4,Math.sin(a)*l*0.6,Math.cos(a)*l,Math.sin(a)*l); g.stroke(); }
+ for(let i=0;i<70;i++){ const a=-Math.PI/2+(r()-0.5)*2.2,l=8+r()*32; ell(Math.cos(a)*l,Math.sin(a)*l,2,1.2,r()<0.5?'#8a8a4a':'#a59a5a',g,r()*3); }
+});}
+function spRocciaAlta(){ const r=mulberry32(5); return creaSprite(170,110,85,96,g=>{
+ ombra(g,10,0,82,20,0.42);
+ const gr=g.createLinearGradient(-60,-90,60,0); gr.addColorStop(0,'#d4cebd'); gr.addColorStop(0.45,'#9a9384'); gr.addColorStop(1,'#524d46');
+ g.fillStyle=gr; g.beginPath(); g.moveTo(-75,4); g.lineTo(-70,-30); g.lineTo(-52,-62); g.lineTo(-20,-78); g.lineTo(25,-80); g.lineTo(55,-62); g.lineTo(72,-30); g.lineTo(76,4); g.closePath(); g.fill();
+ g.fillStyle='rgba(255,255,255,0.2)'; g.beginPath(); g.moveTo(-50,-62); g.lineTo(-20,-76); g.lineTo(25,-78); g.lineTo(50,-62); g.lineTo(10,-56); g.closePath(); g.fill();
+ g.fillStyle='rgba(0,0,0,0.2)'; g.beginPath(); g.moveTo(40,-58); g.lineTo(70,-30); g.lineTo(74,2); g.lineTo(30,2); g.lineTo(20,-40); g.closePath(); g.fill();
+ g.strokeStyle='rgba(30,25,20,0.55)'; g.lineWidth=1.2; g.beginPath(); g.moveTo(-30,-60); g.lineTo(-22,-35); g.lineTo(-30,-10); g.moveTo(10,-55); g.lineTo(18,-30); g.lineTo(12,-5); g.moveTo(-60,-30); g.lineTo(-45,-25); g.stroke();
+ for(let i=0;i<34;i++) ell(-62+r()*54,-22+r()*24,2+r()*4,1.5,'rgba(90,130,60,0.6)',g);
+});}
+function spTana(t){ const r=mulberry32(t.length*31+7); return creaSprite(140,100,70,86,g=>{
+ ombra(g,4,0,64,16,0.4);
+ if(t==='guaritore'){
+  const gr=g.createLinearGradient(-50,-70,50,0); gr.addColorStop(0,'#cdc7b6'); gr.addColorStop(0.5,'#8e887a'); gr.addColorStop(1,'#4f4a42');
+  g.fillStyle=gr; g.beginPath(); g.moveTo(-62,2); g.lineTo(-56,-30); g.lineTo(-30,-58); g.lineTo(10,-66); g.lineTo(46,-48); g.lineTo(60,-15); g.lineTo(63,2); g.closePath(); g.fill();
+  g.fillStyle='rgba(0,0,0,0.18)'; g.beginPath(); g.moveTo(30,-52); g.lineTo(60,-15); g.lineTo(63,2); g.lineTo(28,2); g.closePath(); g.fill();
+  const eg=g.createLinearGradient(0,-40,0,2); eg.addColorStop(0,'#000'); eg.addColorStop(1,'#2a2218'); g.fillStyle=eg; g.beginPath(); g.moveTo(-15,2); g.lineTo(-10,-28); g.lineTo(2,-42); g.lineTo(12,-27); g.lineTo(17,2); g.closePath(); g.fill();
+  for(let i=0;i<40;i++) ell(-55+r()*110,-8-r()*45,2+r()*3,1.4,'rgba(90,130,60,0.6)',g);
+  for(let i=0;i<5;i++){ const x=-38+i*6; g.strokeStyle='#4f8a36'; g.lineWidth=1.2; g.beginPath(); g.moveTo(x,0); g.lineTo(x-2,-9); g.moveTo(x,0); g.lineTo(x+2,-8); g.stroke(); circ(x,-9,1.5,['#c58cff','#ffe066','#fff'][i%3],g); }
+  return; }
+ const pal={guerrieri:['#3e2c18','#6b4f2c','#8f6e3e'],apprendisti:['#2c4a20','#4a7a34','#6a9a48'],nursery:['#2a3f1a','#41602a','#5f8040']}[t];
+ g.save(); g.beginPath(); g.rect(-72,-95,144,97); g.clip();
+ const gr=g.createRadialGradient(-18,-50,4,0,-22,64); gr.addColorStop(0,pal[2]); gr.addColorStop(0.6,pal[1]); gr.addColorStop(1,pal[0]);
+ g.fillStyle=gr; g.beginPath(); g.ellipse(0,-4,58,52,0,0,6.283); g.fill();
+ for(let i=0;i<150;i++){ const a=Math.PI+r()*Math.PI,d=18+r()*40,x=Math.cos(a)*d*1.05,y=-4+Math.sin(a)*d*0.95; g.strokeStyle=r()<0.5?'rgba(40,25,10,0.6)':'rgba(175,135,85,0.45)'; g.lineWidth=0.8+r(); g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+(r()-0.5)*14,y-6,x+(r()-0.5)*22,y+(r()-0.5)*8); g.stroke(); }
+ for(let i=0;i<(t==='guerrieri'?50:130);i++){ const a=Math.PI+r()*Math.PI,d=r()*55; g.globalAlpha=0.8; ell(Math.cos(a)*d,-4+Math.sin(a)*d*0.95,2.7,1.5,r()<0.5?'#3f7432':'#64994a',g,r()*3); } g.globalAlpha=1;
+ if(t==='nursery') for(let i=0;i<16;i++) circ((r()-0.5)*84,-10-r()*42,1.8,r()<0.5?'#3a1030':'#8a2244',g);
+ const eg=g.createRadialGradient(0,-4,2,0,-4,22); eg.addColorStop(0,'#050302'); eg.addColorStop(1,'#2a1d10');
+ g.fillStyle=eg; g.beginPath(); g.moveTo(-18,2); g.quadraticCurveTo(-18,-28,0,-29); g.quadraticCurveTo(18,-28,18,2); g.closePath(); g.fill();
+ g.restore();
+});}
+function preparaSprite(){
+ { const c=document.createElement('canvas'); c.width=64; c.height=32; const g=c.getContext('2d'); g.scale(1,0.5); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(0,0,0,0.3)'); gr.addColorStop(0.6,'rgba(0,0,0,0.18)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); OMBRA=c; }
+ const PF=[['#1d4419','#2f6528','#4c8a3a','#73b252'],['#21491c','#356e2b','#558f3c','#80bc5c'],['#1a3d1c','#2a5a2a','#447f3c','#66a454'],['#2a4a18','#3f6a24','#5f8f34','#8cb84e']];
+ for(let i=0;i<6;i++) SP.alberi.push(spAlbero(100+i,PF[i%4]));
+ for(let i=0;i<3;i++) SP.pini.push(spPino(200+i));
+ SP.salici.push(spAlbero(300,['#3b5a3a','#56785a','#7a9a78','#a3be9a'],true),spAlbero(301,['#334f36','#4b6d50','#6f8f6c','#96b28e'],true));
+ for(let i=0;i<4;i++) SP.felci.push(spFelce(400+i));
+ for(let i=0;i<3;i++) SP.cespugli.push(spCespuglio(500+i,['#1f4a1c','#2f6528','#4c8a3a','#73b252']));
+ for(let i=0;i<3;i++) SP.cespNebbia.push(spCespuglio(600+i,['#2f4a3c','#46644f','#638069','#8ba48e']));
+ for(let i=0;i<4;i++) SP.siepe.push(spCespuglio(700+i,['#1c3f18','#2a5a24','#3f7432','#5f9446'],true));
+ for(let i=0;i<3;i++) SP.canne.push(spCanne(800+i));
+ for(let i=0;i<4;i++) SP.rocce.push(spRoccia(900+i,16+i*5));
+ for(let i=0;i<3;i++) SP.arbusti.push(spArbusto(1000+i));
+ SP.roccia=spRocciaAlta();
+ for(const t of ['guerrieri','apprendisti','nursery','guaritore']) SP.tane[t]=spTana(t);
+ for(const d of DECOR){ const v=d.v, pk=a=>a[Math.floor(v*997)%a.length];
+  if(d.z==='felce') d.spr=v<0.36?pk(SP.alberi):v<0.46?pk(SP.pini):v<0.8?pk(SP.felci):pk(SP.cespugli);
+  else if(d.z==='nebbia') d.spr=v<0.2?pk(SP.salici):v<0.62?pk(SP.canne):pk(SP.cespNebbia);
+  else d.spr=v<0.55?pk(SP.rocce):v<0.82?pk(SP.arbusti):pk(SP.pini);
+  d.alto=d.spr.oy>100; }
+}
+const STATICI=[], SIEPI=[];
+function preparaStatici(){
+ const r=mulberry32(77);
+ for(const k in CLAN){ const cm=CLAN[k].campo, ing=CLAN[k].ingresso;
+  const R=cm.r+60; const spr=creaSprite(R*2,R*2,R,R,g=>{ const lista=[];
+   for(let a=0;a<6.283;a+=0.1){ const d=Math.abs(((a-ing+Math.PI*3)%(Math.PI*2))-Math.PI); if(d<0.3) continue; lista.push([Math.cos(a)*(cm.r+16),Math.sin(a)*(cm.r+16)+8,0.55+r()*0.2,SP.siepe[Math.floor(r()*SP.siepe.length)]]); }
+   lista.sort((p,q)=>p[1]-q[1]); for(const [x,y,sc,sp] of lista) g.drawImage(sp.c,x-sp.ox*sc,y-sp.oy*sc,sp.w*sc,sp.h*sc); });
+  SIEPI.push({s:spr,x:cm.x,y:cm.y}); }
+ STATICI.push({s:SP.roccia,x:L.roccia.x,y:L.roccia.y+22,sc:1,trasp:true});
+ const tipi={tanaGuerrieri:'guerrieri',tanaApprendisti:'apprendisti',nursery:'nursery',tanaGuaritore:'guaritore'};
+ for(const k of TANE) STATICI.push({s:SP.tane[tipi[k]],x:L[k].x,y:L[k].y+24,sc:1,trasp:true});
+ for(const k of ['nebbia','pietre']){ const cm=CLAN[k].campo; for(const [dx,dy,t] of [[-60,-40,'guerrieri'],[60,-30,'apprendisti'],[10,60,'guaritore']]) STATICI.push({s:SP.tane[k==='pietre'&&t!=='guaritore'?'guaritore':t],x:cm.x+dx,y:cm.y+dy+24,sc:0.9,trasp:true}); }
+}
+
+// ---------- i gatti ----------
+let GA=1;
+const scala=c=>c.rango==='gattino'?(G?0.42+0.027*Math.min(6,lune(c)):0.58):c.rango==='apprendista'?0.8:(c.leader?1.1:1);
+function manto(c){ if(c.manto) return c.manto; if(c.macchie&&c.id%2===0) return 'bicolore'; if(c.colore==='#34343a'||c.colore==='#f1ede4') return 'unito'; return c.id%3===1?'unito':'tigrato'; }
+function initAnim(c){ if(!c.an) c.an={ph:Math.random()*6,t:Math.random()*10,face:c.flip||1,fermo:0,walk:0,run:0,sit:0,lie:0,crouch:0,blink:3}; return c.an; }
+function velocita(c,x0,y0,dt){ const v=Math.min(320,Math.hypot(c.x-x0,c.y-y0)/Math.max(dt,1e-3)); c.vel=(c.vel||0)+(v-(c.vel||0))*Math.min(1,dt*12); }
+function anima(c,dt){
+ const a=initAnim(c), v=c.vel||0, k=x=>Math.min(1,dt*x), s=scala(c);
+ a.t+=dt; a.face+=((c.flip||1)-a.face)*k(9);
+ a.walk+=(clamp(v/40,0,1)-a.walk)*k(8); a.run+=(clamp((v-85)/60,0,1)-a.run)*k(6);
+ a.ph+=v*dt/((4.6+2.8*a.run)*s);
+ a.fermo=v<6?a.fermo+dt:0;
+ const balzo=c===G.p&&c.balzo>0, acq=c===G.p&&c.acq&&!balzo, dorme=!!c.dorme;
+ const P=c.posa; if(P){ c.posaT=(c.posaT||0)+dt; if(c.posaFine&&G.t>c.posaFine){c.posa=null;c.posaFine=0;} }
+ const SIT=['siede','lecca','leccato','ascolta','racconta','naso','zampata','canta'], CRO=['mangia','beve','annusa','cura','agguato'], LIE=['dorme','curato'];
+ a.lie+=(((P?LIE.includes(P):dorme)?1:0)-a.lie)*k(3);
+ a.sit+=(((P?SIT.includes(P):(!dorme&&!acq&&!balzo&&a.fermo>2.2))?1:0)-a.sit)*k(4);
+ a.crouch+=(((P?CRO.includes(P):acq)?1:0)-a.crouch)*k(9);
+ a.blink-=dt; if(a.blink<-0.14) a.blink=rnd(2,5);
+ if(c.att>0) c.att-=dt; if(c.colpito>0) c.colpito-=dt; if(c.soffia>0) c.soffia-=dt;
+ a.arch=(a.arch||0)+(((c.soffia>0)?1:0)-(a.arch||0))*k(10);
+}
+function ik(hx,hy,fx,fy,a,b,dir){
+ let dx=fx-hx,dy=fy-hy,d=Math.hypot(dx,dy); const mx=a+b-0.05; if(d>mx){dx*=mx/d;dy*=mx/d;d=mx;} if(d<0.5)d=0.5;
+ const al=Math.acos(clamp((a*a+d*d-b*b)/(2*a*d),-1,1)), ang=Math.atan2(dy,dx)+al*dir;
+ return [hx+Math.cos(ang)*a,hy+Math.sin(ang)*a,hx+dx,hy+dy];
+}
+function zampaDis(hx,hy,fx,fy,a,b,w1,w2,col,colP,dir){
+ const [kx,ky,ex,ey]=ik(hx,hy,fx,fy,a,b,dir);
+ ctx.lineCap='round'; ctx.strokeStyle=col; ctx.lineWidth=w1; ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(kx,ky); ctx.stroke();
+ ctx.strokeStyle=colP; ctx.lineWidth=w2; ctx.beginPath(); ctx.moveTo(kx,ky); ctx.lineTo(ex,ey); ctx.stroke();
+ ell(ex+1.3,ey-0.7,2.9,1.8,colP);
+}
+function bez(P,t){const u=1-t;return[u*u*u*P[0][0]+3*u*u*t*P[1][0]+3*u*t*t*P[2][0]+t*t*t*P[3][0],u*u*u*P[0][1]+3*u*u*t*P[1][1]+3*u*t*t*P[2][1]+t*t*t*P[3][1]];}
+function codaDis(P,col,str,tigr,gonfia=1){
+ const N=10, pts=[]; for(let i=0;i<=N;i++) pts.push(bez(P,i/N));
+ const sx=[],dx=[];
+ for(let i=0;i<=N;i++){ const a=pts[Math.max(0,i-1)], b=pts[Math.min(N,i+1)], tx=b[0]-a[0], ty=b[1]-a[1], l=Math.hypot(tx,ty)||1, w=2.6*gonfia*(1-i/N*0.5);
+  sx.push([pts[i][0]-ty/l*w,pts[i][1]+tx/l*w]); dx.push([pts[i][0]+ty/l*w,pts[i][1]-tx/l*w]); }
+ ctx.beginPath(); ctx.moveTo(sx[0][0],sx[0][1]); for(const q of sx) ctx.lineTo(q[0],q[1]);
+ const e=pts[N]; ctx.arc(e[0],e[1],1.3,0,Math.PI); for(let i=N;i>=0;i--) ctx.lineTo(dx[i][0],dx[i][1]); ctx.closePath();
+ ctx.fillStyle=col; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,0.28)'; ctx.lineWidth=0.7; ctx.stroke();
+ if(tigr){ ctx.strokeStyle=str; ctx.lineWidth=1.5; ctx.beginPath(); for(const i of [3,5,7,9]){ ctx.moveTo(sx[i][0],sx[i][1]); ctx.lineTo(dx[i][0],dx[i][1]); } ctx.stroke(); }
+}
+const _gr={}; const grad=(k,f)=>_gr[k]||(_gr[k]=f());
+const CORPO=new Path2D('M-8,-1 C-7,-9 6,-10 16,-8.5 C24,-7.5 30,-2.5 27.5,3.5 C25,8.5 11,8 2,7.5 C-6,7.5 -11,5 -8,-1 Z');
+function disegnaGatto(c){
+ const a=initAnim(c), s=scala(c), col=c.colore, m=manto(c);
+ let w=a.walk, r=a.run, cr=a.crouch, si=a.sit, li=a.lie, ph=a.ph; const P=c.posa, pt=c.posaT||0; if(P==='rotola'){ w=1; ph=pt*22; }
+ const balzo=c===G.p&&c.balzo>0; let jump=0;
+ const bounce=-Math.abs(Math.sin(ph))*2.4*r-Math.abs(Math.sin(ph*2))*0.7*w*(1-r), breath=Math.sin(a.t*2.4)*0.45;
+ let hip=[-12,-20+bounce], sh=[11,-20.5+bounce+breath];
+ hip=L2(hip,[-12,-12.5],cr); sh=L2(sh,[11,-10.5],cr);
+ hip=L2(hip,[-7,-7.5],si); sh=L2(sh,[7.5,-24],si);
+ hip=L2(hip,[-12,-6.5],li); sh=L2(sh,[11,-6.5],li);
+ const ar=a.arch||0, ak=c.att>0?1-c.att/0.32:0, as=c.att>0?Math.sin(ak*Math.PI):0, hu=c.colpito>0?Math.sin(c.colpito/0.3*Math.PI):0;
+ hip=L2(hip,[-11,-25],ar); sh=L2(sh,[10,-22],ar);
+ if(as){ sh=[sh[0]+5*as,sh[1]+(c.attTipo==='morso'?3:-3)*as]; hip=[hip[0]+2*as,hip[1]]; }
+ if(hu){ hip=[hip[0]-3*hu,hip[1]+2*hu]; sh=[sh[0]-4*hu,sh[1]+3*hu]; }
+ if(P==='agguato') hip=[hip[0]+Math.sin(pt*26)*1.6,hip[1]];
+ if(balzo){ const pr=1-c.balzo/0.35; jump=Math.sin(pr*Math.PI)*15; hip=[-15,-19-jump+4*pr]; sh=[13,-21-jump-6*(0.5-pr)]; }
+ const sx=Math.abs(a.face)<0.15?0.15*(a.face<0?-1:1):a.face;
+ ctx.save(); GA=(scena&&scena.pp&&!scena.attori.includes(c))?0.25:1; ctx.globalAlpha=GA; ctx.translate(c.x,c.y); if(c.elev) ctx.translate(0,-c.elev);
+ ombra(ctx,0,0,(21-jump*0.4)*s,(5.5-jump*0.12)*s,0.36);
+ { const nem=c.clan!=='felce'; ctx.strokeStyle=c===G.p?'#ffe08a':ANELLO[c.clan]; ctx.lineWidth=nem?2.2:1.4; ctx.globalAlpha=GA*(nem?0.95:(c===G.p?0.8:0.5)); ctx.beginPath(); ctx.ellipse(0,1,19*s,5.5*s,0,0,6.283); ctx.stroke(); ctx.globalAlpha=GA*(1); }
+ if(hu) ctx.translate(Math.sin(a.t*70)*1.2,0);
+ if(P==='balzello') ctx.translate(0,-Math.abs(Math.sin(pt*7))*9*s);
+ if(P==='rotola'){ ctx.translate(0,-12*s); ctx.rotate(Math.PI*(0.82+0.18*Math.sin(pt*7))*(sx<0?-1:1)); ctx.translate(0,12*s); }
+ ctx.scale(sx*s,s);
+ const scur=mescola(col,SCURO,0.32), str=mescola(col,SCURO,0.45), zp=m==='bicolore'?BIANCO:col, zpF=m==='bicolore'?mescola(BIANCO,SCURO,0.25):scur;
+ const ang=Math.atan2(sh[1]-hip[1],sh[0]-hip[0]), len=Math.hypot(sh[0]-hip[0],sh[1]-hip[1])/23, ca=Math.cos(ang), sa=Math.sin(ang);
+ const bf=(x,y)=>[hip[0]+ca*x*len-sa*y,hip[1]+sa*x*len+ca*y];
+ // coda
+ const B=bf(-8,-3), sw=Math.sin(a.t*1.7+c.id), tw=Math.sin(a.t*9+c.id)*1.5;
+ let T=[[-8,-3],[-14,-17+sw*3],[-9+sw*2.5,-27]];
+ T=L3(T,[[-10,-2],[-20,-9+sw*2],[-27,-15]],w);
+ T=L3(T,[[-11,-1],[-20,-4],[-27,-8+sw]],r);
+ T=L3(T,[[-10,2],[-20,4],[-30,2+tw]],cr);
+ T=L3(T,[[-5,7],[6,9],[17,7]],si);
+ T=L3(T,[[-8,5],[4,8],[16,7]],li);
+ T=L3(T,[[-6,-6],[-8,-20],[-5,-31]],ar);
+ if(balzo) T=[[-12,-1],[-24,-3],[-34,-6]];
+ codaDis([B,[B[0]+T[0][0],B[1]+T[0][1]],[B[0]+T[1][0],B[1]+T[1][1]],[B[0]+T[2][0],B[1]+T[2][1]]],col,str,m==='tigrato',1+ar*0.9);
+ // zampe
+ const A=(6*w+5*r)*(1-si)*(1-li)*(1-cr*0.5), LF=(3.5+2.5*r)*(1-si)*(1-li);
+ const Z=[{f:0,n:0,o:Math.PI},{f:1,n:0,o:Math.PI*1.5},{f:0,n:1,o:0},{f:1,n:1,o:Math.PI*0.5}];
+ const piede=z=>{
+  let fx=(z.f?11:-11)+A*Math.sin(ph+z.o), fy=-LF*Math.max(0,Math.cos(ph+z.o));
+  fx+=cr*(z.f?4:-3);
+  fx=lerp(fx,z.f?9+(z.n?1.5:-1.5):-0.5+(z.n?1:-1),si); fy=lerp(fy,0,si);
+  fx=lerp(fx,z.f?20+(z.n?2:-1):-3,li); fy=lerp(fy,0,li);
+  if(balzo){ if(z.f){fx=sh[0]+13+(z.n?2:0); fy=sh[1]+11;} else {fx=hip[0]-15+(z.n?0:2); fy=hip[1]+12;} }
+  if(as&&z.f&&z.n&&c.attTipo==='graffio'){ fx=sh[0]+6+16*ak; fy=sh[1]-12+24*ak*ak; }
+  return [fx,fy];
+ };
+ const zampa=z=>{ const [hx,hy]=z.f?bf(23,4):bf(0,3), [fx,fy]=piede(z), o=z.n?0:-1.6;
+  zampaDis(hx+o,hy-(z.n?0:0.6),fx+o,fy-(z.n?0:0.7),z.f?9.5:10.5,z.f?10:10.5,z.f?5:6.2,z.f?4:4.4,z.n?col:scur,z.n?zp:zpF,z.f?1:-1); };
+ zampa(Z[0]); zampa(Z[1]);
+ // corpo
+ ctx.save(); ctx.translate(hip[0],hip[1]); ctx.rotate(ang); ctx.scale(len,1+ar*0.22);
+ ctx.fillStyle=grad('c'+col,()=>{ const gr=ctx.createLinearGradient(0,-10,0,9); gr.addColorStop(0,mescola(col,SCURO,0.22)); gr.addColorStop(0.55,col); gr.addColorStop(1,mescola(col,CHIARO,0.3)); return gr; }); ctx.fill(CORPO);
+ ctx.save(); ctx.clip(CORPO);
+ if(m==='tigrato'){ ctx.strokeStyle=str; ctx.globalAlpha=GA*(0.7); ctx.lineWidth=1.8; for(let x=-6;x<=26;x+=4.5){ctx.beginPath();ctx.moveTo(x,-11);ctx.quadraticCurveTo(x+2.5,-4,x+0.5,2);ctx.stroke();} ctx.globalAlpha=GA*(1); }
+ if(m==='bicolore'){ ell(14,8,18,5.5,BIANCO); ell(26,3,4,6,BIANCO); if(c.macchie){ ell(4,-6,7,4,c.macchie); ell(17,-6,4.5,3,c.macchie);} }
+ ctx.restore();
+ if(c.incinta) ell(7,5.5,11,4.8,col);
+ ctx.strokeStyle='rgba(0,0,0,0.28)'; ctx.lineWidth=0.8; ctx.stroke(CORPO);
+ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(0.5,0.5,8.5,8,0,0,6.283); ctx.fill();
+ if(m==='tigrato'){ ctx.strokeStyle=str; ctx.globalAlpha=GA*(0.6); ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0.5,0.5,5,3.6,5.6); ctx.stroke(); ctx.globalAlpha=GA*(1); }
+  ctx.restore();
+ zampa(Z[2]); zampa(Z[3]);
+ // collo e testa
+ const hs=c.rango==='gattino'?1.4:c.rango==='apprendista'?1.12:1, bob=Math.sin(ph*2)*0.7*w;
+ let hd=[9,-11]; hd=L2(hd,[11,-8.5],w); hd=L2(hd,[13,-5],r); hd=L2(hd,[12,-2.5],cr); hd=L2(hd,[4,-13],si); hd=L2(hd,[12,-3],li); hd=L2(hd,[12,-4],ar); if(as) hd=[hd[0]+(c.attTipo==='morso'?7:3)*as,hd[1]+(c.attTipo==='morso'?3:0)*as];
+ if(balzo) hd=[13,-4];
+ if(P==='mangia'||P==='beve'||P==='annusa'||P==='cura') hd=[15,7.5];
+ if(P==='lecca') hd=[12,-8+Math.sin(pt*7)*1.6];
+ if(P==='naso') hd=[13.5,-10];
+ if(P==='canta') hd=[6,-16];
+ const hx=sh[0]+hd[0], hy=sh[1]+hd[1]+bob, collo=bf(20,-3);
+ ctx.strokeStyle=col; ctx.lineWidth=11; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(collo[0],collo[1]); ctx.lineTo(hx-2,hy+2); ctx.stroke();
+ if(m==='bicolore'){ ctx.strokeStyle=BIANCO; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(collo[0]+3,collo[1]+4); ctx.lineTo(hx+1,hy+5); ctx.stroke(); }
+ ctx.save(); ctx.translate(hx,hy); ctx.rotate(0.12*cr+0.18*li-0.05*si+(P==='leccato'?-0.25:P==='ascolta'?0.18*Math.sin(pt*1.6):P==='canta'?-0.4:0)); ctx.scale(hs,hs);
+ let bo=Math.max(ar,hu,c.attTipo==='morso'?as:0), lg=0, ch=false;
+ if(P==='mangia'||P==='cura') bo=0.35+0.35*Math.abs(Math.sin(pt*12));
+ if(P==='racconta') bo=0.45*Math.abs(Math.sin(pt*9));
+ if(P==='canta') bo=0.25+0.5*Math.abs(Math.sin(pt*5));
+ if(P==='beve'){ lg=Math.max(0,Math.sin(pt*18)); bo=0.3; }
+ if(P==='lecca'){ lg=0.6+0.4*Math.sin(pt*7); bo=0.3; }
+ if(P==='leccato'||P==='naso'||P==='curato'||P==='dorme'||P==='canta') ch=true;
+ testaDis(c,col,m,str,a,bo,Math.max(ar,hu,as*0.6),lg,ch);
+ if(c===G.p&&c.preda){ ctx.save(); ctx.translate(8,9); ctx.rotate(1.3); ctx.scale(0.6,0.6); predaForma(c.preda,0,0); ctx.restore(); }
+ ctx.restore();
+ if(c.pasto&&c.pasto.f>0.05){ const k=0.8*c.pasto.f+0.15; ctx.save(); ctx.translate(35,0); ctx.scale(k,k); predaForma(c.pasto.tipo,0,0); ctx.restore(); }
+ ctx.restore();
+}
+function testaDis(c,col,m,str,a,bocca=0,giu=0,lingua=0,chiusi=false){
+ const sc=mescola(col,SCURO,0.3);
+ const orecchio=(x,y,colE,inner)=>{ ctx.save(); ctx.translate(x,y); ctx.rotate(-0.7*giu); ctx.translate(-x,-y); ctx.fillStyle=colE; ctx.beginPath(); ctx.moveTo(x-3.6,y+1.5); ctx.quadraticCurveTo(x-1.2,y-6,x+0.3,y-8.5); ctx.quadraticCurveTo(x+2.6,y-4,x+4,y+1); ctx.closePath(); ctx.fill();
+  if(inner){ ctx.fillStyle='#d99a92'; ctx.beginPath(); ctx.moveTo(x-1.8,y+0.5); ctx.quadraticCurveTo(x-0.6,y-4.5,x+0.2,y-6); ctx.quadraticCurveTo(x+1.6,y-3,x+2.4,y+0.5); ctx.closePath(); ctx.fill(); } ctx.restore(); };
+ orecchio(-4.5,-4.5,sc,false);
+ ctx.fillStyle=grad('t'+col,()=>{ const g=ctx.createRadialGradient(-1.5,-3,1,0,0,9); g.addColorStop(0,mescola(col,CHIARO,0.15)); g.addColorStop(1,mescola(col,SCURO,0.2)); return g; }); ctx.beginPath(); ctx.ellipse(0,0,8.2,7.2,0,0,6.283); ctx.fill();
+ ell(-1.5,3.2,6.5,4.3,col);
+ ell(5.6,2.4,4.3,3.3,m==='bicolore'?BIANCO:mescola(col,CHIARO,0.28));
+ if(c.rango==='gattino') ell(2.4,3,1.7,1,'rgba(255,140,160,0.45)');
+ if(lingua>0.05) ell(9.2+lingua*1.4,4.8+lingua*0.8,1.7,1.1+lingua,'#e98a9a');
+ if(bocca>0.05){ ell(7.4,4.4,2.6,2*bocca,'#5a1e22'); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(6,3.4); ctx.lineTo(6.6,3.4+1.6*bocca); ctx.lineTo(7.2,3.4); ctx.moveTo(8.2,3.4); ctx.lineTo(8.8,3.4+1.6*bocca); ctx.lineTo(9.4,3.4); ctx.fill(); }
+ if(m==='tigrato'){ ctx.strokeStyle=str; ctx.lineWidth=1.1; ctx.globalAlpha=GA*(0.75); ctx.beginPath(); ctx.moveTo(-2,-6.5); ctx.lineTo(-1,-3.5); ctx.moveTo(0.8,-6.8); ctx.lineTo(1.2,-3.8); ctx.moveTo(-5.5,-1); ctx.lineTo(-2.5,0.5); ctx.moveTo(-5.5,1.6); ctx.lineTo(-2.5,2.4); ctx.stroke(); ctx.globalAlpha=GA*(1); }
+ orecchio(0.5,-5.5,col,true);
+ const aperto=(c.dorme||chiusi)?0.08:(a.blink<0?0.12:1);
+ ctx.save(); ctx.translate(3.6,-1.3); ctx.scale(1,aperto);
+ ell(0,0,2.4,1.9,c.occhi||'#9be04a'); ell(0.35,0,0.65,1.65,'#0d0d0d'); circ(-0.5,-0.7,0.5,'rgba(255,255,255,0.9)');
+ ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=0.5; ctx.beginPath(); ctx.ellipse(0,0,2.4,1.9,0,0,6.283); ctx.stroke();
+ ctx.restore();
+ ctx.fillStyle='#c97f7f'; ctx.beginPath(); ctx.moveTo(8.6,0.4); ctx.lineTo(10,0.6); ctx.lineTo(9.3,1.7); ctx.closePath(); ctx.fill();
+ ctx.strokeStyle='rgba(40,25,20,0.6)'; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(9.3,1.7); ctx.lineTo(9,3); ctx.quadraticCurveTo(8,3.8,7,3.3); ctx.stroke();
+ ctx.strokeStyle='rgba(255,255,255,0.65)'; ctx.lineWidth=0.35; ctx.beginPath();
+ for(const [dy,ey] of [[2,-0.5],[2.8,2.5],[3.4,5.2]]){ ctx.moveTo(7.5,dy); ctx.quadraticCurveTo(12,dy+(ey-dy)*0.3,16.5,ey);} ctx.stroke();
+}
+
+// ---------- le prede ----------
+function predaForma(tipo,ph,vola){
+ switch(tipo){
+ case 'topo':{ const sw=Math.sin(ph*2)*1.2;
+  ctx.strokeStyle='#c99a92'; ctx.lineWidth=0.9; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(-5,-2.5); ctx.bezierCurveTo(-10,-1+sw,-13,-4-sw,-17,-2+sw); ctx.stroke();
+  const g=ctx.createLinearGradient(0,-8,0,0); g.addColorStop(0,'#6b5644'); g.addColorStop(1,'#a8927c'); ctx.fillStyle=g;
+  ctx.beginPath(); ctx.ellipse(0,-3.6,6.2,3.8,0,0,6.283); ctx.fill(); ctx.beginPath(); ctx.ellipse(5.2,-4.2,3.4,2.6,0.25,0,6.283); ctx.fill();
+  circ(3.6,-7,1.9,'#8a7462'); circ(3.7,-6.9,1.1,'#d9a6a0'); circ(6.5,-4.8,0.6,'#111'); circ(8.5,-3.6,0.55,'#d98080'); break; }
+ case 'uccello':{ const fl=vola>0?Math.sin(ph*6):0;
+  ctx.fillStyle='#5a4a3a'; ctx.beginPath(); ctx.moveTo(-4,-5); ctx.lineTo(-10,-7); ctx.lineTo(-9,-3.5); ctx.closePath(); ctx.fill();
+  if(!vola){ ctx.strokeStyle='#8a6a4a'; ctx.lineWidth=0.7; ctx.beginPath(); ctx.moveTo(0,-1.5); ctx.lineTo(-0.5,0); ctx.moveTo(1.5,-1.5); ctx.lineTo(1.8,0); ctx.stroke(); }
+  const g=ctx.createLinearGradient(0,-9,0,-1); g.addColorStop(0,'#6b5a48'); g.addColorStop(1,'#a08a6a'); ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,-5,5.6,3.8,-0.15,0,6.283); ctx.fill();
+  ell(2.6,-3.6,3,2.4,'#d9824a'); circ(4.4,-8,2.9,'#5f4e3e'); circ(5.3,-8.6,0.6,'#111');
+  ctx.fillStyle='#e0b050'; ctx.beginPath(); ctx.moveTo(7,-8.4); ctx.lineTo(9.4,-7.8); ctx.lineTo(7,-7.1); ctx.fill();
+  ctx.fillStyle='#4a3c30'; ctx.beginPath(); if(vola){ ctx.moveTo(-2,-6); ctx.lineTo(-6,-12-fl*5); ctx.lineTo(3,-7); } else ctx.ellipse(-0.8,-5.2,4,2.2,-0.2,0,6.283); ctx.fill(); break; }
+ case 'coniglio':{
+  ell(-8.5,-7,2.8,2.8,'#f4f0e6');
+  const g=ctx.createLinearGradient(0,-13,0,0); g.addColorStop(0,'#8f7d63'); g.addColorStop(1,'#cdbc9c'); ctx.fillStyle=g;
+  ctx.beginPath(); ctx.ellipse(0,-6,8.5,6,0,0,6.283); ctx.fill(); ell(-3.5,-5,5.5,5.2,'#a8957a');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(7,-10.5,4.4,3.8,0.2,0,6.283); ctx.fill();
+  ell(4.6,-16,1.6,5.2,'#9c8a70',ctx,-0.45); ell(6.4,-16.5,1.6,5.4,'#a8957a',ctx,-0.3); ell(6.5,-16.3,0.7,3.6,'#d6a8a0',ctx,-0.3);
+  circ(8.6,-11,0.8,'#111'); circ(11,-9.6,0.6,'#c98080'); ell(6,-0.8,2,1.2,'#b8a586'); break; }
+ case 'scoiattolo':{
+  ctx.lineCap='round'; ctx.strokeStyle='#9a5a30'; ctx.lineWidth=6.5; ctx.beginPath(); ctx.moveTo(-3,-4); ctx.bezierCurveTo(-13,-4,-13,-15,-6,-18); ctx.stroke();
+  ctx.strokeStyle='#c98450'; ctx.lineWidth=3; ctx.stroke();
+  const g=ctx.createLinearGradient(0,-12,0,0); g.addColorStop(0,'#94552d'); g.addColorStop(1,'#c27a45'); ctx.fillStyle=g;
+  ctx.beginPath(); ctx.ellipse(0,-6,5,5.6,0.35,0,6.283); ctx.fill(); ell(2,-5,2.5,3.5,'#ecd2a8');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(4,-11,3.3,0,6.283); ctx.fill();
+  ctx.fillStyle='#94552d'; ctx.beginPath(); ctx.moveTo(2,-13); ctx.lineTo(2.5,-16.5); ctx.lineTo(4,-13.6); ctx.fill();
+  circ(5.2,-11.5,0.65,'#111'); break; }
+ }
+}
+function disegnaPreda(q){
+ const alt=q.tipo==='uccello'&&q.vola>0?q.vola*45:((q.tipo==='coniglio'||q.tipo==='scoiattolo')?Math.abs(Math.sin(q.ph||0))*Math.min(1,(q.sp||0)/25)*5:0);
+ const R=PREDE[q.tipo].r;
+ ombra(ctx,q.x,q.y,R*1.7,R*0.55,0.3*(1-Math.min(0.7,alt/60)));
+ if(q===MIRATA){ ctx.strokeStyle='rgba(255,230,140,0.95)'; ctx.lineWidth=1.3; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.ellipse(q.x,q.y,R*2.6,R*1.1,0,0,6.283); ctx.stroke(); ctx.setLineDash([]); }
+ ctx.save(); ctx.translate(q.x,q.y-alt); ctx.scale(q.f||1,1); predaForma(q.tipo,q.ph||0,q.vola||0); ctx.restore();
+ if(q.allarme>0||q.sosp){ ctx.font='bold 10px system-ui'; ctx.textAlign='center'; ctx.lineWidth=2.5; ctx.strokeStyle='rgba(0,0,0,0.7)'; const tx=q.allarme>0?'!':'?'; ctx.strokeText(tx,q.x,q.y-alt-R*2.6); ctx.fillStyle=q.allarme>0?'#ff7a6a':'#ffe08a'; ctx.fillText(tx,q.x,q.y-alt-R*2.6); }
+}
+
+// ---------- la scena ----------
+function targa(t,x,y,col){ ctx.font='bold 15px system-ui'; const w=ctx.measureText(t).width+18; ctx.fillStyle='rgba(20,16,10,0.72)'; ctx.beginPath(); ctx.roundRect(x-w/2,y-17,w,24,7); ctx.fill(); ctx.strokeStyle='rgba(245,231,196,0.5)'; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle=col; ctx.textAlign='center'; ctx.fillText(t,x,y); }
+function frecceGuida(){ if(G.dentro||G.riposoFinale) return; // frecce verso le cose importanti, con la distanza in metri
+ const p=G.p, cm=CLAN.felce.campo, T=[];
+ if(dist(p,cm)>cm.r+40) T.push({x:cm.x,y:cm.y,s:'🏕️',t:'il tuo campo',c:'#9be07f'});
+ for(const k of ['nebbia','pietre']){ const c=CLAN[k].campo; if(dist(p,c)<1500) T.push({x:c.x,y:c.y,s:EMBLEMA[k],t:'campo del '+CLAN[k].nome,c:CLAN[k].col}); }
+ const nem=G.cats.filter(e=>e.clan!=='felce'&&e.stato!=='fuga'&&e.stato!=='riposo'&&((e.stato==='caccia'&&e.bersaglio===0)||e.stato==='assalto'||(e.stato==='schierato')||dist(e,p)<450)).sort((a,b)=>dist(a,p)-dist(b,p)).slice(0,3);
+ for(const e of nem) T.push({x:e.x,y:e.y,s:'⚔️',t:nome(e),c:'#ff7a6a'});
+ if(G.cerimonia&&dist(p,L.roccia)>200) T.push({x:L.roccia.x,y:L.roccia.y,s:'🌟',t:'cerimonia',c:'#ffe08a'});
+ for(const b of guideBosco(p)) T.push(b); // nel bosco: lago, stagno, guado (js/leggende.js)
+ const occupati=[]; const libero=(x,y,w)=>{ for(let k=0;k<12;k++){ if(!occupati.some(r=>Math.abs(r.x-x)<(r.w+w)/2+6&&Math.abs(r.y-y)<26)) break; y+=(y>H/2?-27:27); } occupati.push({x,y,w}); return y; };
+ for(const b of T){ const d=Math.round(dist(p,b)*0.02); if(d<3) continue; const [sx,sy]=aSchermo(b.x,b.y,0.7);
+  if(sx>70&&sx<W-70&&sy>90&&sy<H-90){ if(b.soloFuori) continue; const lab0=b.s+' '+d+' m'; ctx.font='bold 15px system-ui'; const w0=ctx.measureText(lab0).width+18; targaCliccabile(lab0,sx,libero(sx,sy,w0),b.c,b); continue; }
+  const an=Math.atan2(sy-H/2,sx-W/2), ex=clamp(W/2+Math.cos(an)*(W/2-46),46,W-46), ey=clamp(H/2+Math.sin(an)*(H/2-46),100,H-175);
+  ctx.save(); ctx.translate(ex,ey); ctx.rotate(an); ctx.fillStyle=b.c; ctx.strokeStyle='rgba(0,0,0,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(22,0); ctx.lineTo(-10,-13); ctx.lineTo(-4,0); ctx.lineTo(-10,13); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  const lab=b.s+' '+b.t+' · '+d+' m'; ctx.font='bold 15px system-ui'; const w=ctx.measureText(lab).width; const lx=clamp(ex-Math.cos(an)*30,w/2+20,W-w/2-20); targaCliccabile(lab,lx,libero(lx,clamp(ey-Math.sin(an)*30,110,H-165),w+18),b.c,b); }
+}
+function etichetta(c){
+ if(!etichettaUtile(c)) return; // niente nomi su tutti i gatti: soltanto quelli che contano adesso
+  const p=G.p, nem=c.clan!=='felce', ostile=nem&&(c.stato==='caccia'||c.stato==='assalto');
+ if(c!==p&&dist(c,p)>(nem?240:95)) return;
+ if(nem&&c!==VICINO){ const s=scala(c), [x,y]=aSchermo(c.x,c.y,0.55*s+0.1); scritta(EMBLEMA[c.clan]+(ostile?'⚔️':''),x,y,'#fff','15px system-ui'); return; }
+ let t=EMBLEMA[c.clan]+' '+nome(c); if(ostile) t='⚔️ '+t; if(c.ferito) t='🩹 '+t; if(c.stato==='fuga') t='💨 '+t;
+ if(p.mentore===c.id) t+=' (mentore)'; if(p.compagno===c.id) t+=' 💞'; if(c.figlio) t+=' 🐾';
+ const s=scala(c), [x,y]=aSchermo(c.x,c.y,0.55*s+0.12+(c.elev||0)*0.02);
+ scritta(t,x,y,c===p?'#ffffff':(ostile?'#ff8a7a':CLAN[c.clan].col),c===p||nem?'bold 14px system-ui':'13px system-ui');
+ if(c!==p&&c.hp<c.hpMax&&c.clan!=='felce'){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-22,y+4,44,5); ctx.fillStyle='#e86a6a'; ctx.fillRect(x-22,y+4,44*Math.max(0,c.hp)/c.hpMax,5); }
+}
+function disegnaErba(h,pronta){
+ const x=h.x,y=h.y; ombra(ctx,x,y+1,9,3,0.22);
+ if(pronta&&puoErbe()) ell(x,y-4,15,11,'rgba(220,255,170,0.16)');
+ ctx.lineWidth=1.2; ctx.lineCap='round';
+ for(let k=-2;k<=2;k++){ ctx.strokeStyle=k%2?'#3f7a2b':'#5a9a3e'; ctx.beginPath(); ctx.moveTo(x,y); ctx.quadraticCurveTo(x+k*3,y-6,x+k*4.5,y-(pronta?11:5)+Math.abs(k)); ctx.stroke(); }
+ if(pronta) for(let k=-1;k<=1;k++){ const fx=x+k*5,fy=y-11+Math.abs(k)*2, col=['#c58cff','#ffe066','#ffffff'][h.tipo]; for(let i=0;i<5;i++) circ(fx+Math.cos(i*1.257)*1.6,fy+Math.sin(i*1.257)*1.6,1.3,col); circ(fx,fy,0.9,'#e8b030'); }
+}
+let VIGN=null, MINI=null, VICINO=null;
+const POSTI=[['roccia','Roccia Alta',64],['mucchio','Mucchio delle prede',24],['tanaGuerrieri','Tana dei guerrieri',38],['tanaApprendisti','Tana degli apprendisti',38],['nursery','Nursery',38],['tanaGuaritore','Tana del guaritore',38],['pozza','Pozzanghera',22],['lago','Lago d’Argento',96],['stagno','Stagno',30]];
+function disegna(){
+ const p=G.p;
+ ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+ const bn=bordo('nebbia'),bp=bordo('pietre');
+ MIRATA=(p.rango!=='gattino'&&(!p.preda||(p.carico||[]).length<2))?(p.caccia?p.caccia.q:predaMirata()):null;
+ // schermo: luce, scritte, interfaccia
+ const fase=(G.t%MOON)/MOON, notte=fase>0.6?0.6*Math.sin((fase-0.6)/0.4*Math.PI):0;
+ if(!VIGN||VIGN.w!==W||VIGN.h!==H){ const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d'); const gr=g.createRadialGradient(W/2,H/2,Math.min(W,H)*0.45,W/2,H/2,Math.max(W,H)*0.75); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,0.16)'); g.fillStyle=gr; g.fillRect(0,0,W,H); VIGN={c,w:W,h:H}; }
+ ctx.drawImage(VIGN.c,0,0,W,H);
+ if(scena&&scena.tipo==='dorme'){ const al=Math.min(0.55,scena.t*0.5,(scena.dur-scena.t)*0.8); ctx.fillStyle=`rgba(5,8,30,${al})`; ctx.fillRect(0,0,W,H); }
+ if(banda>0.02){ const hb=H*0.1*banda; ctx.fillStyle=`rgba(255,190,140,${0.07*banda})`; ctx.fillRect(0,0,W,H); ctx.fillStyle='#000'; ctx.fillRect(0,0,W,hb); ctx.fillRect(0,H-hb,W,hb); }
+ const disegnaBanner=()=>{ if(!banner) return; const al=Math.min(1,banner.t*1.5), sc=1+Math.max(0,banner.t-2.2)*0.8; ctx.save(); ctx.globalAlpha=al; ctx.translate(W/2,H*0.26); ctx.scale(sc,sc); scritta(banner.txt,0,0,banner.col,'bold 34px system-ui'); ctx.restore(); };
+ const disegnaCuori=()=>{for(const q of particelle){ if(q.tipo!=='testo'&&q.tipo!=='scintilla') continue; const [x,y]=aSchermo(q.x,q.y+30,0.3+Math.max(0,(q.t0||1)-q.t)*0.25); ctx.globalAlpha=Math.min(1,q.t*1.5); if(q.tipo==='testo'){ ctx.font=`bold ${Math.round(q.size*(banda>0.3?3:1.8))}px system-ui`; ctx.textAlign='center'; ctx.fillStyle=q.col; ctx.fillText(q.txt,x,y); } else circ(x,y,2.5,q.col); ctx.globalAlpha=1; } };
+ disegnaCuori();
+ if(banda>0.3){ disegnaFumetti(); disegnaBanner(); return; }
+ ZONE.length=0; const inVillaggio=dist(p,CLAN.felce.campo)<CLAN.felce.campo.r+40; // nel villaggio i luoghi del campo, nel bosco il lago e lo stagno
+ if(!G.dentro) for(const [k,t,dy] of POSTI){ const lontano=k==='lago'||k==='stagno'; if(inVillaggio===lontano) continue; const l=L[k]; if(dist(p,l)<(lontano?600:420)&&vis(l.x,l.y,0)){ const [x,y]=aSchermo(l.x,l.y,dy*0.02+0.35); targaCliccabile((k==='roccia'&&G.cerimonia?'🌟 ':'')+t,x,y,k==='roccia'&&G.cerimonia?'#ffe08a':'#f5e7c4',metaPosto(k)); } }
+ frecceTane(inVillaggio); // la freccia per entrare nelle tane (js/leggende.js)
+ for(const k of ['nebbia','pietre']){ const cm=CLAN[k].campo; if(dist(p,cm)<330){ const [x,y]=aSchermo(cm.x,cm.y-cm.r,1.4); scritta('Campo del '+CLAN[k].nome,x,y,CLAN[k].col,'bold 14px system-ui'); } }
+ VICINO=null; { let bd=1e9; for(const c of G.cats) if(c.clan!=='felce'){ const d=dist(c,p); if(d<bd){bd=d;VICINO=c;} } }
+ for(const c of G.cats) if(vis(c.x,c.y,40)) etichetta(c);
+ etichetta(p);
+ if(G.visitatore&&vis(G.visitatore.x,G.visitatore.y,40)){ const v=G.visitatore,T=VISITATORI[v.tipo],[x,y]=aSchermo(v.x,v.y,T.h*0.02+0.15); ctx.globalAlpha=v.alpha??1; scritta(T.icona+' '+cap(T.nome),x,y,'#e8d9ff','bold 13px system-ui'); ctx.globalAlpha=1; }
+ disegnaFumetti();
+ for(const f of floats){ const [x,y]=aSchermo(f.x,f.gy??f.y,0.45+(f.gy?(f.gy-f.y-30)*0.02:0)); ctx.globalAlpha=clamp(f.t,0,1); scritta(f.txt,x,y,f.col,'bold 16px system-ui'); ctx.globalAlpha=1; }
+ const tr=territorio(p.x,p.y);
+ const info=`Età: ${lune(p)} lune · ${notte>0.15?'notte':'giorno'} · ${tr==='fiume'?'il fiume':'territorio del '+CLAN[tr].nome}`;
+ ctx.font='15px system-ui'; ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(10,10,ctx.measureText(info).width+24,30); scritta(info,22,31,'#fff','15px system-ui','left');
+ { const ob=obiettivo(); ctx.font='bold 14px system-ui'; const R=righe(ob.t,Math.max(200,W-300)), w=Math.max(...R.map(r=>ctx.measureText(r).width))+24;
+   ctx.fillStyle=G.raid?'rgba(120,30,20,0.78)':'rgba(30,50,25,0.78)'; ctx.fillRect(10,46,w,R.length*19+12); R.forEach((r,i)=>scritta(r,22,65+i*19,'#ffe9a8','bold 14px system-ui','left')); }
+ { const v=G.visitatore, bers=G.raid?{x:G.raid.luogo.x,y:G.raid.luogo.y,s:'⚔',t:'battaglia',c:'#ff7a5a'}:(v&&!v.parte&&p.rango!=='gattino'?{x:v.x,y:v.y-30,s:'✨',t:VISITATORI[v.tipo].nome,c:'#c8a8ff'}:null);
+   if(bers){ const [sx,sy]=aSchermo(bers.x,bers.y);
+    if(sx>40&&sx<W-40&&sy>60&&sy<H-60){ const rr=18+4*Math.sin(G.t*5); ctx.strokeStyle=bers.c; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(sx,sy,rr,0,6.283); ctx.stroke(); scritta(bers.s,sx,sy+6,'#ffe08a','bold 18px system-ui'); }
+    else { const an=Math.atan2(sy-H/2,sx-W/2), ex=clamp(W/2+Math.cos(an)*(W/2-50),40,W-40), ey=clamp(H/2+Math.sin(an)*(H/2-50),70,H-70); ctx.save(); ctx.translate(ex,ey); ctx.rotate(an); ctx.fillStyle=bers.c; ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(-10,-12); ctx.lineTo(-4,0); ctx.lineTo(-10,12); ctx.closePath(); ctx.fill(); ctx.restore(); scritta(bers.s+' '+bers.t,ex,ey-20,'#ffe08a','bold 13px system-ui'); } } }
+ frecceGuida();
+ disegnaBanner();
+ const sug=[];
+ if(!scena){ if(p.caccia) sug.push('🐾 Inseguimento!'); else if(p.auto) sug.push(p.auto.tipo==='marcia'?'⚔️ In marcia con il clan: il gatto va da solo (le frecce per fermarti)':'⚔️ Combatti da sol'+o(p)+' nella mischia (le frecce per riprendere il controllo)'); else { const a=azioneSpazio(); if(a.t) sug.push('Spazio: '+a.t); } }
+ if(sug.length){ const t=sug.join('   ·   '); ctx.font='bold 16px system-ui'; const w=ctx.measureText(t).width+34; ctx.fillStyle='rgba(0,0,0,0.65)'; ctx.fillRect(W/2-w/2,H-148,w,36); scritta(t,W/2,H-124,'#ffe9a8','bold 16px system-ui'); }
+ mappaAntica(p,bn,bp); // la mappa in alto a destra, come una vecchia mappa (js/leggende.js)
+ if(fx){ const al=Math.min(1,Math.min(fx.dur-fx.t,fx.t)*3)*0.85; ctx.fillStyle=`rgba(5,8,25,${al})`; ctx.fillRect(0,0,W,H); ctx.globalAlpha=al/0.85; scritta(fx.testo,W/2,H/2,'#ffe9a8','bold 22px system-ui'); ctx.globalAlpha=1; }
+}
+
+// ================== pannello ==================
+function pannello(){
+ const p=G.p, ob=obiettivo();
+ $('pnome').textContent=nome(p);
+ let r=`${cap(rangoTesto(p))} · ${lune(p)} lune · forza ${forza(p)}`;
+ if(p.rango==='apprendista'&&p.mentore!=null) r+=` · mentore ${nome(gatto(p.mentore))}`;
+ if(p.compagno!=null) r+=` · 💞 ${nome(gatto(p.compagno))}`;
+ if(p.preda) r+=` · in bocca ${PREDE[p.preda].nome}`; if(puoErbe()) r+=` · 🌿 ${p.erbe}`;
+ $('prango').innerHTML=r;
+ $('pbar').innerHTML=[['🍖',p.fame,'#e0a050'],['💧',p.sete,'#5ab0e8'],['⚡',p.energia,'#e8d85a'],['❤️',p.salute,'#e86a6a'],['✨',p.spirito??60,'#b48cff']].map(([n,v,c])=>`<div class="mb${v<30?' lampeggia':''}"><span>${n}</span><div class="bar"><div style="width:${clamp(v,0,100)}%;background:${c}"></div></div></div>`).join('');
+ $('pobj').innerHTML=`<b>${ob.t}</b>`; $('pobj').title=ob.come.replace(/<[^>]+>/g,'');
+ { const m=G.missione, d=m&&gatto(m.da); $('pmis').style.display=m?'block':'none'; if(m) $('pmis').innerHTML=`<b>📋 ${m.t}${m.n>1?` (${m.fatto}/${m.n})`:''}</b>`; if(m) $('pmis').title=MISSIONI[m.k].perche; }
+ $('preq').innerHTML=requisiti().map(x=>`<span class="${x.ok?'ok':'no'}">${x.ok?'✔':'○'} ${x.b} ${x.v}</span>`).join(' · ');
+ const tb=cl=>`${EMBLEMA[cl]} <span class="tb"><span style="width:${G.tens[cl]}%;background:${G.tens[cl]>70?'#e86a6a':'#c9a24a'}"></span></span>`;
+ $('pguerra').innerHTML=`⚔️ Tensione ${tb('nebbia')}${tb('pietre')}`;
+ const f=G.cats.filter(c=>c.clan==='felce');
+ $('pclan').innerHTML=`🐭 ${G.cibo} prede · 🐈 ${f.length} gatti · 🩹 ${f.filter(c=>c.ferito).length} feriti · 📜 ${sentiti().length} racconti${G.p.lezioni?` · 🎓 ${G.p.lezioni} lezioni`:''} · 🗺️ +${G.conq.nebbia+G.conq.pietre} strisce`;
+}
+// ================== salvataggio e avvio ==================
+function salva(){ salvaSlot(); }
+function carica(){ return caricaSlot(); }
+addEventListener('beforeunload',salva);
+function nuovaPartita(){
+ modale('🐾 Gattini guerrieri 3D','Nel bosco vivono tre clan di gatti guerrieri: il <b>Clan della Felce</b>, il tuo, a ovest del fiume; il <b>Clan della Nebbia</b>, a nord-est, tra le paludi; il <b>Clan delle Pietre</b>, a sud-est, tra le rocce.<br><br>Nella nursery del Clan della Felce sta per nascere un piccolo. Chi sei?',
+  [{t:'🐈 Un gatto',f:()=>passoNome('m')},{t:'🐈 Una gatta',f:()=>passoNome('f')}]);
+}
+function passoNome(s){
+ const op=shuffle(prefissiPer(s)).slice(0,6);
+ modale('Il tuo nome',`Scegli la prima parte del tuo nome: ti accompagnerà tutta la vita. Da ${s==='f'?'gattina ti chiamerai «Piccola':'gattino ti chiamerai «Piccolo'} …», da apprendista «Zampa di …», da grande riceverai un nome tutto tuo.`,op.map(n=>({t:n,f:()=>passoPelo(s,n)})));
+}
+function passoPelo(s,n){
+ modale('Il tuo pelo','Di che colore è il tuo pelo?',PELI.map(c=>({t:`<span style="display:inline-block;width:15px;height:15px;border-radius:50%;background:${c.c};vertical-align:middle;margin-right:8px;border:1px solid #000"></span>${c.n}`,f:()=>{creaMondo({sesso:s,prefisso:n,colore:c.c}); intro();}})));
+}
+function intro(){
+ const p=G.p, m=gatto(G.madre);
+ $('log').innerHTML='';
+ log(`🐾 Benvenut${o(p)} nel Clan della Felce, ${nome(p)}!`,'#ffe08a');
+ modale('🐾 '+nome(p),`Sei ${p.sesso==='f'?'una gattina':'un gattino'} di 2 lune del Clan della Felce. Tua madre, ${nome(m)}, ti guarda dalla nursery.<br><br>
+ <b>I gattini non possono uscire dal campo.</b> Intanto:<br>
+ • mangia dal mucchio delle prede, al centro del campo (Spazio);<br>
+ • bevi alla pozzanghera, in fondo al campo tra la nursery e la tana del guaritore (Spazio);<br>
+ • dormi nella nursery quando sei stanc${o(p)} (Spazio);<br>
+ • gioca con la palla di muschio (Spazio) e fai amicizia con gli altri gatti (Spazio vicino a loro);<br>
+ • ascolta i racconti dell’anziano del clan, seduto vicino alla tana dei guerrieri (Spazio vicino a lui o a lei).<br><br>
+ Quando avrai <b>6 lune</b>, resta al campo: l’anziano ti chiamerà per la cerimonia dell’apprendista.`,[{t:'Cominciamo!'}]);
+ salva();
+}
+function avvio(){ menuSalvataggi(true); }
+function avvioVecchio(){
+ const s=carica();
+ if(s&&s.p) modale('🐾 Gattini guerrieri 3D',`C’è una partita salvata: ${nome(s.p)}.`,[
+  {t:'▶ Continua',f:()=>{ G=s; cam.init=false; prede=[]; G.p.sentiti=G.p.sentiti||[]; G.visitatore=null; G.prossimoVisitatore=1e12; G.p.pasto=null; G.p.caccia=null; G.p.auto=null; if(G.prossimaNascita==null) G.prossimaNascita=G.t+MOON*2; G.tens=G.tens||{nebbia:30,pietre:25}; G.motivo=G.motivo||{}; for(const c of [G.p,...G.cats]){c.posa=null;c.elev=0;c.posto=null;} if(G.visitatore){G.visitatore.kneel=0;} G.p.note=G.p.note||{}; if(!G.cats.some(c=>c.rango==='anziano')) nuovoGatto('felce','anziano',{lune:58}); for(let i=0;i<26;i++) spawnPreda(); ultimoTerr=territorio(G.p.x,G.p.y); log(`Bentornat${o(G.p)}, ${nome(G.p)}!`,'#ffe08a'); }},
+  {t:'✨ Nuova partita',f:nuovaPartita}]);
+ else nuovaPartita();
+}
+$('nuova').onclick=()=>{ salva(); menuSalvataggi(false); };
+
+// ================== tastiera ==================
+addEventListener('keydown',e=>{
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+ if(modBtn){
+  const n=parseInt(e.key);
+  if(n>=1&&n<=modBtn.length){ const b=modBtn[n-1]; chiudiModale(); b.f&&b.f(); }
+  else if((e.code==='Enter'||e.code==='Space')&&modBtn.length===1){ const b=modBtn[0]; chiudiModale(); b.f&&b.f(); }
+  return;
+ }
+ keys[e.code]=true;
+ if(paused||fx||!G||e.repeat||scena) return;
+ if(e.code==='Space'||e.code==='KeyE'){ const a=azioneSpazio(); a.f(); }
+ if(e.code==='KeyR') mangiaPreda();
+ if(e.code==='KeyG'){ const h=erbaVicina(); if(h>=0) raccogli(h); else if(puoErbe()) log('Qui non ci sono erbe: cerca i fiorellini nel bosco.'); }
+});
+addEventListener('keyup',e=>{keys[e.code]=false;});
+addEventListener('blur',()=>{for(const k in keys) keys[k]=false;});
+
+let last=performance.now();
+function loop(now){
+ const dt=Math.min(0.05,(now-last)/1000); last=now;
+ mediaDt+=(dt-mediaDt)*0.05; // se il gioco va lento, abbassa la risoluzione
+ if(mediaDt>0.024&&DPR>1&&!document.hidden){ tLento+=dt; if(tLento>2){ DPR=Math.max(1,DPR-0.5); ridimensiona(); VIGN=null; MINI=null; tLento=0; mediaDt=0.016; } } else tLento=0;
+ try{ // un errore non deve fermare il gioco
+ if(G&&!paused){ if(fx){ fx.t-=dt; if(fx.t<=0){ const f=fx.fine; fx=null; f&&f(); } } else aggiorna(dt); }
+ if(G){ aggiornaFloats(dt); aggiornaFumetti(dt); if(!paused&&!fx) aggiornaParticelle(dt); aggiornaCamera(dt); if(window.R3D) R3D.frame(dt); disegna(); tPan+=dt; if(tPan>0.25){tPan=0;pannello();} }
+ else { ctx.setTransform(DPR,0,0,DPR,0,0); ctx.fillStyle='#1d2a1f'; ctx.fillRect(0,0,W,H); scritta('🐾 Gattini guerrieri 3D',W/2,H/2,'#ffe9a8','bold 34px system-ui'); }
+ }catch(e){ console.error(e); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=1; }
+ requestAnimationFrame(loop);
+}
+ridimensiona(); preparaSuolo();
+addEventListener('r3d-pronto',()=>ridimensiona());
+avvio();
+requestAnimationFrame(loop);
+</script>
+<script src="js/erbe.js?v=20261113141038"></script>
+<script type="module" src="js/mondo3d.js?v=20261113141038"></script>
+</body>
+</html>

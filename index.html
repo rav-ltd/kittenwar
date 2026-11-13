@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gattini guerrieri 3D — by RAV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
+<style>
+ /* Schermata titolo (rifatta il 12 novembre 2026: «perché sia davvero bella e professionale»): una radura al tramonto, titolo d'oro inciso,
+    entrata in scena a tempi, un solo pulsante. Tutto si adatta agli schermi stretti e rispetta «riduci movimento». */
+ :root{--oro1:#fff4d0;--oro2:#f3c765;--oro3:#b97a1a;--inchiostro:#2a1907}
+ html,body{margin:0;height:100%;overflow:hidden;background:#0a1210;font-family:'Cormorant Garamond',Georgia,serif;color:#fff3d6}
+ #sfondo{position:fixed;inset:0;background:linear-gradient(180deg,#0b1626 0%,#1d3550 20%,#6a5a66 36%,#e2a063 47%,#f3c98a 52%,#5d6a45 60%,#182619 100%)}
+ #gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+ #raggi{position:fixed;inset:-20%;pointer-events:none;mix-blend-mode:screen;opacity:.33;
+  background:repeating-linear-gradient(108deg,rgba(255,214,150,0) 0 5%,rgba(255,214,150,.55) 7%,rgba(255,214,150,0) 10% 17%);
+  -webkit-mask-image:radial-gradient(ellipse 60% 55% at 28% 30%,#000 0%,transparent 70%);mask-image:radial-gradient(ellipse 60% 55% at 28% 30%,#000 0%,transparent 70%);animation:raggi 16s ease-in-out infinite alternate}
+ @keyframes raggi{from{transform:translateX(-1.5%) rotate(-1deg)}to{transform:translateX(1.5%) rotate(1deg)}}
+ #velatura{position:fixed;inset:0;pointer-events:none;background:
+  radial-gradient(ellipse 120% 95% at 50% 55%,rgba(0,0,0,0) 45%,rgba(3,6,5,.72) 100%),
+  linear-gradient(180deg,rgba(6,10,14,.82) 0%,rgba(6,10,14,.35) 24%,rgba(6,10,14,0) 44%,rgba(6,10,14,0) 66%,rgba(5,8,6,.78) 100%)}
+ #nero{position:fixed;inset:0;background:#060a08;pointer-events:none;z-index:9;transition:opacity 1.6s ease .15s}
+ .pronto #nero{opacity:0}
+ #titolo{position:fixed;left:0;right:0;top:clamp(26px,7vh,84px);text-align:center;perspective:1100px;pointer-events:none;padding:0 4vw}
+ #scena-t{display:inline-block;transform-style:preserve-3d;transition:transform .35s ease-out}
+ h1{margin:0;font-family:'Cinzel',Georgia,serif;font-weight:900;font-size:clamp(32px,5.9vw,92px);letter-spacing:.035em;line-height:1.02;transform-style:preserve-3d;text-wrap:balance}
+ .parola{display:inline-block;white-space:nowrap;transform-style:preserve-3d}
+ .l{position:relative;display:inline-block;transform-style:preserve-3d;transform-origin:50% 60%;animation:onda 6s ease-in-out infinite;animation-delay:calc(var(--i)*-.22s);
+  transition:transform .5s cubic-bezier(.2,.9,.25,1.25),opacity .45s}
+ .l::before{content:attr(data-l);position:absolute;left:0;top:0;z-index:-1;color:#3d2106;
+  text-shadow:0 1px 0 #7d4a14,0 2px 0 #6a3d10,0 3px 0 #58320c,0 4px 0 #472809,0 10px 18px rgba(0,0,0,.75),0 0 46px rgba(255,170,70,.28)}
+ .l span{background:linear-gradient(105deg,var(--oro1) 0%,var(--oro2) 30%,var(--oro3) 44%,#fffbe8 50%,var(--oro3) 56%,var(--oro2) 70%,var(--oro1) 100%);background-size:320% 100%;background-position:100% 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:luce 9s ease-in-out infinite;animation-delay:calc(var(--i)*.07s)}
+ .spazio{display:inline-block;width:.32em}
+ /* il titolo «da gatto»: tre artigliate lo scoprono; ogni lettera, se la tocchi, salta come un gomitolo; ogni tanto un gatto invisibile ci cammina sotto */
+ .l{pointer-events:auto;cursor:default}
+ .l.colpo{animation:colpo .75s cubic-bezier(.3,1.5,.5,1)!important}
+ @keyframes colpo{0%{transform:translateY(0) rotate(0)}28%{transform:translateY(-.3em) rotate(var(--r,14deg)) scale(1.12)}58%{transform:translateY(.05em) rotate(calc(var(--r,14deg)*-.45))}80%{transform:translateY(-.03em) rotate(calc(var(--r,14deg)*.15))}100%{transform:none}}
+ #graffi{position:absolute;inset:-12% -6%;pointer-events:none;z-index:2}
+ #graffi i{position:absolute;left:0;width:100%;height:.09em;font-size:clamp(32px,5.9vw,92px);border-radius:999px;transform-origin:0 50%;transform:rotate(-7deg) scaleX(0);opacity:0;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff 12%,#ffe9a8 45%,#ffb84a 80%,rgba(255,184,74,0));filter:drop-shadow(0 0 10px #ffb84a) drop-shadow(0 0 22px rgba(255,150,40,.7))}
+ #graffi i:nth-child(1){top:24%} #graffi i:nth-child(2){top:50%} #graffi i:nth-child(3){top:76%}
+ .pronto #graffi i{animation:graffio .95s cubic-bezier(.7,0,.2,1) forwards} .pronto #graffi i:nth-child(2){animation-delay:.09s} .pronto #graffi i:nth-child(3){animation-delay:.18s}
+ @keyframes graffio{0%{transform:rotate(-7deg) scaleX(0);opacity:1}55%{transform:rotate(-7deg) scaleX(1);opacity:1}100%{transform:rotate(-7deg) scaleX(1) translateX(6%);opacity:0}}
+ #orme{position:absolute;left:0;right:0;top:100%;height:0;pointer-events:none}
+ #orme svg{position:absolute;width:clamp(13px,1.5vw,22px);height:clamp(13px,1.5vw,22px);fill:#f3c765;opacity:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8));animation:orma 3.2s ease-out forwards}
+ @keyframes orma{0%{opacity:0;transform:scale(.4) rotate(var(--a))}12%{opacity:.85;transform:scale(1.1) rotate(var(--a))}22%{transform:scale(1) rotate(var(--a))}75%{opacity:.6}100%{opacity:0;transform:scale(1) rotate(var(--a))}}
+ .fuori{transform:rotateX(90deg) translateY(-.2em)!important;opacity:0}
+ .entra{transform:rotateX(-90deg) translateY(.25em)!important;opacity:0}
+ @keyframes onda{0%,100%{transform:translateY(0)}50%{transform:translateY(-.028em)}}
+ @keyframes luce{0%,62%{background-position:100% 0}88%,100%{background-position:0% 0}}
+ #tre{display:inline-block;margin-left:.3em;font-family:'Cinzel',serif;font-weight:700;font-size:.4em;letter-spacing:.12em;vertical-align:.95em;padding:.2em .5em .14em;border-radius:.3em;
+  color:var(--oro1);background:rgba(24,15,5,.55);border:1px solid rgba(243,199,101,.75);box-shadow:0 0 18px rgba(255,180,80,.35),inset 0 0 12px rgba(255,200,110,.18);text-shadow:0 1px 6px rgba(0,0,0,.8);
+  transition:opacity .6s .9s,transform .6s .9s}
+ body:not(.pronto) #tre{opacity:0;transform:scale(.7)}
+ .filetto{display:flex;align-items:center;justify-content:center;gap:14px;margin:clamp(8px,1.6vh,18px) auto 0;width:min(520px,70vw);opacity:.95;transition:opacity .9s 1.1s,transform .9s 1.1s}
+ .filetto i{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(243,199,101,.85))} .filetto i:last-child{background:linear-gradient(270deg,transparent,rgba(243,199,101,.85))}
+ .filetto svg{width:22px;height:22px;fill:var(--oro2);filter:drop-shadow(0 1px 4px rgba(0,0,0,.7))}
+ .sub{margin-top:clamp(6px,1.2vh,14px);font-style:italic;font-weight:500;font-size:clamp(17px,2.2vw,28px);color:#f4ead2;text-shadow:0 2px 12px rgba(0,0,0,.9);letter-spacing:.01em;transition:opacity .9s 1.25s,transform .9s 1.25s}
+ .by{margin-top:clamp(8px,1.6vh,16px);font-family:'Cinzel',serif;font-weight:700;font-size:clamp(11px,1.15vw,15px);letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;color:#e9cf93;text-shadow:0 2px 10px #000;opacity:.9;transition:opacity .9s 1.4s}
+ body:not(.pronto) .filetto,body:not(.pronto) .sub{opacity:0;transform:translateY(10px)} body:not(.pronto) .by{opacity:0}
+ .flip{display:inline-block;transition:transform .35s cubic-bezier(.5,-0.4,.5,1.4),opacity .35s;transform-style:preserve-3d}
+ #lingue{position:fixed;top:16px;right:18px;display:flex;gap:2px;background:rgba(8,14,12,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(243,199,101,.35);border-radius:999px;padding:4px;z-index:3;transition:opacity .8s 1.6s}
+ body:not(.pronto) #lingue{opacity:0}
+ #lingue button{border:0;background:transparent;color:#ecd9a9;font:600 13px system-ui,sans-serif;letter-spacing:.02em;padding:7px 14px;border-radius:999px;cursor:pointer;transition:background .25s,color .25s}
+ #lingue button:hover{color:#fff} #lingue button.si{background:linear-gradient(#ffeab0,#eab44c);color:var(--inchiostro)}
+ #azione{position:fixed;left:0;right:0;bottom:clamp(54px,9vh,96px);display:flex;flex-direction:column;align-items:center;gap:12px;z-index:3;transition:opacity .9s 1.7s,transform .9s 1.7s}
+ body:not(.pronto) #azione{opacity:0;transform:translateY(16px)}
+ #gioca{position:relative;border:0;cursor:pointer;padding:17px 58px 16px;border-radius:999px;overflow:hidden;
+  font:900 clamp(20px,2.1vw,27px) 'Cinzel',serif;letter-spacing:.14em;text-indent:.14em;color:var(--inchiostro);background:linear-gradient(180deg,#fff0c0 0%,#f5c860 48%,#d9952b 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -3px 0 rgba(120,70,10,.35),0 5px 0 #7c4f16,0 16px 36px rgba(0,0,0,.6),0 0 0 0 rgba(255,205,110,.5);
+  transition:transform .18s,filter .18s;animation:respiro 3.2s ease-in-out infinite}
+ #gioca::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent);transform:skewX(-20deg);animation:lampo 5.5s ease-in-out infinite}
+ #gioca:hover{transform:translateY(-2px);filter:brightness(1.06)} #gioca:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 2px 0 #7c4f16,0 8px 18px rgba(0,0,0,.6)}
+ #gioca:focus-visible,#lingue button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+ @keyframes respiro{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -3px 0 rgba(120,70,10,.35),0 5px 0 #7c4f16,0 16px 36px rgba(0,0,0,.6),0 0 0 0 rgba(255,205,110,.5)}55%{box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -3px 0 rgba(120,70,10,.35),0 5px 0 #7c4f16,0 16px 36px rgba(0,0,0,.6),0 0 0 16px rgba(255,205,110,0)}}
+ @keyframes lampo{0%,70%{left:-60%}100%{left:130%}}
+ #tasto{font:500 13px system-ui,sans-serif;color:#d9d0b4;opacity:.75;letter-spacing:.04em;text-shadow:0 1px 6px #000}
+ #tasto kbd{font:600 12px system-ui,sans-serif;padding:2px 7px;border-radius:5px;border:1px solid rgba(255,235,190,.5);background:rgba(255,255,255,.08);margin:0 3px}
+ #crediti{position:fixed;left:0;right:0;bottom:12px;text-align:center;font:11.5px system-ui,sans-serif;color:#aab6a4;opacity:.7;padding:0 16px;z-index:2}
+ #crediti a{color:#e2cf9f;text-decoration:none;border-bottom:1px solid rgba(226,207,159,.4)}
+ @media (max-width:640px){ #lingue{top:10px;right:10px} #lingue button{padding:6px 10px;font-size:12px} #titolo{top:64px} #tre{vertical-align:.8em} #tasto{display:none} }
+ @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none!important;transition-duration:.01s!important} }
+</style>
+<script src="js/modello.js?v=202611121148"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="sfondo"></div>
+<canvas id="gl"></canvas>
+<div id="raggi"></div>
+<div id="velatura"></div>
+<div id="lingue"><button data-lang="it" class="si">Italiano</button><button data-lang="en">English</button><button data-lang="fr">Français</button></div>
+<div id="titolo"><div id="scena-t">
+ <div style="position:relative;display:inline-block"><h1 id="h1"></h1><div id="graffi"><i></i><i></i><i></i></div><div id="orme"></div></div>
+ <div class="filetto"><i></i><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15.5" rx="5.2" ry="4.3"/><ellipse cx="4.6" cy="10.6" rx="2.1" ry="2.8" transform="rotate(-18 4.6 10.6)"/><ellipse cx="9.2" cy="6.2" rx="2.1" ry="2.9" transform="rotate(-6 9.2 6.2)"/><ellipse cx="14.8" cy="6.2" rx="2.1" ry="2.9" transform="rotate(6 14.8 6.2)"/><ellipse cx="19.4" cy="10.6" rx="2.1" ry="2.8" transform="rotate(18 19.4 10.6)"/></svg><i></i></div>
+ <div class="sub"><span class="flip" data-t="sub">Tre clan, un bosco, mille leggende</span></div>
+ <div class="by"><span class="flip" data-t="by">di RAV · da un’idea di Dalia</span></div>
+</div></div>
+<div id="azione"><button id="gioca"><span class="flip" data-t="gioca">Gioca</span></button><div id="tasto"><span class="flip" data-t="tasto"></span></div></div>
+<div id="nero"></div>
+<div id="crediti"><span class="flip" data-t="cred">Modello del gatto: «Toon Cat FREE» di Omabuarts Studio, licenza</span> <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 3D: three.js</div>
+<script>
+// il titolo: lettere d'oro in 3D che ondeggiano; cambiando lingua si ribaltano una a una (richiesta del 12 novembre 2026)
+const TESTI={it:{h1:'Gattini guerrieri',by:'di RAV · da un’idea di Dalia',sub:'Tre clan, un bosco, mille leggende',gioca:'Gioca',tasto:'premi <kbd>Invio</kbd> per cominciare',cred:'Modello del gatto: «Toon Cat FREE» di Omabuarts Studio, licenza',pag:'gioco.html',lang:'it'},
+ fr:{h1:'Chatons guerriers',by:'de RAV · d’après une idée de Dalia',sub:'Trois clans, une forêt, mille légendes',gioca:'Jouer',tasto:'appuie sur <kbd>Entrée</kbd> pour commencer',cred:'Modèle du chat : « Toon Cat FREE » d’Omabuarts Studio, licence',pag:'jeu.html',lang:'fr'},
+ en:{h1:'Warrior Kittens',by:'by RAV · from an idea by Dalia',sub:'Three clans, one forest, a thousand legends',gioca:'Play',tasto:'press <kbd>Enter</kbd> to begin',cred:'Cat model: «Toon Cat FREE» by Omabuarts Studio, licence',pag:'game.html',lang:'en'}};
+let lingua=({'#fr':'fr','#en':'en'})[location.hash]||'it'; // la home si apre in italiano; #fr e #en la aprono in francese o in inglese
+const h1=document.getElementById('h1');
+function lettere(t,cl){ let i=0; const parole=t.split(' ').map(w=>'<span class="parola">'+[...w].map(c=>`<span class="l ${cl||''}" style="--i:${i++}" data-l="${c}"><span>${c}</span></span>`).join('')+'</span>'); // le parole vanno a capo intere sugli schermi stretti
+ return parole.slice(0,-1).map(p=>p+'<span class="spazio"></span>').join('')+'<span class="parola">'+parole[parole.length-1].replace(/^<span class="parola">|<\/span>$/g,'')+'<span id="tre">3D</span></span>'; }
+function scrivi(L,anima){
+ const T=TESTI[L]; document.documentElement.lang=T.lang;
+ document.querySelectorAll('#lingue button').forEach(b=>b.classList.toggle('si',b.dataset.lang===L));
+ if(!anima){ h1.innerHTML=lettere(T.h1); document.querySelectorAll('.flip').forEach(e=>e.innerHTML=T[e.dataset.t]); return; }
+ const vecchie=[...h1.querySelectorAll('.l')];
+ vecchie.forEach((e,i)=>setTimeout(()=>{ e.style.animation='none'; e.classList.add('fuori'); },i*45));
+ document.querySelectorAll('.flip').forEach((e,i)=>setTimeout(()=>{ e.style.transform='rotateX(90deg)'; e.style.opacity=0; setTimeout(()=>{ e.innerHTML=T[e.dataset.t]; e.style.transform='rotateX(-90deg)'; requestAnimationFrame(()=>requestAnimationFrame(()=>{ e.style.transform=''; e.style.opacity=1; })); },350); },120+i*90));
+ setTimeout(()=>{ h1.innerHTML=lettere(T.h1,'entra'); [...h1.querySelectorAll('.l')].forEach((e,i)=>setTimeout(()=>e.classList.remove('entra'),40+i*45)); },vecchie.length*45+320);
+}
+scrivi(lingua,false);
+// entrata in scena: le lettere salgono una a una, poi filetto, sottotitolo, pulsante (le regole sono nel CSS, sotto body.pronto)
+[...h1.querySelectorAll('.l')].forEach(e=>e.classList.add('entra'));
+const inScena=()=>{ if(document.body.classList.contains('pronto')) return; document.body.classList.add('pronto'); [...h1.querySelectorAll('.l')].forEach((e,i,A)=>setTimeout(()=>{ e.classList.remove('entra'); colpisci(e,0.5); },160+i/A.length*520)); setTimeout(orme,2600); setInterval(orme,15000); };
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>setTimeout(inScena,120)); setTimeout(inScena,1800);
+addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&!(e.target&&e.target.closest&&e.target.closest('#lingue'))){ e.preventDefault(); document.getElementById('gioca').click(); } });
+document.querySelectorAll('#lingue button').forEach(b=>b.onclick=()=>{ if(b.dataset.lang===lingua) return; lingua=b.dataset.lang; scrivi(lingua,true); try{ history.replaceState(null,'',lingua==='it'?location.pathname:'#'+lingua); }catch(e){} });
+document.getElementById('gioca').onclick=()=>{ location.href=TESTI[lingua].pag; };
+// le lettere si colpiscono come un gomitolo: al passaggio del mouse (o al tocco) saltano e ruotano, e trascinano un po' le vicine
+function colpisci(e,forza=1){ if(!e||e.classList.contains('colpo')||e.classList.contains('entra')||e.classList.contains('fuori')) return; e.style.setProperty('--r',((Math.random()<0.5?-1:1)*(8+Math.random()*14)*forza)+'deg'); e.classList.add('colpo'); setTimeout(()=>e.classList.remove('colpo'),760); }
+h1.addEventListener('pointerover',e=>{ const l=e.target.closest&&e.target.closest('.l'); if(!l) return; colpisci(l); const A=[...h1.querySelectorAll('.l')], i=A.indexOf(l); setTimeout(()=>{ colpisci(A[i-1],0.45); colpisci(A[i+1],0.45); },70); });
+// un gatto invisibile cammina sotto il titolo e lascia le orme
+const ORMA='<svg viewBox="0 0 24 24"><ellipse cx="12" cy="15.5" rx="5.2" ry="4.3"/><ellipse cx="4.6" cy="10.6" rx="2.1" ry="2.8" transform="rotate(-18 4.6 10.6)"/><ellipse cx="9.2" cy="6.2" rx="2.1" ry="2.9" transform="rotate(-6 9.2 6.2)"/><ellipse cx="14.8" cy="6.2" rx="2.1" ry="2.9" transform="rotate(6 14.8 6.2)"/><ellipse cx="19.4" cy="10.6" rx="2.1" ry="2.8" transform="rotate(18 19.4 10.6)"/></svg>';
+function orme(){ const box=document.getElementById('orme'); if(!box||document.hidden||matchMedia('(prefers-reduced-motion: reduce)').matches) return; const verso=Math.random()<0.5?1:-1, n=12;
+ for(let k=0;k<n;k++) setTimeout(()=>{ const d=document.createElement('div'); d.innerHTML=ORMA; const s=d.firstChild, x=verso>0?4+k*(92/n):96-k*(92/n); s.style.left=x+'%'; s.style.top=((k%2)?10:-4)+'px'; s.style.setProperty('--a',(verso>0?90:-90)+'deg'); box.appendChild(s); setTimeout(()=>s.remove(),3300);
+  const A=[...h1.querySelectorAll('.l')]; if(k%3===1) colpisci(A[Math.floor(x/100*A.length)],0.35); },k*230); }
+// il titolo si inclina seguendo il mouse
+const st=document.getElementById('scena-t');
+addEventListener('pointermove',e=>{ const x=e.clientX/innerWidth-0.5, y=e.clientY/innerHeight-0.5; st.style.transform=`rotateY(${x*10}deg) rotateX(${-y*7}deg)`; });
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+// la radura del titolo: gattini che si allenano alla guerra, il capo che chiama dalla roccia, una sentinella, un cacciatore
+try{
+ const cv=document.getElementById('gl');
+ const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+ renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.25; renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(34,1,0.05,60);
+ scene.fog=new THREE.Fog('#59553c',3.6,12.5); // foschia calda: gli alberi lontani si perdono nella luce della sera
+ scene.add(new THREE.HemisphereLight('#ffe2bd','#26402c',1.25));
+ const sole=new THREE.DirectionalLight('#ffb463',3.6); sole.position.set(-3.4,2.3,-2.2); sole.castShadow=true; sole.shadow.mapSize.set(2048,2048); sole.shadow.bias=-0.0006; // sole basso, di tre quarti da dietro: contorni dorati e ombre lunghe
+ const riempi=new THREE.DirectionalLight('#8fb4ff',0.55); riempi.position.set(2.5,2,3.5); scene.add(riempi); // un filo di luce fredda davanti, perché i musi non restino neri
+ Object.assign(sole.shadow.camera,{left:-3,right:3,top:3,bottom:-3}); scene.add(sole);
+ const R=(()=>{ let x=7; return ()=>((x=(x*16807)%2147483647)/2147483647); })();
+ const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:1});
+ const prato=new THREE.Mesh(new THREE.CircleGeometry(7,64),mat('#4d7638')); prato.rotation.x=-Math.PI/2; prato.receiveShadow=true; scene.add(prato);
+ const terra=new THREE.Mesh(new THREE.CircleGeometry(1.25,48),mat('#a88a5c')); terra.rotation.x=-Math.PI/2; terra.position.y=0.003; terra.receiveShadow=true; scene.add(terra);
+ const erba=new THREE.InstancedMesh(new THREE.ConeGeometry(0.009,0.07,3),mat('#ffffff'),2200), o=new THREE.Object3D(), col=new THREE.Color();
+ for(let i=0;i<2200;i++){ const a=R()*6.283, r=1.2+R()*4; o.position.set(Math.cos(a)*r,0.03,Math.sin(a)*r); o.scale.setScalar(0.7+R()*0.9); o.rotation.set(R()*0.3,R()*3,R()*0.3); o.updateMatrix(); erba.setMatrixAt(i,o.matrix); erba.setColorAt(i,col.setHSL(0.26+R()*0.06,0.5,0.25+R()*0.12)); }
+ scene.add(erba);
+ // alberi tutt'intorno e la roccia del capo
+ for(let i=0;i<16;i++){ const a=i/16*6.283+R()*0.3, r=3.2+R()*2; const g=new THREE.Group(); g.position.set(Math.cos(a)*r,0,Math.sin(a)*r);
+  const tr=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.11,1.2,7),mat('#5a4129')); tr.position.y=0.6; tr.castShadow=true; g.add(tr);
+  if(i%2){ for(let k=0;k<3;k++){ const c=new THREE.Mesh(new THREE.ConeGeometry(0.55-k*0.13,0.7,8),mat(new THREE.Color().setHSL(0.36,0.4,0.18+R()*0.05))); c.position.y=1.1+k*0.38; c.castShadow=true; g.add(c); } }
+  else for(let k=0;k<4;k++){ const c=new THREE.Mesh(new THREE.IcosahedronGeometry(0.4+R()*0.2,1),mat(new THREE.Color().setHSL(0.27+R()*0.05,0.45,0.25+R()*0.08))); c.position.set((R()-0.5)*0.5,1.4+R()*0.4,(R()-0.5)*0.5); c.castShadow=true; g.add(c); }
+  scene.add(g); }
+ const roccia=new THREE.Mesh(new THREE.DodecahedronGeometry(0.42,1),new THREE.MeshStandardMaterial({color:'#9d978a',roughness:1,flatShading:true}));
+ roccia.position.set(-0.75,0.22,-0.85); roccia.scale.set(1.2,0.75,1); roccia.castShadow=roccia.receiveShadow=true; scene.add(roccia);
+ for(const [x,z,s] of [[1.2,-0.6,0.18],[-1.3,0.5,0.12],[0.9,0.9,0.1]]){ const m=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),roccia.material); m.position.set(x,s*0.5,z); m.castShadow=true; scene.add(m); }
+ const topo=new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8),mat('#8a7a6a')); topo.scale.set(1,0.8,1.5); scene.add(topo);
+ // --- i segni della storia: antropologia ed esoterismo, in 3D (richiesta del 12 novembre 2026) ---
+ const lum=(c,e,i=1)=>new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:i,roughness:0.6});
+ const pietra=new THREE.MeshStandardMaterial({color:'#8f897b',roughness:1,flatShading:true});
+ const simboli={fiamme:[]};
+ // 1. il cerchio di pietre, con un trilite: i riti hanno bisogno di un luogo
+ for(let i=0;i<9;i++){ const a=Math.PI*(1.06+0.88*i/8), r=2.55+R()*0.15, h=0.55+R()*0.35, m=new THREE.Mesh(new THREE.BoxGeometry(0.2+R()*0.08,h,0.13),pietra); m.position.set(Math.cos(a)*r,h/2,Math.sin(a)*r); m.rotation.y=-a+Math.PI/2+(R()-0.5)*0.3; m.rotation.z=(R()-0.5)*0.12; m.castShadow=m.receiveShadow=true; scene.add(m);
+  if(i===4){ const m2=m.clone(); m2.position.x+=0.42; m2.rotation.z=0; m.rotation.z=0; m2.scale.y=m.scale.y=1; m2.position.y=m.position.y=0.4; m.geometry=m2.geometry=new THREE.BoxGeometry(0.2,0.8,0.14); scene.add(m2);
+   const arch=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.14,0.18),pietra); arch.position.set(m.position.x+0.21,0.87,m.position.z); arch.rotation.y=m.rotation.y; arch.castShadow=true; scene.add(arch); } }
+ // 2. il totem del clan: tre musi di gatto uno sull'altro
+ { const g=new THREE.Group(); g.position.set(1.75,0,-1.25); const cols=['#b5542e','#d9a441','#3f6f5a'];
+  cols.forEach((c,i)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.14,0.34,10),mat(c)); b.position.y=0.17+i*0.34; b.castShadow=true; g.add(b);
+   for(const sx of [-1,1]){ const e=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.11,4),mat(c)); e.position.set(sx*0.09,0.37+i*0.34,0); g.add(e); const o=new THREE.Mesh(new THREE.SphereGeometry(0.022,8,6),lum('#fff6c0','#ffd060',0.8)); o.position.set(sx*0.05,0.2+i*0.34,0.125); g.add(o); }
+   const n=new THREE.Mesh(new THREE.ConeGeometry(0.02,0.03,3),mat('#2a1a10')); n.rotation.x=Math.PI; n.position.set(0,0.14+i*0.34,0.14); g.add(n); });
+  g.rotation.y=-0.5; scene.add(g); }
+ // 3. l'altare con le candele e le offerte (una conchiglia, un osso), e sopra l'uroboro che gira: il serpente che si morde la coda
+ { const g=new THREE.Group(); g.position.set(0.2,0,-1.45);
+  const lastra=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.1,0.34),pietra); lastra.position.y=0.2; lastra.castShadow=true; g.add(lastra);
+  for(const sx of [-0.22,0.22]){ const z=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.16,0.26),pietra); z.position.set(sx,0.08,0); g.add(z); }
+  for(const [x,h] of [[-0.2,0.13],[0,0.19],[0.2,0.1]]){ const c=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.026,h,8),mat('#f1e6c8')); c.position.set(x,0.25+h/2,-0.05); g.add(c);
+   const f=new THREE.Mesh(new THREE.ConeGeometry(0.02,0.07,6),new THREE.MeshBasicMaterial({color:'#ffd27a'})); f.position.set(x,0.25+h+0.04,-0.05); g.add(f); simboli.fiamme.push(f); }
+  const conch=new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8),mat('#f3d9c8')); conch.scale.set(1,0.5,0.8); conch.position.set(-0.08,0.27,0.09); g.add(conch);
+  const osso=new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,0.12,6),mat('#efe8d6')); osso.rotation.z=Math.PI/2; osso.rotation.y=0.5; osso.position.set(0.12,0.26,0.09); g.add(osso);
+  const luce=new THREE.PointLight('#ffb060',1.4,2.2,2); luce.position.set(0,0.5,0.05); g.add(luce); simboli.luce=luce;
+  const ouro=new THREE.Group(); const anello=new THREE.Mesh(new THREE.TorusGeometry(0.17,0.022,10,40,Math.PI*1.86),lum('#9fe3a0','#3fa860',1.1)); ouro.add(anello);
+  const testa=new THREE.Mesh(new THREE.SphereGeometry(0.036,10,8),lum('#c8f5b0','#57c070',1.2)); testa.scale.set(1.3,0.9,0.9); testa.position.set(0.17,0,0); ouro.add(testa);
+  ouro.position.y=0.78; g.add(ouro); simboli.ouro=ouro; scene.add(g); }
+ // 4. la gatta di Bubasti: una statua nera con il collare d'oro, su un plinto di arenaria
+ { const g=new THREE.Group(); g.position.set(1.0,0,-2.0); const nero=new THREE.MeshStandardMaterial({color:'#1b1b22',roughness:0.35,metalness:0.4}), oro=lum('#f2c14e','#7a5208',0.7);
+  const pl=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.22,0.34),mat('#c9ad7a')); pl.position.y=0.11; pl.castShadow=true; g.add(pl);
+  const corpo=new THREE.Mesh(new THREE.SphereGeometry(0.12,14,10),nero); corpo.scale.set(0.85,1.5,0.95); corpo.position.y=0.4; corpo.castShadow=true; g.add(corpo);
+  const capo=new THREE.Mesh(new THREE.SphereGeometry(0.075,12,10),nero); capo.position.set(0,0.63,0.03); g.add(capo);
+  for(const sx of [-1,1]){ const e=new THREE.Mesh(new THREE.ConeGeometry(0.03,0.09,4),nero); e.position.set(sx*0.045,0.72,0.03); g.add(e); const o=new THREE.Mesh(new THREE.SphereGeometry(0.012,6,6),lum('#ffe9a0','#ffd060',1.2)); o.position.set(sx*0.03,0.64,0.098); g.add(o); }
+  const col=new THREE.Mesh(new THREE.TorusGeometry(0.07,0.014,8,20),oro); col.rotation.x=Math.PI/2; col.position.y=0.55; g.add(col);
+  g.rotation.y=-0.35; scene.add(g); }
+ // 5. la tavola di smeraldo, appoggiata a un masso
+ { const c=document.createElement('canvas'); c.width=128; c.height=192; const g=c.getContext('2d'); g.fillStyle='#0e3a2a'; g.fillRect(0,0,128,192); g.strokeStyle='#8ff0c0'; g.fillStyle='#8ff0c0'; g.lineWidth=3;
+  g.beginPath(); g.moveTo(64,20); g.lineTo(92,66); g.lineTo(36,66); g.closePath(); g.stroke(); g.beginPath(); g.moveTo(64,124); g.lineTo(92,78); g.lineTo(36,78); g.closePath(); g.stroke(); // il triangolo in alto e quello in basso
+  g.beginPath(); g.arc(64,150,13,0,6.283); g.stroke(); g.beginPath(); g.arc(64,150,3,0,6.283); g.fill(); // il sole
+  g.beginPath(); g.arc(26,150,10,0.9,5.4); g.stroke(); g.lineWidth=2; for(let y=0;y<3;y++){ g.beginPath(); g.moveTo(92,140+y*9); g.lineTo(112,140+y*9); g.stroke(); } // la luna e tre righe di scrittura
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
+  const tav=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.45,0.03),new THREE.MeshStandardMaterial({map:t,emissiveMap:t,emissive:'#ffffff',emissiveIntensity:0.9,roughness:0.4})); tav.position.set(-1.85,0.26,-0.15); tav.rotation.set(-0.28,1.05,0); tav.castShadow=true; scene.add(tav); simboli.tavola=tav;
+  const masso=new THREE.Mesh(new THREE.DodecahedronGeometry(0.2,0),pietra); masso.position.set(-2.0,0.1,-0.28); scene.add(masso); }
+ // 6. il bastone di Asclepio: un ramo con un serpente attorcigliato, piantato vicino alle erbe
+ { const g=new THREE.Group(); g.position.set(-1.45,0,0.85); const asta=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.024,0.95,7),mat('#6b4a2a')); asta.position.y=0.475; asta.castShadow=true; g.add(asta);
+  const pts=[]; for(let i=0;i<=40;i++){ const u=i/40, a=u*Math.PI*5; pts.push(new THREE.Vector3(Math.cos(a)*0.045,0.12+u*0.72,Math.sin(a)*0.045)); }
+  const serp=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),60,0.014,6,false),lum('#7fc27a','#2f6a3a',0.5)); serp.castShadow=true; g.add(serp);
+  const ts=new THREE.Mesh(new THREE.SphereGeometry(0.024,8,6),lum('#9fe08a','#2f6a3a',0.5)); ts.position.copy(pts[40]); ts.scale.set(1.4,0.8,1); g.add(ts);
+  for(let i=0;i<5;i++){ const fi=new THREE.Mesh(new THREE.SphereGeometry(0.022,6,5),lum(['#c58cff','#ffe08a','#ffffff'][i%3],'#553a80',0.3)); fi.position.set((R()-0.5)*0.45,0.05,(R()-0.5)*0.45); g.add(fi); }
+  g.rotation.z=0.06; scene.add(g); }
+ window.simboli=simboli;
+ // i gattini
+ const fine=gltf=>{
+  const modello=gltf.scene, passo=gltf.animations[0]; modello.updateMatrixWorld(true);
+  const SC=0.42/Math.max(...new THREE.Box3().setFromObject(modello,true).getSize(new THREE.Vector3()).toArray());
+  let mat0=null; modello.traverse(x=>{ if(x.isMesh) mat0=x.material; });
+  const mantello=colore=>{ const img=mat0.map.image, c=document.createElement('canvas'); c.width=img.width; c.height=img.height; const g=c.getContext('2d'); g.drawImage(img,0,0);
+   if(colore){ const d=g.getImageData(0,0,c.width,c.height), k=new THREE.Color(colore), th={}, src=new THREE.Color(), hs={}; k.getHSL(th);
+    for(let i=0;i<d.data.length;i+=4){ src.setRGB(d.data[i]/255,d.data[i+1]/255,d.data[i+2]/255); src.getHSL(hs); if(hs.s<0.35||hs.h<0.015||hs.h>0.16) continue;
+     src.setHSL(th.h,th.s*Math.min(1,hs.s/0.7),Math.min(0.95,Math.max(0.06,th.l*hs.l/0.5))); d.data[i]=src.r*255; d.data[i+1]=src.g*255; d.data[i+2]=src.b*255; } g.putImageData(d,0,0); }
+   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.flipY=false; const m=mat0.clone(); m.map=t; return m; };
+  const gatti=[];
+  const nuovo=(colore,scala,x,z,dir,anello)=>{ const g=SkeletonUtils.clone(modello), m=mantello(colore); g.traverse(x=>{ if(x.isMesh){ x.material=m; x.castShadow=true; x.frustumCulled=false; } });
+   const box=new THREE.Group(); box.add(g); g.scale.setScalar(SC*scala); box.position.set(x,0,z); box.rotation.y=dir; scene.add(box);
+   if(anello){ const r=new THREE.Mesh(new THREE.RingGeometry(0.2,0.225,40),new THREE.MeshBasicMaterial({color:anello,transparent:true,opacity:0.8,depthWrite:false})); r.rotation.x=-Math.PI/2; r.position.y=0.01; box.add(r); }
+   const ossa={}; g.traverse(b=>{ if(b.isBone){ ossa[b.name.replace(/_\d+$/,'')]=b; b.userData.riposo=b.quaternion.clone(); } });
+   const mixer=new THREE.AnimationMixer(g), az=mixer.clipAction(passo); az.play();
+   const gt={box,g,ossa,mixer,az,x,z,dir}; gatti.push(gt); return gt; };
+  // due gattini che lottano per gioco, uno del Clan della Felce e uno
+  const A=nuovo(null,1,-0.2,0.15,Math.PI/2,'#b4f59a'), B=nuovo('#3a3a40',1,0.2,0.15,-Math.PI/2,'#a6d0ff');
+  const capo=nuovo('#d8d4cc',1.15,-0.75,-0.85,0.5,null); capo.box.position.y=0.42;   // il capo sulla roccia
+  const sentinella=nuovo('#7a5232',1.05,0,0,0,'#b4f59a');                          // fa la ronda intorno alla radura
+  const cacciatore=nuovo('#c9c2b4',0.95,0.95,0.35,0,null);                          // l'agguato al topo
+  const eu=new THREE.Euler(), qq=new THREE.Quaternion();
+  const posa=(gt,o)=>{ for(const b of Object.values(gt.ossa)) b.quaternion.copy(b.userData.riposo); };
+  const ruota=(gt,o)=>{ for(const [n,v] of Object.entries(o)){ const b=gt.ossa[n]; if(!b) continue; eu.set(v[0],v[1],v[2]); qq.setFromEuler(eu); b.quaternion.multiply(qq); } };
+  let t=0;
+  window.aggiornaGattini=dt=>{ t+=dt;
+   for(const gt of gatti){ posa(gt); gt.az.setEffectiveWeight(gt===sentinella?1:0); gt.mixer.update(dt); }
+   // la lotta: a turno uno si impenna e dà zampate, l'altro si acquatta col dorso inarcato
+   const fase=Math.floor(t/1.6)%2, k=Math.sin((t%1.6)/1.6*Math.PI), sw=Math.sin(t*14);
+   const [att,dif]=fase?[A,B]:[B,A];
+   ruota(att,{root:[-0.75*k,0,0],legupperFL:[-1.3*k+0.5*sw*k,0,0],legupperFR:[-1.3*k-0.5*sw*k,0,0],tail:[0.9,Math.sin(t*6)*0.3,0],neck:[0.2,0,0]});
+   ruota(dif,{root:[0.15*k,0,0],spine01:[0.35*k,0,0],spine02:[0.25*k,0,0],tail:[1.1*k,0,0],neck:[0.3*k,0,0],head:[0.2,0,0]});
+   att.box.position.x=att.x+(att===A?1:-1)*0.05*k; dif.box.position.x=dif.x+(dif===A?-1:1)*0.04*k; dif.box.position.y=0.0;
+   // il capo chiama il clan, testa alta
+   const ch=Math.max(0,Math.sin(t*0.9)); ruota(capo,{root:[-0.35,0,0],neck:[-0.55*ch,0,0],head:[-0.25*ch,-0.25*ch,0],tail:[0.6,Math.sin(t*1.5)*0.3,0]});
+   // la sentinella gira intorno alla radura
+   const osc=Math.sin(t*0.22), a=Math.PI*1.5-(giro-0.5)+osc*1.15, verso=Math.cos(t*0.22)>=0; // fa la ronda avanti e indietro sul lato lontano dalla telecamera, così non le passa mai davanti
+   sentinella.box.position.set(Math.cos(a)*1.75,0,Math.sin(a)*1.75); sentinella.box.rotation.y=-a+(verso?0:Math.PI); sentinella.az.timeScale=0.5+0.5*Math.abs(Math.cos(t*0.22));
+   // il cacciatore: si acquatta, scodinzola, balza sul topo, e il topo scappa di nuovo
+   const ct=t%4, tx=1.35, tz=0.75; let cx=0.95, cz=0.35, cy=0;
+   if(ct<2.4){ ruota(cacciatore,{root:[0.25,0,0],neck:[0.35,0,0],tail:[0.2,Math.sin(t*12)*0.5,0],thighBL:[0.4,0,0],thighBR:[0.4,0,0]}); }
+   else if(ct<3){ const u=(ct-2.4)/0.6; cx+=(tx-cx)*u*0.85; cz+=(tz-cz)*u*0.85; cy=Math.sin(u*Math.PI)*0.16; ruota(cacciatore,{root:[-0.4+0.6*u,0,0],legupperFL:[-1.2,0,0],legupperFR:[-1.2,0,0],tail:[0.6,0,0]}); }
+   else { cx+=(tx-cx)*0.85; cz+=(tz-cz)*0.85; ruota(cacciatore,{root:[0.3,0,0],neck:[0.6,0,0],head:[0.3,0.3,0]}); }
+   cacciatore.box.position.set(cx,cy,cz); cacciatore.box.rotation.y=Math.atan2(tx-0.95,tz-0.35);
+   const mt=ct<2.4?0:Math.min(1,(ct-2.4)/1.4); topo.position.set(tx+mt*0.7,0.03,tz+mt*0.2+Math.sin(t*20)*0.005*mt);
+  };
+ };
+ { const l=new GLTFLoader(); if(window.MODELLO_GLB){ const s=atob(window.MODELLO_GLB), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); l.parse(u.buffer,'',fine,e=>console.warn(e)); } else l.load('modelli/toon_cat_free.glb',fine); }
+ // lucciole e pulviscolo nella luce
+ const NP=70, pp=new Float32Array(NP*3), semi=[]; for(let i=0;i<NP;i++){ const a=R()*6.283, r=0.4+R()*3.2; semi.push([a,r,0.15+R()*1.3,0.2+R()*0.6,R()*6.283]); }
+ const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+ const pc=document.createElement('canvas'); pc.width=pc.height=64; { const g=pc.getContext('2d'), gr=g.createRadialGradient(32,32,1,32,32,31); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.35,'rgba(255,236,170,.6)'); gr.addColorStop(1,'rgba(255,220,140,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); }
+ const punti=new THREE.Points(pg,new THREE.PointsMaterial({map:new THREE.CanvasTexture(pc),color:'#ffe9a8',size:0.075,transparent:true,opacity:0.85,depthWrite:false,blending:THREE.AdditiveBlending})); punti.frustumCulled=false; scene.add(punti);
+ const resize=()=>{ const w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); };
+ addEventListener('resize',resize); resize();
+ let t0=performance.now(), giro=0;
+ renderer.setAnimationLoop(()=>{ const t=performance.now(), dt=Math.min(0.05,(t-t0)/1000); t0=t; giro+=dt*0.06;
+  const sec=t/1000, avvio=1-Math.min(1,sec/7), ease=avvio*avvio; // all'inizio la telecamera è più lontana e più alta, e scende piano
+  const d=(innerHeight>innerWidth?4.4:3.05)+ease*1.5; camera.position.set(Math.sin(giro-0.5)*d,0.82+ease*0.9,Math.cos(giro-0.5)*d); camera.lookAt(0,0.36,-0.2);
+  for(let i=0;i<NP;i++){ const [a,r,h,v,f]=semi[i], an=a+sec*v*0.12; pp[i*3]=Math.cos(an)*r; pp[i*3+1]=h+Math.sin(sec*0.9+f)*0.12; pp[i*3+2]=Math.sin(an)*r; } pg.attributes.position.needsUpdate=true; punti.material.opacity=0.55+0.3*Math.sin(sec*1.7);
+  { const S=window.simboli; if(S){ if(S.ouro){ S.ouro.rotation.z=sec*0.7; S.ouro.rotation.y=Math.sin(sec*0.4)*0.6; S.ouro.position.y=0.78+Math.sin(sec*1.1)*0.03; } S.fiamme.forEach((f,i)=>{ f.scale.y=1+0.25*Math.sin(sec*9+i*2); f.scale.x=1+0.12*Math.sin(sec*7+i); }); if(S.luce) S.luce.intensity=1.2+0.4*Math.sin(sec*8); if(S.tavola) S.tavola.material.emissiveIntensity=0.7+0.3*Math.sin(sec*1.3); } }
+  if(window.aggiornaGattini) window.aggiornaGattini(dt); renderer.render(scene,camera); });
+}catch(e){ console.warn('WebGL non disponibile',e); }
+</script>
+</body>
+</html>
