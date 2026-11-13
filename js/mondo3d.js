@@ -76,9 +76,10 @@ function liberaVisuale(){ // ciò che sta tra la telecamera e il gatto diventa t
  if(G.dentro) return;
  const ax=camera.position.x, az=camera.position.z, bx=cam3.tx, bz=cam3.tz, dx=bx-ax, dz=bz-az, l2=dx*dx+dz*dz||1, lun=Math.sqrt(l2);
  const CC=G.colosso;
+ const vistaColosso=(x,z,r)=>{ const sx=CC.x*K, sz=CC.y*K, ex=sx-ax, ez=sz-az, L2=ex*ex+ez*ez||1, t=Math.max(0,Math.min(1,((x-ax)*ex+(z-az)*ez)/L2)); return Math.hypot(x-(ax+ex*t),z-(az+ez*t))<r+1.6; }; // durante la festa nulla copre il grande gatto alla telecamera
  const davanti=(x,z,r)=>{ const t=((x-ax)*dx+(z-az)*dz)/l2; if(t<-0.1||t>1-0.04/lun) return false; return Math.hypot(x-(ax+dx*t),z-(az+dz*t))<r+0.35; };
  for(const {m,info,fa} of OSTACOLI){ let cambiato=false;
-  for(let i=0;i<info.length;i++){ const it=info[i], rad=!!CC&&Math.hypot(it.x-CC.x*K,it.z-CC.y*K)<4.5, na=rad?2:(davanti(it.x,it.z,it.r)?1:0); // intorno al grande gatto di pietra c'è una radura: lì alberi e massi spariscono del tutto
+  for(let i=0;i<info.length;i++){ const it=info[i], rad=!!CC&&(Math.hypot(it.x-CC.x*K,it.z-CC.y*K)<(CC.festa?8.5:4.5)||(CC.vivo&&vistaColosso(it.x,it.z,it.r))), na=rad?2:(davanti(it.x,it.z,it.r)?1:0); // intorno al grande gatto di pietra c'è una radura: lì alberi e massi spariscono del tutto
    if(na!==(it.nascosto|0)){ it.nascosto=na; m.setMatrixAt(i,na?ZERO:it.m); fa.setMatrixAt(i,na===1?it.m:ZERO); cambiato=true; } }
   if(cambiato){ m.instanceMatrix.needsUpdate=true; fa.instanceMatrix.needsUpdate=true; } }
  for(const it of SINGOLI){
@@ -866,11 +867,29 @@ function aggiornaColosso(t){ const C=G.colosso; if(!C){ if(colosso3) colosso3.g.
   D.push([0,2.62,0.92,0.3]); // il muso
   D.push([-0.3,3.0,0.92,0.12,'e'],[0.3,3.0,0.92,0.12,'e']); // gli occhi di fuoco, per ultimi
   D.forEach(([x,y,z,sc,k],i)=>{ const geo=k==='o'?new THREE.ConeGeometry(1,2.2,5):k==='e'?new THREE.SphereGeometry(1,10,8):new THREE.DodecahedronGeometry(1,1), m=new THREE.Mesh(geo,k==='e'?om:(i%2?pm:pm2));
-   m.position.set(x,y,z); m.scale.set(sc*(0.92+R()*0.16),sc*(0.86+R()*0.16),sc*(0.92+R()*0.16)); if(!k) m.rotation.set(R()*3,R()*3,R()*3); m.castShadow=m.receiveShadow=true; m.visible=false; g.add(m); massi.push(m); });
+   m.position.set(x,y,z); m.scale.set(sc*(0.92+R()*0.16),sc*(0.86+R()*0.16),sc*(0.92+R()*0.16)); if(!k) m.rotation.set(R()*3,R()*3,R()*3); m.castShadow=m.receiveShadow=true; m.visible=false; m.userData.p0=m.position.clone(); g.add(m); massi.push(m); });
   const luce=new THREE.PointLight('#ffb060',0,9,2); luce.position.set(0,3.0,1.2); g.add(luce);
-  g.scale.setScalar(1.75); g.position.set(C.x*K,quotaPx(C.x,C.y)-0.05,C.y*K); g.rotation.y=Math.atan2((FX0+FX1)/2-C.x,0.001)>0?Math.PI/2:-Math.PI/2; scene.add(g); colosso3={g,massi,luce,C,n:-1}; } // alto più di cinque metri: svetta sopra gli alberi
+  g.scale.setScalar(1.75); g.position.set(C.x*K,quotaPx(C.x,C.y)-0.05,C.y*K); g.rotation.y=Math.atan2((FX0+FX1)/2-C.x,0.001)>0?Math.PI/2:-Math.PI/2; scene.add(g); colosso3={g,massi,luce,C,n:-1,pm,pm2,om}; } // alto più di cinque metri: svetta sopra gli alberi
  const o=colosso3; o.g.visible=!G.dentro; const TOT=typeof COLOSSO_N!=='undefined'?COLOSSO_N:15, n=Math.min(o.massi.length,Math.ceil(o.massi.length*Math.min(TOT,C.massi||0)/TOT)); if(n!==o.n){ o.massi.forEach((m,i)=>{ m.visible=i<n; }); o.n=n; } // i pezzi sono ventiquattro, i massi da portare quindici: ogni masso posato ne scopre uno o due
- o.luce.intensity=n>=o.massi.length?2.2+0.6*Math.sin(t*5):0; }
+ o.luce.intensity=n>=o.massi.length?2.2+0.6*Math.sin(t*5):0;
+ colossoVivo(o,t); }
+// il grande gatto si anima alla festa dei tre clan (G.colosso.vivo={fase,t0}, fasi dettate dal racconto in js/storie.js; richiesta del 13 novembre 2026
+//). Fasi: 1 trema, 2 gira la testa, 3 alza la zampa, 4 lo spirito sale, 5 torna immobile.
+const TESTA=[13,14,15,16,21,22,23], CODA=[19,20], ZAMPA=17;
+function colossoVivo(o,t){ const V=G.colosso.vivo, M=o.massi; if(!V||!V.fase){ if(o.anim){ M.forEach(m=>m.position.copy(m.userData.p0)); o.pm.emissiveIntensity=o.pm2.emissiveIntensity=0; if(o.spirito) o.spirito.visible=false; o.anim=false; } return; }
+ o.anim=true; const e=Math.max(0,G.t-V.t0), f=V.fase, liscio=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+ const testa=f===2||f===3||f===4?liscio(e/3.5)*(f===2?1:1):f===5?1-liscio(e/2.5):0, ang=0.75*(V.verso||1)*(f>=3&&f<=4?1:testa), zampa=f===3?liscio(e/2):f===4?1:f===5?1-liscio(e/2):0;
+ const trema=f===1?0.05*Math.min(1,e):f===5&&e<1?0.02:0, oro=f>=2&&f<=4?Math.min(1,e/2+(f>2?1:0)):f===5?Math.max(0,1-e/3):0;
+ M.forEach((m,i)=>{ const q=m.userData.p0; let x=q.x, y=q.y, z=q.z;
+  if(TESTA.includes(i)){ const px=0,pz=0.1, c=Math.cos(ang), sn=Math.sin(ang), dx=x-px, dz=z-pz; x=px+dx*c+dz*sn; z=pz-dx*sn+dz*c; y+=0.08*Math.sin(t*1.3)*(testa>0?1:0); }
+  if(CODA.includes(i)&&f>=2&&f<=4){ const px=0.4,pz=-0.9, a=0.45*Math.sin(t*2.2), c=Math.cos(a), sn=Math.sin(a), dx=x-px, dz=z-pz; x=px+dx*c+dz*sn; z=pz-dx*sn+dz*c; }
+  if(i===ZAMPA){ y+=1.3*zampa; z+=0.55*zampa; }
+  if(trema){ x+=Math.sin(t*41+i*1.7)*trema; y+=Math.sin(t*37+i)*trema*0.6; z+=Math.cos(t*43+i)*trema; }
+  m.position.set(x,y,z); });
+ o.pm.emissive.set('#ffb347'); o.pm2.emissive.set('#ffc860'); o.pm.emissiveIntensity=o.pm2.emissiveIntensity=0.55*oro*(0.8+0.2*Math.sin(t*3)); o.om.emissiveIntensity=1.6+2.4*Math.min(1,oro+(f===1?e/4:0));
+ o.luce.intensity=Math.max(o.luce.intensity,4+5*oro);
+ if(!o.spirito){ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:sfumato('rgba(255,236,170,1)','rgba(255,190,80,0)'),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false})); o.g.add(sp); o.spirito=sp; }
+ const sp=o.spirito; sp.visible=f===4||(f===5&&e<1.5); if(sp.visible){ const k=f===4?Math.min(1,e/6):1; sp.position.set(0,3.2+k*14,0.3); sp.scale.setScalar(2.2+2*Math.sin(Math.min(1,k)*Math.PI)); sp.material.opacity=f===4?Math.min(1,e*1.5)*(1-k*0.6):Math.max(0,1-e/1.5); } }
 function aggiornaOggetti3(t){ const lista=G.oggetti||[], viste=new Set(lista);
  for(const [o,m] of oggetti3){ if(!viste.has(o)){ scene.remove(m); oggetti3.delete(o); } }
  for(const o of lista){ const qui=G.dentro?o.tana===G.dentro:!o.tana; let m=oggetti3.get(o); // gli oggetti di una tana si vedono soltanto da dentro quella tana

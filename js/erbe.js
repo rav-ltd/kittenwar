@@ -154,7 +154,7 @@ addEventListener('DOMContentLoaded',()=>{ if(typeof raccogli!=='function'||typeo
  const coda=[];
  function scheda(s,poi){ const P=PIANTE[s], t=P[LG]; modale(P.e+' '+t[0].charAt(0).toUpperCase()+t[0].slice(1),`<i>${P.lat}</i><br><br>${t[1]}<br><br><b>${P.v==='r'?T.virtuR:T.virtuS}</b>`+box(T.fonte,t[2]),[{t:'🌿',f:poi}]); }
  function prendi(s,conta){ const p=G.p; sacca(); p.erbe=(p.erbe||0)+1; if(conta) p.erbeTotali=(p.erbeTotali||0)+1; p.sacca.push(s); if(!viste()[s]){ viste()[s]=G.t||1; coda.push(s); } }
- window.ERBE_PROVA={scheda,prendi,sacca};
+ window.ERBE_PROVA={scheda,prendi,sacca,impara(s){ const A=G.armadio||(G.armadio={}); A[s]=(A[s]||0)+1; if(!viste()[s]){ viste()[s]=G.t||1; coda.push(s); } }}; // impara: l'erba raccolta dal gattino in gita va nell'armadio, e la prima volta la scheda la spiega
 
  // raccogliere: ogni punto dà la sua pianta, e la prima volta la scheda la spiega
  raccogli=function(i){ const p=G.p; if(!puoErbe()){ log(T.solo); return; } if(p.erbe>=8){ log(T.piena); return; } G.erbe[i]=G.t+40; const s=ERBE[i].specie||0;

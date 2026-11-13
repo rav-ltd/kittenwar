@@ -61,7 +61,7 @@ kbd{background:#0006;border:1px solid #777;border-radius:4px;padding:0 4px;font-
 </div>
 </div>
 <div id="modal"><div class="box"><h2 id="mt"></h2><div id="mx"></div><div id="mb"></div></div></div>
-<script src="js/leggende.js?v=20261113141038"></script><script src="js/suoni.js?v=20261113141038"></script><script src="js/musica.js?v=20261113141038"></script><script src="js/storie.js?v=20261113141038"></script><script src="js/registro.js?v=20261113141038"></script><script src="js/modello.js?v=20261113141038"></script>
+<script src="js/leggende.js?v=20261113154836"></script><script src="js/suoni.js?v=20261113154836"></script><script src="js/musica.js?v=20261113154836"></script><script src="js/storie.js?v=20261113154836"></script><script src="js/registro.js?v=20261113154836"></script><script src="js/modello.js?v=20261113154836"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script>
 'use strict';
@@ -135,6 +135,13 @@ const DECOR=[],ERBE=[];
  }
  while(ERBE.length<14){const x=40+r()*900,y=40+r()*1720; if(inCampo(x,y,40)||acqua(x,y)) continue; ERBE.push({x,y,tipo:Math.floor(r()*3)});}
 })();
+// Bosco meno fitto, con radure (richiesta del 13 novembre 2026)
+// tolto circa un albero su tre in tutto il bosco, e nessun albero né cespuglio nelle radure del territorio della Felce. Il filtro viene dopo il sorteggio
+// così le erbe e tutto ciò che il seme decide dopo restano dove erano.
+(function(){ const RADURE=[{x:210,y:420,r:150},{x:700,y:380,r:140},{x:180,y:1330,r:170},{x:600,y:1250,r:140},{x:830,y:1650,r:120},{x:840,y:560,r:110}];
+ const albero=d=>d.z==='felce'?d.v<0.46||d.v>=0.8:d.z==='nebbia'?d.v<0.2:d.v>=0.82;
+ for(let i=DECOR.length-1;i>=0;i--){ const d=DECOR[i]; if(!albero(d)) continue; const h=((i*2654435761)>>>0)%100;
+  if(h<34||(d.z==='felce'&&RADURE.some(q=>Math.hypot(d.x-q.x,d.y-q.y)<q.r))) DECOR.splice(i,1); } })();
 
 // ================== stato ==================
 let G=null, prede=[], floats=[], fx=null, modBtn=null, paused=true;
@@ -233,7 +240,7 @@ function azioneSpazio(){
  if(nem) return {t:p.rango==='gattino'?'scappa nella nursery!':'attacca '+nome(nem),f:balzo};
  if(p.rango==='gattino'&&dist(p,palla)<45) return {t:'salta sulla palla di muschio',f:()=>{ p.dir=Math.atan2(palla.y-p.y,palla.x-p.x); p.flip=palla.x<p.x?-1:1; balzo(); }};
  const nelLuogo=dist(p,L.roccia)<L.roccia.r+18||dist(p,L.mucchio)<L.mucchio.r+16||TANE.some(k=>dist(p,L[k])<L[k].r);
- if(!nelLuogo&&p.rango!=='gattino'&&(!p.preda||(p.carico||[]).length<2)&&!p.caccia&&MIRATA&&!felcePerParlare(p,34)) return {t:'insegui '+PREDE[MIRATA.tipo].nome,f:()=>{ p.caccia={q:MIRATA,t:0}; }};
+ if(!nelLuogo&&p.rango!=='gattino'&&!(puoErbe()&&erbaVicina()>=0)&&(!p.preda||(p.carico||[]).length<2)&&!p.caccia&&MIRATA&&!felcePerParlare(p,34)) return {t:'insegui '+PREDE[MIRATA.tipo].nome,f:()=>{ p.caccia={q:MIRATA,t:0}; }};
  const a=contesto(); if(a) return {t:a.t.charAt(0).toLowerCase()+a.t.slice(1),f:a.f};
  if(p.preda) return {t:'mangia '+PREDE[p.preda].nome,f:mangiaPreda};
  if(puoErbe()&&p.erbe>0&&p.salute<60) return {t:'usa un’erba su di te',f:mangiaPreda};
@@ -353,8 +360,9 @@ function colpisci(a,b){
    if(a===G.p) G.p.vittorie++;
    if(G.raid&&G.raid.bersaglio===b.clan){G.raid.sconfitti++; controllaRaid();}
   }
- } else if(b.hp<=b.hpMax*0.25&&b.stato!=='ferito'){
-  b.stato='ferito'; b.ferito=true; log(`🩹 ${nome(b)} è ferit${o(b)} e va nella tana del guaritore.`,'#ffb0a0'); if(G.raid){ G.raid.perdite++; controllaSconfitta(); }
+ } else if(b.hp<=b.hpMax*0.25&&b.stato!=='ferito'&&b.stato!=='soccorso'){
+  const veglia=!!(b.clan==='felce'&&G.raid&&G.veglia&&(G.p.rango==='guaritore'||G.p.via==='guaritore')); b.stato=veglia?'soccorso':'ferito'; b.ferito=true; b.soccorsoIl=veglia?G.t:null; // con il guaritore che veglia, il ferito corre da lui (js/storie.js)
+  log(veglia?`🩹 ${nome(b)} è ferit${o(b)} e corre da te, che vegli sulla battaglia.`:`🩹 ${nome(b)} è ferit${o(b)} e va nella tana del guaritore.`,'#ffb0a0'); if(G.raid){ G.raid.perdite++; controllaSconfitta(); }
  }
 }
 function combatti(c,t,dt,vel){
@@ -547,7 +555,7 @@ function cerimoniaGuerriero(){
  prova('🌑 La prova della sapienza',`${nome(capo())}: «Un guerriero non è fatto soltanto di artigli. Prima di darti il tuo nome, rispondimi.»`,nomeGuerriero);
 }
 function nomeGuerriero(){
- const p=G.p, nc=nome(capo()), opz=shuffle(SUFFISSI).slice(0,4);
+ const p=G.p, nc=nome(capo()), opz=shuffle(SUFFISSI).filter(x=>x!==p.prefisso).slice(0,4);
  modale('🌗 Il nome del guerriero',`${nc}: «Io, capo del Clan della Felce, chiedo ai nostri antenati stellati di guardare questo apprendista. Ha imparato il codice dei guerrieri, e lo affido a voi.»<br><br>«${nome(p)}, prometti di rispettare il codice e di proteggere il clan, anche a costo della vita?» — «Lo prometto.»<br><br>Quale nome ti dà il capo?`
   +box('Il nome','Per molti popoli, scrive Frazer nel <i>Ramo d’oro</i>, il nome è una parte viva della persona: per questo a volte lo si tiene segreto. Cambiare nome è diventare un altro.'),
   opz.map(s=>({t:p.prefisso+' '+s,f:()=>{
@@ -569,7 +577,7 @@ function riva(){ const p=G.p;
   modale('🌗 Il sogno',`Bevi l’acqua gelida e ti addormenti sulla riva. Nel sogno cadi nell’acqua nera e ti senti sciogliere, come se morissi. Poi i gatti di stelle ti ricompongono, pelo per pelo, e ti rimettono in piedi: «Ora conosci la strada tra i vivi e gli antenati.»`
    +box('Morte e rinascita','Per Mircea Eliade l’iniziazione dello sciamano passa spesso per una morte simbolica e una rinascita (<i>Lo sciamanismo e le tecniche arcaiche dell’estasi</i>, 1951).'),
    [{t:'Ascoltare gli antenati',f:()=>{
-    const opz=shuffle(SUFF_GUAR).slice(0,4);
+    const opz=shuffle(SUFF_GUAR).filter(x=>x!==G.p.prefisso).slice(0,4);
     modale('🌕 Il nome dato dalle stelle','«Ogni anima ha la sua stella, e ora tu conosci la tua.» Quale nome ti danno gli antenati?'
      +box('Le stelle','Nel <i>Timeo</i> Platone racconta che ogni anima ha la sua stella, e che chi vive con giustizia vi ritorna.'),
      opz.map(s=>({t:p.prefisso+' '+s,f:()=>{
@@ -734,7 +742,7 @@ function curiosita(){ const p=G.p; p.cur=(p.cur||0); const [t,f]=CURIOSITA[p.cur
 function obiettivo(){
  const p=G.p;
  if(G.raid){ const r=G.raid; return {t:`⚔️ Battaglia contro il ${CLAN[r.bersaglio].nome}: ${r.sconfitti}/${r.necessari} nemici in fuga · ${r.perdite||0}/${r.maxPerdite||3} dei nostri feriti`,come:'Segui la freccia ⚔ fino al campo di battaglia. Vicino a un nemico premi Spazio più volte; se la tua salute scende, allontanati un momento.'}; }
- if(G.cats.some(c=>c.stato==='assalto')) return p.rango==='gattino'?{t:'⚠️ Nemici al campo!',come:'Corri nella nursery: i guerrieri ci difendono.'}:{t:'⚠️ Nemici al campo!',come:'Raggiungi i nemici (nome rosso con ⚔) e premi Spazio vicino a loro: difendi il mucchio delle prede.'};
+ if(G.cats.some(c=>c.stato==='assalto')) return (p.rango==='guaritore'||p.via==='guaritore')?{t:'⚠️ Nemici al campo!',come:'Tu non combatti: resta vicino alla tana del guaritore e cura i feriti che arrivano (Spazio vicino a loro).'}:p.rango==='gattino'?{t:'⚠️ Nemici al campo!',come:'Corri nella nursery: i guerrieri ci difendono.'}:{t:'⚠️ Nemici al campo!',come:'Raggiungi i nemici (nome rosso con ⚔) e premi Spazio vicino a loro: difendi il mucchio delle prede.'};
  if(p.sete<30) return {t:'💧 Hai sete: vai a bere!',come:'Bevi al fiume, allo stagno o alla pozzanghera del campo: avvicinati all’acqua e premi Spazio. Senza acqua la salute scende.'};
  if(p.fame<30) return {t:'🍖 Hai fame: vai a mangiare!',come:'Mangia dal mucchio delle prede, al centro del campo (Spazio), oppure caccia una preda e mangiala. Senza cibo la salute scende.'};
  if(p.energia<25) return {t:'😴 Sei stanc'+o(p)+': vai a dormire!',come:'Dormi nella tua tana (Spazio): l’energia torna piena e il tempo passa più in fretta.'};
@@ -790,11 +798,11 @@ function iniziaGuerra(cl,chiamata){
  if(!chiamata&&p.incinta) return modale(nome(capo()),'«Aspetti dei cuccioli: non è il momento di combattere. Riposa nella nursery.»',[{t:'Va bene'}]);
  if(!chiamata&&(p.energia<30||p.salute<50)) return modale(nome(capo()),'«Sei troppo stanc'+o(p)+' o ferit'+o(p)+'. Mangia, bevi e dormi prima di guidare un assalto.»',[{t:'Va bene'}]);
  avviaScena('cerimonia',partecipanti(),3.4,()=>{
-  const cand=G.cats.filter(c=>c.clan==='felce'&&(c.rango==='guerriero'||c.rango==='apprendista')&&!c.regina&&!c.ferito&&(chiamata||!c.leader)).sort((a,b)=>((b.amicizia>=3)-(a.amicizia>=3))||dist(a,p)-dist(b,p)).slice(0,chiamata?4:3);
+  const cand=G.cats.filter(c=>c.clan==='felce'&&(c.rango==='guerriero'||c.rango==='apprendista')&&c.via!=='guaritore'&&!c.regina&&!c.ferito&&(chiamata||!c.leader)).sort((a,b)=>((b.amicizia>=3)-(a.amicizia>=3))||dist(a,p)-dist(b,p)).slice(0,chiamata?4:3);
   cand.forEach((c,i)=>{c.stato='segui';c.slot=i%OFF.length;c.posa=null;c.elev=0;});
   const luogo=chiamata?luogoBattaglia(cl):{x:CLAN[cl].campo.x-170,y:CLAN[cl].campo.y};
   G.raid={bersaglio:cl,sconfitti:0,necessari:3,perdite:0,maxPerdite:3,uscito:false,luogo};
-  G.cats.filter(c=>c.clan===cl&&!c.leader&&c.stato!=='fuga').slice(0,4).forEach((c,i)=>{c.stato='schierato'; c.posto=[luogo.x+50+(i%2)*28,luogo.y-40+i*26];});
+  G.cats.filter(c=>c.clan===cl&&!c.leader&&c.stato!=='fuga'&&c.rango!=='guaritore'&&c.via!=='guaritore').slice(0,4).forEach((c,i)=>{c.stato='schierato'; c.posto=[luogo.x+50+(i%2)*28,luogo.y-40+i*26];});
   annuncia(chiamata?'⚔️ Al confine!':'⚔️ All’assalto!');
   log(`⚔️ Parte la battaglia contro il ${CLAN[cl].nome}!`,'#ffd27a');
   modale('⚔️ '+(chiamata?'In marcia verso il confine':'Assalto al '+CLAN[cl].nome),`${nome(capo())} lancia il grido di guerra dalla Roccia Alta. ${cand.length?cand.map(c=>nome(c)+(c.amicizia>=3?' 💚':'')).join(', ')+(cand.length>1?' ti seguono.':' ti segue.'):''} ${cand.some(c=>c.amicizia>=3)?'Gli amici (💚) combattono meglio accanto a te.':'Nessuno di loro è tuo amico: coltiva l’amicizia, e la prossima volta combatteranno meglio accanto a te.'} Il gatto andrà da solo verso il campo di battaglia e combatterà da solo: le frecce ti ridanno il controllo, Spazio ti rimanda nella mischia.<br><br><b>Obiettivo:</b> segui la freccia ⚔ fino al campo di battaglia. Metti in fuga <b>3 guerrieri</b> del ${CLAN[cl].nome} (Spazio vicino a loro, più volte) prima che loro mettano fuori combattimento 3 dei nostri. Se torni al campo, la battaglia finisce.`
@@ -1064,7 +1072,7 @@ function azioneGuerra(){ // durante una battaglia Spazio serve soltanto alla bat
   if(nemicoVicino(p,330)||dist(p,G.raid.luogo)<230) return {t:'entra nella mischia',f:()=>{ p.auto={tipo:'mischia'}; }};
   return {t:'segui il clan verso la battaglia',f:()=>{ p.auto={tipo:'marcia',percorso:percorsoVerso(G.raid.luogo)}; }};
  }
- if(p.rango!=='gattino'&&!p.auto&&!p.vecchio){ const a=assaltatoreVicino(p,350); if(a&&!nemicoVicino(p,55)) return {t:'difendi il campo da '+nome(a),f:()=>{ p.auto={tipo:'difesa'}; }}; }
+ if(p.rango!=='gattino'&&!puoErbe()&&!p.auto&&!p.vecchio){ const a=assaltatoreVicino(p,350); if(a&&!nemicoVicino(p,55)) return {t:'difendi il campo da '+nome(a),f:()=>{ p.auto={tipo:'difesa'}; }}; }
  return null;
 }
 
@@ -1082,7 +1090,7 @@ function assistiCerimonia(){
 }
 function ritoPrimoTempo(c,r){
  const nc=nome(capo()), madre=gatto(G.madre);
- if(r==='apprendista') modale('🌑 Primo tempo: la separazione',`${nc} sale sulla Roccia Alta: «${nome(c)} ha compiuto sei lune. Da questa notte lascia la nursery.» Una regina gli lecca la testa per l’ultima volta.<br><br>Tu sei nel cerchio, con il clan: anche chi assiste fa parte del rito.`
+ if(r==='apprendista') modale('🌑 Primo tempo: la separazione',`${nc} sale sulla Roccia Alta: «${nome(c)} ha compiuto sei lune. Da questa notte lascia la nursery.» Una regina ${c.sesso==='f'?'le':'gli'} lecca la testa per l’ultima volta.<br><br>Tu sei nel cerchio, con il clan: anche chi assiste fa parte del rito.`
   +box('Separazione','Il primo tempo di ogni rito di passaggio stacca chi passa dalla sua condizione di prima (Van Gennep). Il gruppo che guarda dà al passaggio il suo valore: un rito senza testimoni non cambia nessuno.'),[{t:'Restare a guardare',f:()=>ritoSecondoTempo(c,r)}]);
  else modale('🌑 Primo tempo: la prova',`${nc} interroga ${nome(c)} sul codice dei guerrieri e sulle storie del clan. L’apprendista risponde senza esitare: le storie dell’anziano gli sono servite.`
   +box('Il sapere del clan','Nelle iniziazioni di molti popoli il giovane deve dimostrare di conoscere i miti e le regole del gruppo: per questo le storie si ascoltano, si ricordano e si tramandano.'),[{t:'Ascoltare in silenzio',f:()=>ritoSecondoTempo(c,r)}]);
@@ -1153,8 +1161,8 @@ const BISOGNI=[['fame','🍖 Hai fame!','Hai fame: vai a mangiare al mucchio del
 function controllaBisogni(){
  const p=G.p; p.avvisi=p.avvisi||{};
  for(const [k,ban,txt] of BISOGNI){
-  if(p[k]<30&&!p.avvisi[k]){ p.avvisi[k]=1; annuncia(k==='energia'?(p.sesso==='f'?'😴 Sei stanca!':ban):ban,'#ffc08a'); consiglio('bisogno-'+k,txt,20); }
-  if(p[k]<15&&p.avvisi[k]===1){ p.avvisi[k]=2; annuncia(k==='energia'?(p.sesso==='f'?'😴 Sei stanca!':ban):ban,'#ff8a7a'); log('⚠️ '+txt+' Se aspetti ancora, la salute comincia a scendere.','#ff9a8a'); }
+  if(p[k]<30&&!p.avvisi[k]){ p.avvisi[k]=1; annuncia(k==='energia'?(p.sesso==='f'?'😴 Sei stanca!':ban):ban,'#ffc08a'); consiglio('bisogno-'+k,(k==='energia'&&p.sesso==='f')?txt.replace('Sei stanco','Sei stanca'):txt,20); }
+  if(p[k]<15&&p.avvisi[k]===1){ p.avvisi[k]=2; annuncia(k==='energia'?(p.sesso==='f'?'😴 Sei stanca!':ban):ban,'#ff8a7a'); log('⚠️ '+((k==='energia'&&p.sesso==='f')?txt.replace('Sei stanco','Sei stanca'):txt)+' Se aspetti ancora, la salute comincia a scendere.','#ff9a8a'); }
   if(p[k]>50) p.avvisi[k]=0;
  }
 }
@@ -1216,7 +1224,7 @@ function nascita(){
  const n=1+Math.floor(Math.random()*3), nomi=[], kits=[];
  for(let i=0;i<n;i++){ const k=nuovoGatto('felce','gattino',{lune:0,figlio:true,colore:pick([p.colore,m?m.colore:p.colore]),x:L.nursery.x+rnd(-20,20),y:L.nursery.y+rnd(-10,15)}); nomi.push(nome(k)); kits.push(k); }
  p.figli+=n; if(m) m.incinta=false;
- const finestra=()=>modale('🐾 Sono nati i tuoi cuccioli!',`Nella nursery, al caldo, ci sono ${n===1?'un cucciolo':n+' cuccioli'}: <b>${nomi.join(', ')}</b>.<br><br>Crescono con il clan: a sei lune diventeranno apprendisti, e potrai assistere alla loro cerimonia.`
+ const finestra=()=>modale('🐾 Sono nati i tuoi cuccioli!',`Nella nursery, al caldo, ${n===1?'c’è un cucciolo':'ci sono '+n+' cuccioli'}: <b>${nomi.join(', ')}</b>.<br><br>Crescono con il clan: a sei lune diventeranno apprendisti, e potrai assistere alla loro cerimonia.`
   +box('Il primo rito','Anche la nascita è un passaggio: Van Gennep descrive i riti con cui molti popoli accolgono il neonato e gli danno un nome, facendolo entrare nella comunità.'),[{t:'Che belli!'}]);
  log(`🐾 Sono nati i tuoi cuccioli: ${nomi.join(', ')}!`,'#ffd0f0');
  if(p.sesso==='f'){ p.incinta=false; p.allatta=G.t+MOON*2;
@@ -1256,7 +1264,7 @@ function aggiornaFelce(c,dt){
  }
  c.dorme=false;
  c.hp=Math.min(c.hpMax,c.hp+0.5*dt);
- const combattente=(c.rango==='guerriero'||c.rango==='apprendista')&&!c.regina;
+ const combattente=(c.rango==='guerriero'||(c.rango==='apprendista'&&c.via!=='guaritore'))&&!c.regina;
  if(combattente&&c.stato!=='segui'&&c.stato!=='difesa'&&c.stato!=='colonia'){ const inv=invasoreVicino(c,550); if(inv){c.stato='difesa';c.bersaglio=inv.id;c.soffia=0.6;} }
  switch(c.stato){
   case 'difesa':{ const t=gatto(c.bersaglio); if(!t||t.stato==='fuga'||t.stato==='riposo'||territorio(t.x,t.y)!=='felce'){c.stato='campo';nuovoPuntoCampo(c);} else combatti(c,t,dt,135); break; }
@@ -1341,10 +1349,10 @@ function aggiornaGiocatore(dt){
  p.x=clamp(p.x,10,WW-10); p.y=clamp(p.y,10,WH-10);
  vincoloTana(p,ox,oy,dt);
  p.cd-=dt;
- if(p.rango==='gattino'){
+ if(p.rango==='gattino'&&!G.gita){ // durante la gita con un adulto il gattino esce (js/storie.js)
   const cm=CLAN.felce.campo, d=dist(p,cm);
   if(d>cm.r+8){ p.x=cm.x+(p.x-cm.x)/d*(cm.r+8); p.y=cm.y+(p.y-cm.y)/d*(cm.r+8);
-   if(G.t>avvisoBordo){avvisoBordo=G.t+5; log('🚫 I gattini non possono uscire dal campo! Aspetta di diventare apprendista.','#ffd27a');} }
+   } // a dirglielo è un adulto, in un fumetto (trattenuto, js/leggende.js)
  }
  p.fame=Math.max(0,p.fame-0.08*dt); p.sete=Math.max(0,p.sete-0.1*dt); p.energia=Math.max(0,p.energia-0.065*dt); // bisogni a un quarto della velocità iniziale (12 novembre 2026, due volte)
  if(p.fame<=0||p.sete<=0||p.energia<=0) p.salute-=1.2*dt;
@@ -1372,19 +1380,19 @@ function aggiornaPrede(dt){
 }
 function tick1(){
  for(const c of G.cats){ const l=lune(c);
-  let r=null; if(c.rango==='gattino'&&l>=6) r='apprendista'; else if(c.rango==='apprendista'&&l>=12) r='guerriero';
+  let r=null; if(c.rango==='gattino'&&l>=6) r='apprendista'; else if(c.rango==='apprendista'&&c.via!=='guaritore'&&l>=12) r='guerriero'; // l'apprendista del guaritore diventa guaritore (js/storie.js), non guerriero
   if(!r) continue;
   if(c.clan!=='felce'){ promuovi(c,r); continue; }
   if(!G.cerimonia&&puoEvento()){ segnaEvento(); G.cerimonia={id:c.id,r,fino:G.t+MOON*1.2}; annuncia('🌟 Una cerimonia ti aspetta!'); log(`🌟 ${nome(c)} è pront${o(c)} per diventare ${r}. Il clan si raduna alla Roccia Alta: vai ad assistere, e partecipa!`,'#ffe08a'); } }
  if(G.cerimonia){ const c=gatto(G.cerimonia.id);
   if(!c) G.cerimonia=null;
   else if(G.t>G.cerimonia.fino){ const r=G.cerimonia.r; G.cerimonia=null; promuovi(c,r); log('(Il rito si è svolto senza di te.)','#ccc'); }
-  else if(!scena&&!paused&&!G.raid&&dist(G.p,L.roccia)<130) assistiCerimonia(); }
+  else if(!scena&&!paused&&!G.raid&&!G.riposoFinale&&!G.funerale&&!(typeof recitaAtt!=='undefined'&&recitaAtt)&&dist(G.p,L.roccia)<130) assistiCerimonia(); } // durante un addio o un funerale la cerimonia aspetta
  controllaMissione(); controllaBisogni(); controllaColonia(); congedaPartiti();
  G.pasto++; if(G.pasto>=40){ G.pasto=0; if(G.cibo>0) G.cibo--; else log('🍂 Il mucchio delle prede è vuoto: il clan ha fame! Andate a caccia.','#ffb37a'); }
  if(G.t>G.prossimoAssalto&&!inCaccia()&&!momentoSacro()){ // niente assalti mentre si caccia (js/leggende.js)
   G.prossimoAssalto=G.t+MOON*rnd(2.5,4.5);
-  if(!G.raid){ const cl=pick(['nebbia','pietre']); const cand=G.cats.filter(c=>c.clan===cl&&!c.leader&&c.stato==='pattuglia').slice(0,3);
+  if(!G.raid){ const cl=pick(['nebbia','pietre']); const cand=G.cats.filter(c=>c.clan===cl&&!c.leader&&c.stato==='pattuglia'&&c.rango!=='guaritore'&&c.via!=='guaritore').slice(0,3);
    if(cand.length>=2){ cand.forEach(c=>{c.stato='assalto';}); tensione(cl,10,'ha attaccato il nostro campo'); annuncia('⚠️ Nemici al campo!','#ff9a8a'); log(`⚠️ Una pattuglia del ${CLAN[cl].nome} attraversa il fiume e attacca il campo!`,'#ff8a7a'); flo(G.p.x,G.p.y-40,'⚠️ Attacco!','#ff8a7a'); } }
  }
  for(const cl of ['nebbia','pietre']){ if(!G.raid) tensione(cl,0.15);
@@ -1400,7 +1408,7 @@ function tick1(){
  if(G.raid){ const tr=territorio(G.p.x,G.p.y); if(tr!=='felce'&&tr!=='fiume') G.raid.uscito=true;
   if(G.raid.uscito&&dist(G.p,CLAN.felce.campo)<CLAN.felce.campo.r) fineRaid('Sei tornat'+o(G.p)+' al campo: l’assalto è finito.'); }
  const tr=territorio(G.p.x,G.p.y);
- if(tr!=='fiume'&&tr!==ultimoTerr){ if(tr==='felce') log('Sei di nuovo nel territorio del tuo clan.'); else { log(`🚩 Hai superato il confine: questo è il territorio del ${CLAN[tr].nome}. Attento alle pattuglie!`,'#ffd27a'); nota('confine'); } ultimoTerr=tr; }
+ if(tr!=='fiume'&&tr!==ultimoTerr){ if(tr==='felce') log('Sei di nuovo nel territorio del tuo clan.'); else { log(`🚩 Hai superato il confine: questo è il territorio del ${CLAN[tr].nome}. ${G.p.sesso==='f'?'Attenta':'Attento'} alle pattuglie!`,'#ffd27a'); nota('confine'); } ultimoTerr=tr; }
  if(prede.length<70) spawnPreda();
  if(eNotte()) nota('notte');
  if(++tSave>=10){tSave=0;salva();}
@@ -1897,7 +1905,7 @@ function disegna(){
  frecceGuida();
  disegnaBanner();
  const sug=[];
- if(!scena){ if(p.caccia) sug.push('🐾 Inseguimento!'); else if(p.auto) sug.push(p.auto.tipo==='marcia'?'⚔️ In marcia con il clan: il gatto va da solo (le frecce per fermarti)':'⚔️ Combatti da sol'+o(p)+' nella mischia (le frecce per riprendere il controllo)'); else { const a=azioneSpazio(); if(a.t) sug.push('Spazio: '+a.t); } }
+ if(!scena&&!(typeof recitaAtt!=='undefined'&&recitaAtt)){ if(p.caccia) sug.push('🐾 Inseguimento!'); else if(p.auto) sug.push(p.auto.tipo==='marcia'?'⚔️ In marcia con il clan: il gatto va da solo (le frecce per fermarti)':'⚔️ Combatti da sol'+o(p)+' nella mischia (le frecce per riprendere il controllo)'); else { const a=azioneSpazio(); if(a.t) sug.push('Spazio: '+a.t); } }
  if(sug.length){ const t=sug.join('   ·   '); ctx.font='bold 16px system-ui'; const w=ctx.measureText(t).width+34; ctx.fillStyle='rgba(0,0,0,0.65)'; ctx.fillRect(W/2-w/2,H-148,w,36); scritta(t,W/2,H-124,'#ffe9a8','bold 16px system-ui'); }
  mappaAntica(p,bn,bp); // la mappa in alto a destra, come una vecchia mappa (js/leggende.js)
  if(fx){ const al=Math.min(1,Math.min(fx.dur-fx.t,fx.t)*3)*0.85; ctx.fillStyle=`rgba(5,8,25,${al})`; ctx.fillRect(0,0,W,H); ctx.globalAlpha=al/0.85; scritta(fx.testo,W/2,H/2,'#ffe9a8','bold 22px system-ui'); ctx.globalAlpha=1; }
@@ -1941,7 +1949,7 @@ function intro(){
  $('log').innerHTML='';
  log(`🐾 Benvenut${o(p)} nel Clan della Felce, ${nome(p)}!`,'#ffe08a');
  modale('🐾 '+nome(p),`Sei ${p.sesso==='f'?'una gattina':'un gattino'} di 2 lune del Clan della Felce. Tua madre, ${nome(m)}, ti guarda dalla nursery.<br><br>
- <b>I gattini non possono uscire dal campo.</b> Intanto:<br>
+ <b>I gattini escono dal campo soltanto in gita con un grande</b>: chiedilo a un guerriero o al guaritore, o aspetta che te lo propongano. Intanto:<br>
  • mangia dal mucchio delle prede, al centro del campo (Spazio);<br>
  • bevi alla pozzanghera, in fondo al campo tra la nursery e la tana del guaritore (Spazio);<br>
  • dormi nella nursery quando sei stanc${o(p)} (Spazio);<br>
@@ -1995,7 +2003,7 @@ addEventListener('r3d-pronto',()=>ridimensiona());
 avvio();
 requestAnimationFrame(loop);
 </script>
-<script src="js/erbe.js?v=20261113141038"></script>
-<script type="module" src="js/mondo3d.js?v=20261113141038"></script>
+<script src="js/erbe.js?v=20261113154836"></script>
+<script type="module" src="js/mondo3d.js?v=20261113154836"></script>
 </body>
 </html>

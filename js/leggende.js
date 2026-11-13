@@ -73,7 +73,7 @@ const TESTI_LEGG={
   guadagni:{fame:'🍖 Ti sei saziato',sete:'💧 Ti sei dissetato',energia:'😴 Hai recuperato le forze',salute:'❤️ Ti senti meglio',spirito:'✨ Lo spirito del clan si rafforza',forza:'💪 Diventi più forte'},
   clicInd:{fame:'Hai fame: dove vai?',mucchio:n=>`🍖 Al mucchio delle prede (${n})`,caccia:'🐾 A caccia',acqua:'Clicca: all’acqua',salute:'Clicca: dal guaritore',curato:n=>`🌿 ${n} ti cura con le erbe del bosco.`,energia:'Clicca: a dormire',cibo:'Clicca: a mangiare',spirito:'Clicca: a pregare'},
   verso:{tit:'🎖️ Per diventare guerriero',titG:'🎖️ Per diventare guaritore',titA:'🎖️ Per diventare apprendista',b:{lune:'🌙 lune',racconti:'📜 racconti',prede:'🐭 prede',allenamenti:'⚔️ allenamenti',erbe:'🌿 erbe',cure:'🩹 cure'},oppure:n=>`Battaglie vinte: ${n} di 3 (con 3 vittorie il capo ti chiama)`,pronto:'✅ Pronto! Vai alla Roccia Alta'},
-  convoca:n=>`${n}, hai combattuto con valore. Vieni alla Roccia Alta: è il momento della tua cerimonia da guerriero!`,convocaAnn:'🌟 Sei convocato alla Roccia Alta!',
+  convoca:n=>`${n}, hai combattuto con valore. Vieni alla Roccia Alta: è il momento della tua cerimonia da guerriero!`,convocaAnn:'🌟 Ti chiamano alla Roccia Alta!',
   manca:(n,l)=>`Non scoraggiarti, ${n}. Per diventare guerriero ti mancano: ${l}. Oppure vinci tre battaglie, e il capo ti chiamerà.`,
   visita:{storia:n=>`${n} ti si avvicina e si siede davanti a te: «Mi racconti una storia?»`,coccole:n=>`${n} ti si avvicina facendo le fusa e ti strofina la testa sul fianco: vuole un po’ di coccole.`,racconta:'📖 Raccontare una storia',coccola:'😽 Fare le coccole',nonOra:'🙂 Non ora',ok:n=>`${n} ti saluta con la coda alta.`},
   get canto(){ return pick(['🎶 Miaooooom…','🎶 Miaaaao…','🎶 Mrrrau…','🎶 Miaoooo…']); },
@@ -113,13 +113,13 @@ const TESTI_LEGG={
     '«Da noi chi vince un duello regala qualcosa allo sconfitto: così non si fa un nemico per sempre. La vittoria senza dono porta sfortuna.»',
     '«Ogni gatto delle Pietre porta con sé una pietra del cuore, trovata da cucciolo. Se la perde, non può prendere compagno finché non ne trova un’altra.»',
     '«Prima di cacciare chiediamo il permesso alla preda, in silenzio, e dopo la ringraziamo. Voi ringraziate le vostre prede?»']}},
-  guaritore:{convoca:n=>`${n}, hai raccolto le erbe e imparato i loro segreti. Vieni alla Roccia Alta: è il momento della tua cerimonia da guaritore!`,cer:'🌿 Cerimonia del guaritore',pronto:n=>`«${n}, il clan è pronto. Oggi diventerai guaritore.»`,
+  guaritore:{convoca:n=>`${n}, hai raccolto le erbe e imparato i loro segreti. Vieni alla Roccia Alta: è il momento della tua cerimonia da guaritore!`,cer:'🌿 Cerimonia del guaritore',pronto:n=>`«${n}, il clan è pronto. Oggi diventerai ${(G&&G.p&&G.p.sesso==='f')?'guaritrice':'guaritore'}.»`,
    malanni:{spina:'ha una spina nella zampa',pancia:'ha il mal di pancia',tosse:'ha la tosse',zampa:'ha una zampa dolorante',ferita:'è ferito dopo una battaglia'},
    arriva:(n,m)=>`${n} arriva zoppicando: ${m}. «Mi aiuti, tu che conosci le erbe?»`,arrivaN:(n,cl,m)=>`${n}, del ${cl}, si avvicina con prudenza: ${m}. «Nel mio clan non riescono a curarmi… mi aiuti, anche se siamo nemici?»`,
    cura:'🌿 Curarlo con le erbe',nonOra:'🙂 Non ora',senza:'Non hai erbe con te: raccoglile nel bosco, poi torna.',guarito:n=>`🌿 Hai curato ${n}. Ti ringrazia con una testata affettuosa.`,guaritoN:n=>`🌿 Hai curato ${n}. «Non lo dimenticherò: da oggi non sei più mio nemico.»`},
   iniziazione:{gattino:(a,n)=>`${n}, avvicinati. Le lune ti hanno fatto crescere: è giunto il momento della tua iniziazione. Oggi lascerai la nursery e diventerai apprendista.`,
    guerriero:(a,n)=>`${n}, il clan ti ha visto cacciare e combattere. È giunto il momento della tua iniziazione: oggi riceverai il tuo nome di guerriero.`,
-   guaritore:(a,n)=>`${n}, conosci le erbe e i loro segreti. È giunto il momento della tua iniziazione: oggi diventerai guaritore.`},
+   guaritore:(a,n)=>`${n}, conosci le erbe e i loro segreti. È giunto il momento della tua iniziazione: oggi diventerai ${(G&&G.p&&G.p.sesso==='f')?'guaritrice':'guaritore'}.`},
   entra:'Entra', profilo:{lune:n=>`🌙 ${n} lune`,forza:n=>`💪 forza ${n}`,umori:{fame:'Ha fame',sete:'Ha sete',stanco:'Ha sonno',ferito:'Ha una ferita',incinta:'Aspetta i cuccioli',felice:'Sta bene'}},
   curio:'📜 Lo sapevi?', luoghi:{lago:'Lago d’Argento',stagno:'stagno',guado:'guado'},
   guida:{clic:'👉 Clicca: ti ci porto',via:'🧭 Ti accompagno: usa le frecce per riprendere il controllo.',arrivo:'🧭 Eccoci!',fatto:{bevi:o=>`💧 Ora ti sei dissetat${o}`,mangia:()=>'🍖 Ora hai mangiato',deposita:()=>'🐭 Hai portato la preda al mucchio',dormi:()=>'😴 Ora dormi nella tua tana',caccia:()=>'🐾 Ora insegui la preda'},stop:'🧭 Hai ripreso il controllo.',giro:'🧭 Di qui la siepe è chiusa: facciamo il giro fino all’apertura.',bloccato:'🧭 Di qui non si passa: torno indietro, prova un’altra strada.',nessuna:'🧭 Non so dove portarti per questo: guarda il consiglio nel riquadro.',missione:'Ho una missione per te!',dice:n=>`${n} ti chiama`},
@@ -251,7 +251,7 @@ const TESTI_LEGG={
   guadagni:{fame:'🍖 Tu as bien mangé',sete:'💧 Ta soif est apaisée',energia:'😴 Tu as repris des forces',salute:'❤️ Tu te sens mieux',spirito:'✨ L’esprit du clan se renforce',forza:'💪 Tu deviens plus fort'},
   clicInd:{fame:'Tu as faim : où vas-tu ?',mucchio:n=>`🍖 Au tas de proies (${n})`,caccia:'🐾 À la chasse',acqua:'Clique : vers l’eau',salute:'Clique : chez le guérisseur',curato:n=>`🌿 ${n} te soigne avec les herbes de la forêt.`,energia:'Clique : dormir',cibo:'Clique : manger',spirito:'Clique : prier'},
   verso:{tit:'🎖️ Pour devenir guerrier',titG:'🎖️ Pour devenir guérisseur',titA:'🎖️ Pour devenir apprenti',b:{lune:'🌙 lunes',racconti:'📜 récits',prede:'🐭 proies',allenamenti:'⚔️ entraînements',erbe:'🌿 herbes',cure:'🩹 soins'},oppure:n=>`Batailles gagnées : ${n} sur 3 (avec 3 victoires, le chef t’appelle)`,pronto:'✅ Prêt ! Va à la Haute Roche'},
-  convoca:n=>`${n}, tu as combattu avec courage. Viens à la Haute Roche : c’est le moment de ta cérémonie de guerrier !`,convocaAnn:'🌟 Tu es convoqué à la Haute Roche !',
+  convoca:n=>`${n}, tu as combattu avec courage. Viens à la Haute Roche : c’est le moment de ta cérémonie de guerrier !`,convocaAnn:'🌟 On t’appelle à la Haute Roche !',
   manca:(n,l)=>`Ne te décourage pas, ${n}. Pour devenir guerrier, il te manque : ${l}. Ou gagne trois batailles, et le chef t’appellera.`,
   visita:{storia:n=>`${n} s’approche et s’assoit devant toi : « Tu me racontes une histoire ? »`,coccole:n=>`${n} s’approche en ronronnant et frotte sa tête contre ton flanc : un câlin, s’il te plaît.`,racconta:'📖 Raconter une histoire',coccola:'😽 Faire un câlin',nonOra:'🙂 Pas maintenant',ok:n=>`${n} te salue la queue bien haute.`},
   get canto(){ return pick(['🎶 Miaooooom…','🎶 Miaaaao…','🎶 Mrrrau…','🎶 Miaoooo…']); },
@@ -291,13 +291,13 @@ const TESTI_LEGG={
     '« Chez nous, celui qui gagne un duel offre quelque chose au vaincu : ainsi, on ne se fait pas un ennemi pour toujours. Une victoire sans cadeau porte malheur. »',
     '« Chaque chat des Pierres porte une pierre du cœur, trouvée quand il était chaton. S’il la perd, il ne peut pas prendre de compagne avant d’en trouver une autre. »',
     '« Avant de chasser, nous demandons la permission à la proie, en silence, et après nous la remercions. Vous remerciez vos proies ? »']}},
-  guaritore:{convoca:n=>`${n}, tu as cueilli les herbes et appris leurs secrets. Viens à la Haute Roche : c’est le moment de ta cérémonie de guérisseur !`,cer:'🌿 Cérémonie du guérisseur',pronto:n=>`« ${n}, le clan est prêt. Aujourd’hui, tu deviendras guérisseur. »`,
+  guaritore:{convoca:n=>`${n}, tu as cueilli les herbes et appris leurs secrets. Viens à la Haute Roche : c’est le moment de ta cérémonie de guérisseur !`,cer:'🌿 Cérémonie du guérisseur',pronto:n=>`« ${n}, le clan est prêt. Aujourd’hui, tu deviendras ${(G&&G.p&&G.p.sesso==='f')?'guérisseuse':'guérisseur'}. »`,
    malanni:{spina:'a une épine dans la patte',pancia:'a mal au ventre',tosse:'tousse',zampa:'a une patte douloureuse',ferita:'est blessé après une bataille'},
    arriva:(n,m)=>`${n} arrive en boitant : ce chat ${m}. « Tu m’aides, toi qui connais les herbes ? »`,arrivaN:(n,cl,m)=>`${n}, du ${cl}, s’approche prudemment : ce chat ${m}. « Dans mon clan, on n’arrive pas à me soigner… tu m’aides, même si nous sommes ennemis ? »`,
    cura:'🌿 Le soigner avec les herbes',nonOra:'🙂 Pas maintenant',senza:'Tu n’as pas d’herbes sur toi : cueilles-en dans la forêt, puis reviens.',guarito:n=>`🌿 Tu as soigné ${n}. Ce chat te remercie d’un petit coup de tête affectueux.`,guaritoN:n=>`🌿 Tu as soigné ${n}. « Je ne l’oublierai pas : à partir d’aujourd’hui, tu n’es plus mon ennemi. »`},
   iniziazione:{gattino:(a,n)=>`${n}, approche. Les lunes t’ont fait grandir : le moment de ton initiation est venu. Aujourd’hui, tu quitteras la pouponnière et tu deviendras apprenti.`,
    guerriero:(a,n)=>`${n}, le clan t’a vu chasser et combattre. Le moment de ton initiation est venu : aujourd’hui, tu recevras ton nom de guerrier.`,
-   guaritore:(a,n)=>`${n}, tu connais les herbes et leurs secrets. Le moment de ton initiation est venu : aujourd’hui, tu deviendras guérisseur.`},
+   guaritore:(a,n)=>`${n}, tu connais les herbes et leurs secrets. Le moment de ton initiation est venu : aujourd’hui, tu deviendras ${(G&&G.p&&G.p.sesso==='f')?'guérisseuse':'guérisseur'}.`},
   entra:'Entrer', profilo:{lune:n=>`🌙 ${n} lunes`,forza:n=>`💪 force ${n}`,umori:{fame:'A faim',sete:'A soif',stanco:'A sommeil',ferito:'A une blessure',incinta:'Attend des chatons',felice:'Va bien'}},
   curio:'📜 Le savais-tu ?', luoghi:{lago:'Lac d’Argent',stagno:'étang',guado:'gué'},
   guida:{clic:'👉 Clique : je t’y emmène',via:'🧭 Je t’accompagne : utilise les flèches pour reprendre la main.',arrivo:'🧭 Nous y voilà !',fatto:{bevi:o=>`💧 Te voilà désaltéré${o==='a'?'e':''}`,mangia:()=>'🍖 Tu as mangé',deposita:()=>'🐭 Tu as apporté ta proie au tas',dormi:()=>'😴 Tu dors dans ta tanière',caccia:()=>'🐾 Tu poursuis la proie'},stop:'🧭 Tu as repris la main.',giro:'🧭 La haie est fermée ici : faisons le tour jusqu’à l’ouverture.',bloccato:'🧭 On ne passe pas par ici : je reviens en arrière, essaie un autre chemin.',nessuna:'🧭 Je ne sais pas où t’emmener pour cela : lis le conseil dans l’encadré.',missione:'J’ai une mission pour toi !',dice:n=>`${n} t’appelle`},
@@ -465,15 +465,25 @@ const suScalini=Math.abs(dx)<24&&dy>15&&dy<82; // gli scalini scolpiti, sul dava
   p.sopra=true; salta(p,r.x+dx/d*18,r.y+dy/d*18,CIMA,22,0.6);
   if(!puoSalire(p)){ p.scendiAlle=ora+2200; const c=capo(); const t=TESTI_LEGG.sgrida(p.rango==='gattino');
    segnaEvento(); if(c){ parla(c,t,5); mettiAFuoco(c,4500); log(`🗣️ ${nome(c)}: «${t}»`,'#ffb0a0'); } else log('🗣️ '+t,'#ffb0a0'); } } }
+// Correzione del 13 novembre 2026
+const TRATTIENI={it:['Ehi, piccol{o}! Fuori dal campo non si va: il bosco è pericoloso per un gattino. Potrai uscire quando sarai apprendista.','Torna dentro! Soltanto gli apprendisti e i guerrieri escono dal campo. Il tuo momento verrà, verso le sei lune.','Dove credi di andare? Nel bosco ci sono volpi e gatti di altri clan. Resta al campo finché non diventi apprendista.'],
+ en:['Hey, little one! No going outside the camp: the forest is dangerous for a kit. You may go out once you are an apprentice.','Back inside! Only apprentices and warriors leave the camp. Your time will come, around six moons.','Where do you think you are going? There are foxes and cats of other clans in the forest. Stay in camp until you become an apprentice.'],
+ fr:['Hé, {pt} ! On ne sort pas du camp : la forêt est dangereuse pour un chaton. Tu pourras sortir quand tu seras apprenti{e}.','Rentre ! Seuls les apprentis et les guerriers sortent du camp. Ton moment viendra, vers six lunes.','Où crois-tu aller ? Il y a des renards et des chats d’autres clans dans la forêt. Reste au camp jusqu’à ce que tu deviennes apprenti{e}.']};
+let trattenutoIl=0, trattenutoN=0;
+function trattenuto(p){ const ora=performance.now(); if(ora-trattenutoIl<7000||recitaAtt||scena) return; trattenutoIl=ora;
+ const f=p.sesso==='f', t=TRATTIENI[LINGUA][trattenutoN++%3].replace('{o}',f?'a':'o').replace('{pt}',f?'petite':'petit').replace('{e}',f?'e':'');
+ const vicini=G.cats.filter(c=>c!==p&&c.clan==='felce'&&c.rango!=='gattino'&&!c.ferito&&dist(c,p)<420).sort((a,b)=>dist(a,p)-dist(b,p)), c=vicini.find(c=>c.regina&&dist(c,p)<300)||vicini[0];
+ if(c){ c.flip=p.x<c.x?-1:1; parla(c,t,6); mettiAFuoco(c,3500); log(`🗣️ ${nome(c)}: «${t}»`,'#ffd9a0'); } else { log('🏡 '+t,'#ffd9a0'); annuncia('🏡 '+t.split(/[.!?]/)[0]); } }
 function siepe(p,ox,oy,dt){ let spinto=false; const ora=performance.now();
  // soluzione semplice (12 novembre 2026): al secondo urto, o dopo mezzo secondo di spinta, il gatto attraversa la siepe
  if(ora<(p.passaSiepe||0)) return;
  for(const k in CLAN){ const cm=CLAN[k].campo, R=cm.r+18, r0=Math.hypot(ox-cm.x,oy-cm.y), r1=Math.hypot(p.x-cm.x,p.y-cm.y);
   const a=Math.atan2(p.y-cm.y,p.x-cm.x), da=Math.abs(((a-CLAN[k].ingresso+Math.PI*3)%(Math.PI*2))-Math.PI);
-  if(da<0.27) continue; // l'apertura
   const dentroPrima=r0<R;
+  if(k==='felce'&&p.rango==='gattino'&&p.clan==='felce'&&!G.gita&&dentroPrima&&r1>R-10){ const rr=R-10; p.x=cm.x+(p.x-cm.x)/(r1||1)*rr; p.y=cm.y+(p.y-cm.y)/(r1||1)*rr; p.guida=null; trattenuto(p); spinto=true; continue; } // il gattino non esce dal campo, neanche dall'apertura, finché non diventa apprendista
+  if(da<0.27) continue; // l'apertura
   if(dentroPrima&&r1>R-10||!dentroPrima&&r1<R+10){
-   if(p.rango!=='gattino'){
+   if(p.rango!=='gattino'||G.gita){ // durante la gita con un adulto anche il gattino passa (js/storie.js)
     if(!p.inSiepe){ p.urtiSiepe=(p.urtiSiepe||0)+1; p.inSiepe=true; }
     p.spintaSiepe=(p.spintaSiepe||0)+(dt||0);
     if(p.auto||p.urtiSiepe>=2||p.spintaSiepe>0.5){ p.passaSiepe=ora+1500; p.urtiSiepe=0; p.spintaSiepe=0; return; } } // passa attraverso
@@ -554,9 +564,10 @@ function spiegaSpirito(){ G.spiritoSpiegato=true; modale(TESTI_LEGG.titoloSpirit
 // richiesta del 12 novembre 2026: cuoricini e coccole quando un gatto vuole avere cuccioli, un esplicito
 // proposte soltanto a gatti di sesso opposto della stessa età e dello stesso rango, rifiuti gentili; niente scene scabrose: il gioco è per bambini.
 const AM=()=>TESTI_LEGG.amore;
-function impegno(c){ if(c.impegno===undefined){ const r=((c.id*2654435761)>>>0)%100; c.impegno=r<22?'partner':r<38?'guerra':null; } return c.impegno; }
+function impegno(c){ if(c.impegno===undefined){ const r=((c.id*2654435761)>>>0)%100; c.impegno=r<22?'partner':(r<38&&c.rango!=='guaritore')?'guerra':null; } return c.impegno; }
+const adultoAmore=r=>r==='guerriero'||r==='guaritore'; // anche guaritori e guaritrici trovano un compagno (richiesta del 13 novembre 2026)
 function puoProporre(p,c){
- return c.clan==='felce'&&c!==p&&c.sesso!==p.sesso&&p.rango==='guerriero'&&c.rango==='guerriero'
+ return c.clan==='felce'&&c!==p&&c.sesso!==p.sesso&&adultoAmore(p.rango)&&adultoAmore(c.rango)
   &&!c.leader&&!c.figlio&&c.id!==G.madre&&!c.incinta&&!p.incinta&&!G.attesaGattini&&!(p.allatta&&G.t<p.allatta)&&(p.compagno==null||p.compagno===c.id); }
 function opzioniAmore(c){ const p=G.p; return puoProporre(p,c)?[{t:AM().proponi,f:()=>proponi(c)}]:[]; }
 function proponi(c){ const p=G.p, n=nome(p);
@@ -591,7 +602,7 @@ function corteggiamento(dt){
  if(ora<prossimoCorteggio||scena||paused||G.raid||G.dentro||!(basso?puoVisita():puoEvento())) return;
  prossimoCorteggio=ora+(basso?10000:20000); // un controllo ogni venti secondi (dieci con lo spirito basso)
  if(Math.random()>(basso?0.8:0.35)) return;
- const cand=p.rango!=='guerriero'?[]:G.cats.filter(c=>puoProporre(p,c)&&(c.amicizia>=3||(lune(p)>=14&&c.amicizia>=1)||lune(p)>=18)&&(p.compagno===c.id||!impegno(c))&&!(c.impegnoRifiuto&&G.t-c.impegnoRifiuto<MOON*3)&&dist(c,p)<420&&c.stato==='campo');
+ const cand=!adultoAmore(p.rango)?[]:G.cats.filter(c=>puoProporre(p,c)&&(c.amicizia>=3||(lune(p)>=14&&c.amicizia>=1)||lune(p)>=18)&&(p.compagno===c.id||!impegno(c))&&!(c.impegnoRifiuto&&G.t-c.impegnoRifiuto<MOON*3)&&dist(c,p)<420&&c.stato==='campo');
  if(cand.length&&Math.random()<0.55){ const sc=cand.sort((a,b)=>(b.id===p.compagno)-(a.id===p.compagno)||b.amicizia-a.amicizia)[0]; sc.amicizia=Math.max(sc.amicizia||0,3); corteggia={id:sc.id,t:0,cuore:0}; segnaEvento(); return; } // chi ti corteggia ti è già amico
  if(p.rango==='guaritore'&&Math.random()<0.5){ // i pazienti vengono dal guaritore
   const nemico=Math.random()<0.25, pool=G.cats.filter(c=>(nemico?c.clan!=='felce'&&!ostileClan(c.clan):c.clan==='felce')&&c!==p&&!c.leader&&c.stato!=='fuga'&&c.stato!=='assalto'&&c.rango!=='gattino');
@@ -664,6 +675,11 @@ function tappaVerso(p,meta){ // gira intorno alla siepe fino all'apertura del ca
   if(Math.abs(diff)>0.3){ const a2=ap+Math.sign(diff)*Math.min(0.5,Math.abs(diff)), RR=R+55; return {x:cm.x+Math.cos(a2)*RR,y:cm.y+Math.sin(a2)*RR}; } // il giro largo, fuori dalla siepe
   return (dist(p,fuori)>16&&scarto(p)>0.22)?fuori:dentro; }
  return tappaGuado(p,meta); }
+// Il gatto guidato vede gli alberi e i massi davanti a sé e li aggira per tempo, invece di sbatterci contro (correzione del 13 novembre 2026
+function sterzo(p,ux,uy,d){ const S=window.SOLIDI; if(!S) return [ux,uy]; let ax=0, ay=0; const avanti=Math.min(150,d);
+ for(const o of S){ const rx=o.x-p.x, ry=o.y-p.y; if(Math.abs(rx)>170||Math.abs(ry)>170) continue; const t=rx*ux+ry*uy; if(t<=0||t>avanti) continue;
+  const lat=ry*ux-rx*uy, largo=o.r+26; if(Math.abs(lat)>=largo) continue; const lato=lat>0?-1:1, peso=(1-t/(avanti+1))*(1-Math.abs(lat)/largo)*3.2; ax+=-uy*lato*peso; ay+=ux*lato*peso; }
+ const nx=ux+ax, ny=uy+ay, l=Math.hypot(nx,ny)||1; return [nx/l,ny/l]; }
 function guidaPasso(p,dt){ const T=TESTI_LEGG.guida, g=p.guida;
  const tasti=keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight||keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD;
  if((tasti&&!g.giro)||p.auto||scena||g.t>90){ p.guida=null; if(tasti) log(T.stop,'#cfe8ff'); return; }
@@ -685,7 +701,8 @@ function guidaPasso(p,dt){ const T=TESTI_LEGG.guida, g=p.guida;
  const vicino=meta.clan?36:20;
  if(g.giro&&dist(p,meta)<24){ p.guida=null; return; }
  if(dist(p,meta)<vicino&&!G.dentro&&!meta.tana){ p.guida=null; arrivo(p,g.punto&&g.punto.clan?g.punto:meta); return; }
- const dx=tap.x-p.x, dy=tap.y-p.y, d=Math.hypot(dx,dy)||1, v=(p.rango==='gattino'?100:130)*(acqua(p.x,p.y)?0.5:1), s=Math.min(d,v*dt);
+ let dx=tap.x-p.x, dy=tap.y-p.y; const d=Math.hypot(dx,dy)||1; if(!G.dentro){ const sv=sterzo(p,dx/d,dy/d,d); dx=sv[0]*d; dy=sv[1]*d; }
+ const v=(p.rango==='gattino'?100:130)*(acqua(p.x,p.y)?0.5:1), s=Math.min(d,v*dt);
  p.x+=dx/d*s; p.y+=dy/d*s; p.vx=dx/d*2; p.vy=dy/d*2; p.dir=Math.atan2(dy,dx); if(Math.abs(dx)>1) p.flip=dx<0?-1:1;
  if(!G.dentro){ // gira intorno alla Roccia Alta e alle tane che non sono la meta, senza salirci né entrarci
   const ostacoli=[[L.roccia,L.roccia.r+32],...TANE.filter(k=>dist(ingressoTana(k),meta)>4).map(k=>[L[k],L[k].r*0.98])];
@@ -834,7 +851,7 @@ function segnaEvento(){ G.ultimoEvento=G.t; }
 // ================== incontro con un gatto nemico: combattere, scappare, a volte diventare amici o avere cuccioli ==================
 // richiesta del 12 novembre 2026
 const TN=()=>TESTI_LEGG.nemico;
-function puoCuccioliNemico(p,e){ return e.sesso!==p.sesso&&p.rango==='guerriero'&&e.rango==='guerriero'&&((e.conosciuto||0)>=1||e.amicoPrima||(e.amico&&e.pacificoFino==null))&&!e.leader&&!e.incinta&&!p.incinta&&!G.attesaGattini&&!(p.allatta&&G.t<p.allatta)&&(p.compagno==null||p.compagno===e.id); }
+function puoCuccioliNemico(p,e){ return e.sesso!==p.sesso&&adultoAmore(p.rango)&&adultoAmore(e.rango)&&((e.conosciuto||0)>=1||e.amicoPrima||(e.amico&&e.pacificoFino==null))&&!e.leader&&!e.incinta&&!p.incinta&&!G.attesaGattini&&!(p.allatta&&G.t<p.allatta)&&(p.compagno==null||p.compagno===e.id); }
 function incontroNemico(e){ const p=G.p; if(!e||e.stato==='fuga'||paused||scena) return;
  if(!e.opz||G.t>e.opz.fino){ e.opz={fino:G.t+MOON, amici:!e.amico&&Math.random()<0.35, cuccioli:puoCuccioliNemico(p,e)}; }
  segnaEvento(); p.guida=null; p.caccia=null; e.vx=e.vy=0; e.flip=p.x<e.x?-1:1; p.flip=-e.flip;
@@ -1154,7 +1171,7 @@ function rubaAltare(k){ const cl=L[k].clan, T=TESTI_LEGG.nemiche, p=G.p; G.derub
 // richiesta del 12 novembre 2026
 const ETA_VECCHIO=60, ETA_FINE=70; // vita più corta (scelta del 12 novembre 2026): circa 50 minuti di gioco per vita
 setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused||scena||G.raid||transizione) return; const p=G.p, V=TESTI_LEGG.vita, l=lune(p);
- if(l>=ETA_VECCHIO&&!p.vecchio&&p.rango!=='gattino'){ p.vecchio=true; const c=capo(); const t=V.vecchio(nome(p)); if(c&&c!==p){ parla(c,t,9); mettiAFuoco(c,4000); log(`🗣️ ${nome(c)}: «${t}»`,'#e8d0a8'); } else log(t,'#e8d0a8'); annuncia(V.vecchioAnn,'#e8d0a8'); segnaEvento(); return; }
+ if(l>=ETA_VECCHIO&&!p.vecchio&&p.rango!=='gattino'){ p.vecchio=true; const c=p.leader&&typeof anziano==='function'&&anziano()||capo(); const t=V.vecchio(nome(p)); if(c&&c!==p){ parla(c,t,9); mettiAFuoco(c,4000); log(`🗣️ ${nome(c)}: «${t}»`,'#e8d0a8'); } else log(t,'#e8d0a8'); annuncia(V.vecchioAnn,'#e8d0a8'); segnaEvento(); return; } // al capo lo dice l'anziano, non il suo vice
  if(l>=ETA_FINE&&!G.riposoFinale&&p.rango!=='gattino') fineVita(); },1000);
 function fineVita(){ const p=G.p, V=TESTI_LEGG.vita, k='tanaGuerrieri', d=L[k]; G.riposoFinale={t:G.t}; p.guida=null; p.caccia=null; p.anim=null; p.sopra=false; p.elev=0;
  modale(V.tit,V.sonno(nome(p)),[{t:'🕯️',f:()=>{
@@ -1368,16 +1385,18 @@ document.head.appendChild(stileGrande);
 var recitaAtt=null;
 const didascalia=document.createElement('div'); didascalia.id='didascalia';
 const stileRecita=document.createElement('style'); stileRecita.textContent=`#didascalia{position:absolute;left:50%;bottom:27%;transform:translateX(-50%);max-width:min(760px,80%);padding:16px 26px;border-radius:14px;background:rgba(12,9,22,.82);border:2px solid rgba(255,220,150,.45);color:#ffe9c4;font:italic 600 24px/1.45 Georgia,serif;text-align:center;opacity:0;transition:opacity .5s;pointer-events:none;z-index:30;text-shadow:0 2px 6px #000}
-#didascalia.si{opacity:1} #didascalia.alto{bottom:auto;top:12%} #saltaRecita{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:31;font:800 19px system-ui;color:#2a1a05;background:linear-gradient(#ffeeb8,#ffc94d);border:2px solid #fff6d0;border-radius:999px;padding:10px 24px 13px;display:none;cursor:pointer;white-space:nowrap;overflow:hidden;animation:invito 1.4s ease-in-out infinite} #saltaRecita.si{display:block}
-#saltaRecita kbd,#mb kbd.sp{display:inline-block;margin:0 7px;padding:2px 12px;border-radius:7px;background:#2a1a05;color:#ffe9a8;font:800 15px system-ui;box-shadow:0 2px 0 #000} #mb kbd.sp{float:right;margin:0 0 0 10px;animation:lamp 1.2s infinite}
-#saltaRecita small{margin-left:8px;font:700 13px system-ui;opacity:.7} #saltaRecita i{position:absolute;left:0;bottom:0;height:4px;width:100%;background:#a8560a;transform-origin:left}
-@keyframes invito{0%,100%{box-shadow:0 0 0 0 rgba(255,210,90,.8),0 6px 18px #0009}50%{box-shadow:0 0 0 13px rgba(255,210,90,0),0 6px 18px #0009}} @keyframes durata{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+#didascalia.si{opacity:1} #didascalia.alto{bottom:auto;top:12%} #saltaRecita{position:absolute;left:50%;bottom:122px;transform:translateX(-50%);z-index:31;display:none;cursor:pointer;white-space:nowrap;padding:9px 26px 12px;border-radius:4px;background:linear-gradient(180deg,rgba(18,13,28,.88),rgba(10,7,16,.92));border:1px solid rgba(232,196,120,.55);box-shadow:0 0 0 3px rgba(10,7,16,.55),0 8px 24px rgba(0,0,0,.55);color:#f1dfb4;font:italic 500 18px/1.2 Georgia,'Times New Roman',serif;letter-spacing:.04em;animation:invito 3s ease-in-out infinite} #saltaRecita.si{display:block}
+#saltaRecita::before,#saltaRecita::after{content:'❧';font-style:normal;color:#d9b36a;margin:0 12px;font-size:15px;opacity:.85} #saltaRecita::before{display:inline-block;transform:scaleX(-1)}
+#saltaRecita kbd{display:inline-block;margin:0 9px;padding:2px 12px 3px;border-radius:5px;border:1px solid #d9b36a;border-bottom-width:3px;background:rgba(217,179,106,.12);color:#ffe7ae;font:600 12px/1.4 system-ui,sans-serif;letter-spacing:.18em;font-style:normal;vertical-align:2px}
+#mb kbd.sp{float:right;margin:0 0 0 10px;padding:1px 9px;border-radius:5px;border:1px solid rgba(255,231,174,.7);border-bottom-width:3px;color:#ffe7ae;font:600 11px/1.5 system-ui;letter-spacing:.14em}
+#saltaRecita small{margin-left:6px;font:500 12px system-ui;letter-spacing:.1em;color:#d9b36a;opacity:.8;font-style:normal} #saltaRecita i{position:absolute;left:14px;right:14px;bottom:4px;height:1px;background:linear-gradient(90deg,transparent,#d9b36a,transparent);transform-origin:center}
+@keyframes invito{0%,100%{border-color:rgba(232,196,120,.45);box-shadow:0 0 0 3px rgba(10,7,16,.55),0 8px 24px rgba(0,0,0,.55)}50%{border-color:rgba(255,224,160,.95);box-shadow:0 0 0 3px rgba(10,7,16,.55),0 0 22px rgba(232,186,96,.35),0 8px 24px rgba(0,0,0,.55)}} @keyframes durata{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 #cornice{position:absolute;inset:0;pointer-events:none;z-index:29;opacity:0;transition:opacity .6s;border-radius:10px;box-shadow:inset 0 0 0 4px rgba(255,224,150,.95),inset 0 0 60px 16px rgba(255,190,80,.6),inset 0 0 170px 40px rgba(30,14,0,.38);animation:cornice 2.6s ease-in-out infinite} #cornice.si{opacity:1}
 @keyframes cornice{50%{box-shadow:inset 0 0 0 4px rgba(255,240,200,1),inset 0 0 90px 26px rgba(255,204,100,.75),inset 0 0 170px 40px rgba(30,14,0,.38)}}`;
 document.head.appendChild(stileRecita);
 const saltaRecita=document.createElement('div'); saltaRecita.id='saltaRecita'; const cornice=document.createElement('div'); cornice.id='cornice';
 addEventListener('DOMContentLoaded',()=>{ const sc=document.getElementById('scena3')||document.body; sc.appendChild(didascalia); sc.appendChild(saltaRecita);
- saltaRecita.innerHTML={it:'Premi <kbd>SPAZIO</kbd> per continuare ▸',en:'Press <kbd>SPACE</kbd> to continue ▸',fr:'Appuie sur <kbd>ESPACE</kbd> pour continuer ▸'}[LINGUA]+'<small></small><i></i>'; sc.appendChild(cornice); saltaRecita.addEventListener('click',e=>{ e.stopPropagation(); avanzaRecita(true); }); });
+ saltaRecita.innerHTML={it:'premi <kbd>SPAZIO</kbd> per continuare',en:'press <kbd>SPACE</kbd> to continue',fr:'appuie sur <kbd>ESPACE</kbd> pour continuer'}[LINGUA]+'<small></small><i></i>'; sc.appendChild(cornice); saltaRecita.addEventListener('click',e=>{ e.stopPropagation(); avanzaRecita(true); }); });
 function recita(battute,fine){ if(recitaAtt) clearTimeout(recitaAtt.to); recitaAtt={b:battute.filter(Boolean),i:-1,fine,da:0}; saltaRecita.classList.add('si'); avanzaRecita(); }
 function avanzaRecita(salto){ const r=recitaAtt; if(!r) return;
  if(salto&&performance.now()-r.da<900) return;
@@ -1544,7 +1563,7 @@ addEventListener('DOMContentLoaded',()=>{
   const titolo={it:'🌑 Sulla riva del Lago d’Argento',en:'🌑 On the shore of Silver Lake',fr:'🌑 Sur la rive du Lac d’Argent'}[LINGUA], voce={it:'Dall’acqua sale una voce: «Chi vuole parlare con gli antenati deve prima sapere.»',en:'A voice rises from the water: “Whoever wishes to speak with the ancestors must first know.”',fr:'De l’eau monte une voix : « Celui qui veut parler aux ancêtres doit d’abord savoir. »'}[LINGUA];
   prova(titolo,voce,()=>{ const S=RECITE.sogno;
    recita([{t:S[0],dur:4,f:()=>{ setPosa(p,'dorme',30); }},{t:S[1],dur:5},{t:S[2],dur:5,f:()=>scintille(p.x,p.y-10,'#cfe0ff',20)},{t:S[3],dur:4.5}],()=>{ log(RECITE.notaSogno,'#e8d9a8');
-    const opz=shuffle(SUFF_GUAR).slice(0,4);
+    const opz=shuffle(SUFF_GUAR).filter(x=>x!==G.p.prefisso).slice(0,4);
     modale(RECITE.stelle,RECITE.stelleT+box(...RECITE.boxStelle),opz.map(s=>({t:nomeCon(p,s),f:()=>{
      p.suffisso=s; p.rango='guaritore'; p.via=null; G.t+=MOON*0.3;
      recita([{t:RC('voce',nome(p)),dur:4.5,f:()=>scintille(p.x,p.y-20,'#ffe08a',18)}],()=>{ p.posa=null; p.posaFine=0; log('✨ '+RC('guarFine',nome(p),rangoTesto(p)),'#ffe08a'); effetto(RECITE.sveglia,2.6); });
@@ -1645,7 +1664,7 @@ const SPAZIO_B={it:{bevi:'bevi',mucchio:n=>`mangia dal mucchio (${n} prede)`,pre
 addEventListener('DOMContentLoaded',()=>{ if(typeof azioneSpazio!=='function') return; const o=azioneSpazio;
  azioneSpazio=function(){ const p=G.p; if(G.raid||G.dentro||p.anim) return o();
   { const cg=typeof colossoVicino==='function'&&!campoSottoAttacco()&&colossoVicino(p); if(cg) return cg; } // ai piedi del grande gatto di pietra, Spazio serve a lui
-  if(campoSottoAttacco()&&p.rango!=='gattino'&&!p.vecchio){ const gu0=typeof azioneGuerra==='function'&&azioneGuerra(); if(gu0) return gu0; if(nemicoVicino(p,55)) return o(); return {t:ALLARME.corri,f:()=>avviaGuida('obiettivo')}; } // con il campo sotto attacco, Spazio serve soltanto a difenderlo
+  if(campoSottoAttacco()&&p.rango!=='gattino'&&!p.vecchio&&!(typeof puoErbe==='function'&&puoErbe())){ const gu0=typeof azioneGuerra==='function'&&azioneGuerra(); if(gu0) return gu0; if(nemicoVicino(p,55)) return o(); return {t:ALLARME.corri,f:()=>avviaGuida('obiettivo')}; } // con il campo sotto attacco, Spazio serve soltanto a difenderlo
   const gu=typeof azioneGuerra==='function'&&azioneGuerra(); if(gu) return gu;
   if(p.rango!=='gattino'&&nemicoVicino(p,55)) return o(); // un nemico addosso viene prima di tutto
   const B=[];
@@ -1753,7 +1772,11 @@ function clanInvecchia(){ const p=G.p;
  const F=G.cats.filter(c=>c.clan==='felce'), legati=new Set([p.compagno,p.mentore,p.allievo,G.madre].filter(x=>x!=null)), anziani=F.filter(c=>c.rango==='anziano');
  const soglia=c=>ETA_VECCHIO+(c.id%7); // non tutti alla stessa luna
  // 1. il capo passa il testimone
- const k=F.find(c=>c.leader); if(k&&lune(k)>=soglia(k)){ const G2=F.filter(c=>c.rango==='guerriero'&&!c.leader&&!c.regina&&!c.ferito), cand=G2.filter(c=>lune(c)<ETA_VECCHIO-12).sort((a,b)=>lune(b)-lune(a))[0]||G2.sort((a,b)=>lune(a)-lune(b))[0]; // il più esperto tra i giovani; in mancanza, il più giovane
+ const k=F.find(c=>c.leader); if(k&&lune(k)>=soglia(k)&&!p.leader&&typeof STORIE!=='undefined'&&STORIE.capoChiama){ // prima di scegliere un giovane, il capo offre il posto al giocatore che ha i meriti (correzione del 13 novembre 2026)
+  const S=p.st||(p.st={}), merito=p.rango==='guerriero'?((p.vinte||0)>=5||(p.battaglie||0)>=2):p.rango==='guaritore'?((p.cure||0)>=5):false;
+  if(merito&&lune(p)>=28&&!(S.capoChiesto&&G.t-S.capoChiesto<MOON*2)&&!S.capoAddio){ S.capoAddio=G.t; STORIE.capoChiama(); return 'capo'; }
+  if(S.capoAddio&&G.t-S.capoAddio<MOON*0.5) return; } // la risposta del giocatore arriva prima di passare ad altri
+ if(k&&lune(k)>=soglia(k)&&!p.leader){ const G2=F.filter(c=>c.rango==='guerriero'&&!c.leader&&!c.regina&&!c.ferito), cand=G2.filter(c=>lune(c)<ETA_VECCHIO-12).sort((a,b)=>lune(b)-lune(a))[0]||G2.sort((a,b)=>lune(a)-lune(b))[0]; // il più esperto tra i giovani; in mancanza, il più giovane
   if(cand){ const v=nome(k); diventaAnziano(k); cand.leader=true; stat(cand); nuovoPuntoCampo(cand); const t=ETA.capo(v); parla(cand,t,8); mettiAFuoco(cand,4000); log(ETA.capoLog(v,nome(cand)),'#ffe08a'); log(`🗣️ ${nome(cand)}: «${t}»`,'#ffe08a'); return 'capo'; } }
  // 2. un guerriero o un guaritore vecchio diventa anziano (il guaritore soltanto se un altro guaritore resta)
  const v=F.find(c=>!c.leader&&(c.rango==='guerriero'||(c.rango==='guaritore'&&F.filter(x=>x.rango==='guaritore').length>1))&&c.stato==='campo'&&!c.ferito&&lune(c)>=soglia(c));
@@ -1773,7 +1796,7 @@ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.raid||paused) return; const 
  const clan=G.cats.filter(c=>c.clan===cl); if(!r.battuti){ r.battuti=[]; r.visti={}; }
  for(const c of clan){ if(c.stato==='fuga'&&r.visti[c.id]&&r.visti[c.id]!=='fuga'&&!r.battuti.includes(c.id)) r.battuti.push(c.id); r.visti[c.id]=c.stato; }
  const attivi=clan.filter(c=>c.stato==='schierato'||c.stato==='caccia'), mancano=r.necessari-r.sconfitti-attivi.length; if(mancano<=0) return;
- const riserva=clan.filter(c=>!attivi.includes(c)&&!r.battuti.includes(c.id)).sort((a,b)=>(a.leader?1:0)-(b.leader?1:0)).slice(0,mancano);
+ const riserva=clan.filter(c=>!attivi.includes(c)&&!r.battuti.includes(c.id)&&c.rango!=='guaritore'&&c.via!=='guaritore'&&c.rango!=='gattino'&&c.rango!=='anziano').sort((a,b)=>(a.leader?1:0)-(b.leader?1:0)).slice(0,mancano);
  riserva.forEach((c,i)=>{ c.stato='schierato'; c.hp=Math.max(c.hp,c.hpMax*0.7); c.posto=[lu.x+50+(i%2)*28,lu.y-30+i*26]; r.visti[c.id]='schierato'; if(dist(c,{x:lu.x,y:lu.y})>500){ c.x=lu.x+160+i*20; c.y=lu.y+i*18; } });
  const disp=attivi.length+riserva.length;
  if(disp<r.necessari-r.sconfitti){ r.necessari=r.sconfitti+disp; if(r.necessari<1) r.sconfitti=r.necessari=1; if(r.sconfitti>=r.necessari&&typeof controllaRaid==='function') controllaRaid(); } },1000);
@@ -1914,3 +1937,39 @@ function puntoMappa(e){ const R=MAPPA_R; if(!R||!G||G.dentro) return null; const
 addEventListener('DOMContentLoaded',()=>{ const cv=document.getElementById('c'); if(!cv) return;
  cv.addEventListener('click',e=>{ if(paused||scena||recitaAtt) return; const pt=puntoMappa(e); if(!pt) return; e.stopImmediatePropagation(); G.p.guida=null; avviaGuida('punto',pt); },true);
  cv.addEventListener('mousemove',e=>{ if(puntoMappa(e)) cv.style.cursor='pointer'; else if(cv.style.cursor==='pointer'&&!zonaSotto(e)) cv.style.cursor=''; }); });
+
+// ================== fumetti che non si coprono e restano visibili ==================
+// Richiesta del 13 novembre 2026.
+// Al massimo tre fumetti alla volta (prima chi parla nel racconto, poi il giocatore, poi i più recenti); stanno in una fascia centrale
+// lontano dai bordi; se due si toccano, il secondo si sposta sopra o sotto; la punta indica sempre il gatto che parla.
+addEventListener('DOMContentLoaded',()=>{ if(typeof disegnaFumetti!=='function') return;
+ disegnaFumetti=function(){ if(typeof G==='undefined'||!G||!G.p) return; ctx.font='bold 19px system-ui';
+  const chiParla=recitaAtt&&recitaAtt.b[recitaAtt.i]&&recitaAtt.b[recitaAtt.i].c, cand=[];
+  for(const f of fumetti){ const c=gatto(f.id); if(!c||dist(c,G.p)>520) continue; const pri=(chiParla&&chiParla.id===c.id?3:0)+(c===G.p?2:0)+f.t*0.01; cand.push({f,c,pri}); }
+  cand.sort((a,b)=>b.pri-a.pri); const mw=Math.min(300,W*0.25), posti=[{bx:W-mw-30,by:0,w:mw+30,h:WH*mw/WW+34}], mx=Math.max(16,W*0.1), top=58, basso=H-190; // la mappa in alto a destra è un ostacolo come un altro fumetto
+  for(const {f,c} of cand.slice(0,3)){ const s=scala(c), [x,y]=aSchermo(c.x,c.y,(c.tipo&&VISITATORI[c.tipo]?VISITATORI[c.tipo].h*0.02+0.1:0.6*s+0.15)+(c.elev||0)*0.02);
+   const R=righe(f.txt,Math.min(360,W*0.42)), w=Math.max(...R.map(r=>ctx.measureText(r).width))+28, h=R.length*25+18;
+   let bx=clamp(x-w/2,mx,Math.max(mx,W-mx-w)), by=clamp(y-h-18,top,Math.max(top,basso-h));
+   const tocca=yy=>posti.some(q=>bx<q.bx+q.w+10&&bx+w+10>q.bx&&yy<q.by+q.h+10&&yy+h+10>q.by);
+   if(tocca(by)){ let ok=null; for(let k=1;k<=6&&ok==null;k++){ for(const d of [-1,1]){ const yy=by+d*k*(h*0.5+8); if(yy>=top&&yy+h<=basso&&!tocca(yy)){ ok=yy; break; } } } if(ok!=null) by=ok; else { const q=posti[0]; if(bx+w>q.bx) bx=Math.max(mx,q.bx-w-12); } } // se non trova posto in verticale, si sposta a sinistra della mappa
+   posti.push({bx,by,w,h});
+   ctx.globalAlpha=Math.min(1,f.t*2); ctx.fillStyle='rgba(255,250,235,0.97)'; ctx.beginPath(); ctx.roundRect(bx,by,w,h,13); ctx.fill(); ctx.strokeStyle='rgba(90,60,20,.6)'; ctx.lineWidth=2; ctx.stroke();
+   const px=clamp(x,bx+16,bx+w-16), sotto=y>by+h, ty=sotto?by+h:by; // la punta va verso il gatto, sopra o sotto il fumetto
+   ctx.beginPath(); ctx.moveTo(px-9,ty); ctx.lineTo(px+9,ty); ctx.lineTo(clamp(x,px-30,px+30),sotto?Math.min(ty+16,y):Math.max(ty-16,y)); ctx.closePath(); ctx.fill(); ctx.stroke();
+   ctx.fillStyle='rgba(255,250,235,0.97)'; ctx.fillRect(px-8,sotto?ty-2:ty,16,3);
+   ctx.fillStyle='#2a2418'; ctx.textAlign='left'; R.forEach((r,i)=>ctx.fillText(r,bx+14,by+27+i*25)); ctx.globalAlpha=1; } }; });
+
+// ================== le cose solide valgono per tutti i gatti ==================
+// Correzione del 13 novembre 2026
+//. Prima i solidi (Roccia Alta e scalini, tronchi, massi, bracieri, aste: window.SOLIDI)
+// fermavano soltanto il giocatore. Ora fermano anche gli altri gatti quando camminano (muovi): chi urta scivola di lato verso la sua meta.
+// Restano liberi il capo (parla dagli scalini), i gatti in alto (elev) e chi è dentro una tana.
+addEventListener('DOMContentLoaded',()=>{ if(typeof muovi!=='function') return; const o=muovi;
+ const fuori=(c,cx,cy,m,tx,ty,v,dt)=>{ const dx=c.x-cx, dy=c.y-cy, d=Math.hypot(dx,dy)||1; if(d>=m) return false; const nx=dx/d, ny=dy/d; c.x=cx+nx*m; c.y=cy+ny*m;
+  const t1=-ny, t2=nx, verso=Math.sign(t1*(tx-c.x)+t2*(ty-c.y))||1; c.x+=t1*verso*v*dt*0.7; c.y+=t2*verso*v*dt*0.7; return true; }; // scivola intorno all'ostacolo
+ muovi=function(c,x,y,v,dt){ const r=o.apply(this,arguments); if(!c||c===G.p||c.elev>0||c.sopra||G.dentro&&c.inSala) return r;
+  const R=L.roccia; if(!c.leader&&Math.abs(c.x-R.x)<140&&Math.abs(c.y-R.y)<140){
+   fuori(c,R.x,R.y,R.r+12,x,y,v,dt);
+   const dx=c.x-R.x, dy=c.y-R.y; if(Math.abs(dx)<26&&dy>12&&dy<84){ const ex=26-Math.abs(dx), ey=84-dy; if(ex<ey) c.x=R.x+(dx<0?-26:26); else { c.y=R.y+84; c.x+=(dx<0?-1:1)*v*dt*0.9; } } } // davanti agli scalini scivola di lato, per aggirarli // gli scalini scolpiti, sul davanti
+  const S=window.SOLIDI; if(S) for(const s of S){ if(Math.abs(c.x-s.x)>s.r+10||Math.abs(c.y-s.y)>s.r+10) continue; fuori(c,s.x,s.y,s.r+5,x,y,v,dt); }
+  return r; }; });

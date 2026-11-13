@@ -76,6 +76,7 @@ it:{
   box:['Lo straniero che resta','Il sociologo Georg Simmel (<i>Excursus sullo straniero</i>, 1908) descrive lo straniero non come il viandante «che oggi viene e domani va», ma come colui «che oggi viene e domani rimane»: sta nel gruppo senza esserci nato, e proprio per questo vede cose che gli altri non vedono più.']},
  capo:{sogno:n=>`${n}, il clan ti guarda. Chi vince molte battaglie o guarisce molti gatti, un giorno potrà guidarlo. Ma un capo non comanda: ascolta, dona e mette pace.`,
   chiama:n=>`Le mie lune sono tante, e il clan ha bisogno di una guida più giovane. ${n}, ti ho vist{o} proteggere, donare e ascoltare. Vuoi prendere il mio posto?`,
+  chiamaG:n=>`${n}, il clan ti ascolta più di quanto ascolti me. Ti ho vist{o} proteggere, donare e ascoltare: una guida si riconosce così. Vuoi prendere il mio posto?`,
   tit:'⭐ La guida del clan',testo:v=>`${v} aspetta la tua risposta. Tutto il clan trattiene il fiato.`,si:'⭐ Accettare',no:'Non ancora',
   nome:n=>`Da questo giorno il clan ti chiamerà ${n}. Che gli antenati stellati ti prestino la loro pazienza.`,giuro:'Guiderò il clan con le zampe leggere. Parlerò per ultim{o}, e mangerò per ultim{o}.',
   fineTit:'⭐ Sei capo del clan',fine:(n,v,vice)=>`Ora sei <b>${n}</b>. ${v} si siede tra gli anziani, content{x}. ${vice?vice+' sarà la tua voce quando sarai lontano.':''}<br><br>Puoi salire sulla Roccia Alta, e il clan si raduna intorno a te.`,
@@ -159,6 +160,7 @@ en:{
   box:['The stranger who stays','The sociologist Georg Simmel (<i>The Stranger</i>, 1908) describes the stranger not as the wanderer «who comes today and goes tomorrow», but as the one «who comes today and stays tomorrow»: part of the group without having been born in it, and for that very reason able to see what the others no longer see.']},
  capo:{sogno:n=>`${n}, the clan is watching you. Whoever wins many battles or heals many cats may one day lead it. But a leader does not command: a leader listens, gives and makes peace.`,
   chiama:n=>`My moons are many, and the clan needs a younger guide. ${n}, I have seen you protect, give and listen. Will you take my place?`,
+  chiamaG:n=>`${n}, the clan listens to you more than it listens to me. I have seen you protect, give and listen: that is how a guide is known. Will you take my place?`,
   tit:'⭐ Leading the clan',testo:v=>`${v} waits for your answer. The whole clan holds its breath.`,si:'⭐ Accept',no:'Not yet',
   nome:n=>`From this day the clan will call you ${n}. May the starry ancestors lend you their patience.`,giuro:'I will lead the clan with light paws. I will speak last, and eat last.',
   fineTit:'⭐ You are the clan leader',fine:(n,v,vice)=>`Now you are <b>${n}</b>. ${v} sits down among the elders, content. ${vice?vice+' will be your voice when you are away.':''}<br><br>You may climb Tall Rock, and the clan gathers around you.`,
@@ -242,6 +244,7 @@ fr:{
   box:['L’étranger qui reste','Le sociologue Georg Simmel (<i>Digressions sur l’étranger</i>, 1908) décrit l’étranger non comme le voyageur « qui vient aujourd’hui et repart demain », mais comme celui « qui vient aujourd’hui et reste demain » : il fait partie du groupe sans y être né, et c’est pour cela qu’il voit ce que les autres ne voient plus.']},
  capo:{sogno:n=>`${n}, le clan te regarde. Qui remporte de nombreuses batailles ou guérit de nombreux chats pourra un jour le guider. Mais un chef ne commande pas : il écoute, il donne et il apaise.`,
   chiama:n=>`Mes lunes sont nombreuses, et le clan a besoin d’un guide plus jeune. ${n}, je t’ai vu{e} protéger, donner et écouter. Veux-tu prendre ma place ?`,
+  chiamaG:n=>`${n}, le clan t’écoute plus qu’il ne m’écoute. Je t’ai vu{e} protéger, donner et écouter : c’est ainsi qu’on reconnaît un guide. Veux-tu prendre ma place ?`,
   tit:'⭐ Guider le clan',testo:v=>`${v} attend ta réponse. Tout le clan retient son souffle.`,si:'⭐ Accepter',no:'Pas encore',
   nome:n=>`À partir de ce jour, le clan t’appellera ${n}. Que les ancêtres étoilés te prêtent leur patience.`,giuro:'Je guiderai le clan d’une patte légère. Je parlerai après tous les autres, et je mangerai après tous les autres.',
   fineTit:'⭐ Tu es chef du clan',fine:(n,v,vice)=>`Maintenant, tu es <b>${n}</b>. ${v} s’assied parmi les anciens, le cœur en paix. ${vice?vice+' sera ta voix quand tu seras loin.':''}<br><br>Tu peux monter sur la Haute Roche, et le clan se rassemble autour de toi.`,
@@ -343,7 +346,7 @@ const STORIE={
  // richiesta del 12 novembre 2026
  capoSogno(){ const p=G.p, T=STORIE_T.capo, k=capo(); if(!k) return; segnaEvento(); stP().capoSogno=true; recita([{c:k,t:T.sogno(nome(p)),dur:10}],()=>{}); },
  capoChiama(){ const p=G.p, T=STORIE_T.capo, k=capo(); if(!k||p.leader) return; segnaEvento(); stP().capoChiesto=G.t; const v=nome(k);
-  recita([{c:k,t:stAcc(T.chiama(nome(p)),p),dur:11}],()=>modale(T.tit,T.testo(v)+stSapere(T.box),[{t:T.si,f:()=>avviaScena('cerimonia',partecipanti(),3.6,()=>STORIE.capoDiventa(k))},{t:T.no}])); },
+  recita([{c:k,t:stAcc((lune(k)<ETA_VECCHIO-6?T.chiamaG:T.chiama)(nome(p)),p),dur:11}],()=>modale(T.tit,T.testo(v)+stSapere(T.box),[{t:T.si,f:()=>avviaScena('cerimonia',partecipanti(),3.6,()=>STORIE.capoDiventa(k))},{t:T.no}])); },
  capoDiventa(k){ const p=G.p, T=STORIE_T.capo, v=nome(k), futuro=nome({...p,leader:true});
   recita([{c:k,t:T.nome(futuro),dur:8},{c:p,t:stAcc(T.giuro,p),dur:6}],()=>{ diventaAnziano(k); p.leader=true; p.convocato=false;
    const vice=G.cats.filter(c=>c.clan==='felce'&&c.rango==='guerriero'&&!c.ferito).sort((a,b)=>(b.vinte||0)-(a.vinte||0)||(b.amicizia||0)-(a.amicizia||0))[0]; G.vice=vice?vice.id:null;
@@ -393,6 +396,10 @@ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||typeof recita!=='function
  if(S.voce===1&&p.rango==='apprendista'&&l>=7&&gatto(p.mentore)&&dist(gatto(p.mentore),p)<300&&storiaLibera(30)) return STORIE.voceSvela();
  if(W.kula===1&&(p.inventario||[]).includes('conchiglia')&&storiaLibera(5)){ const e=stVicino(c=>c.clan==='pietre'&&c.stato!=='fuga'&&c.stato!=='assalto'&&c.stato!=='caccia',110); if(e&&!ostileClan('pietre')) return STORIE.kula2(e); }
  if(consegna>=2&&nelCampo(p,0)&&!(W.giro&&G.t-W.giro<MOON*8)&&Math.random()<0.5&&storiaLibera(8)) return STORIE.giro();
+ if(nelCampo(p,0)&&!p.leader&&capo()&&p.rango!=='gattino'&&p.rango!=='apprendista'&&storiaLibera(8)){ // le tappe verso la guida del clan non aspettano il silenzio lungo delle storie rare (correzione del 13 novembre 2026)
+  const merito=p.rango==='guerriero'?((p.vinte||0)>=5||(p.battaglie||0)>=2):((p.cure||0)>=5);
+  if(!p.vecchio&&!S.capoSogno&&l>=18) return STORIE.capoSogno();
+  if(merito&&l>=28&&!(S.capoChiesto&&G.t-S.capoChiesto<MOON*8)) return STORIE.capoChiama(); }
  if(!storiaLibera(55)) return; const r=Math.random();
  if(p.vecchio){ if(!p.leader&&capo()&&nelCampo(p,0)&&!(S.capoChiesto&&G.t-S.capoChiesto<MOON*8)&&((p.vinte||0)>=5||(p.battaglie||0)>=2||(p.cure||0)>=5)) return STORIE.capoChiama(); // l'ultima occasione, anche da vecchi
   if(!W.araldo&&nelCampo(p,0)) return STORIE.araldo(); if(nelCampo(p,40)&&G.t-(W.narraT??-1e9)>MOON*2.5) return STORIE.narra(); return; }
@@ -400,7 +407,7 @@ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||typeof recita!=='function
   if(stAdulto(p)&&!p.leader&&capo()){ const merito=p.rango==='guerriero'?((p.vinte||0)>=5||(p.battaglie||0)>=2):((p.cure||0)>=5); // vittorie o guarigioni, senza un conteggio severo
    if(!S.capoSogno&&l>=18) return STORIE.capoSogno();
    if(merito&&l>=28&&!(S.capoChiesto&&G.t-S.capoChiesto<MOON*8)) return STORIE.capoChiama(); }
-  if(p.rango==='guerriero'&&l>=14&&p.compagno==null&&!G.attesaGattini){ const comp=G.cats.filter(c=>puoProporre(p,c)), liberi=comp.filter(c=>!impegno(c)); // nessuno con cui fare coppia: qualcuno cambia idea, oppure arriva un gatto da fuori
+  if((p.rango==='guerriero'||p.rango==='guaritore')&&l>=14&&p.compagno==null&&!G.attesaGattini){ const comp=G.cats.filter(c=>puoProporre(p,c)), liberi=comp.filter(c=>!impegno(c)); // nessuno con cui fare coppia: qualcuno cambia idea, oppure arriva un gatto da fuori
    if(!liberi.length){ const g=comp.find(c=>impegno(c)==='guerra'); if(g&&r<0.5) g.impegno=null; else if(!(W.solitario&&G.t-W.solitario<MOON*15)) return STORIE.solitario(); } }
   if(l>=8&&!(W.re&&G.t-W.re<MOON*14)&&r<0.03) return STORIE.re();
   if(stAdulto(p)&&!W.pittore&&l>=16&&r<0.05) return STORIE.pittore();
@@ -481,21 +488,21 @@ addEventListener('DOMContentLoaded',()=>{ if(typeof parlaStraniero!=='function'|
 // ================== dopo la prima partita completa (12 novembre 2026) ==================
 const VITA2={
 it:{poppa:['I cuccioli si stringono contro di te e succhiano, impastando con le zampine. Fai le fusa senza accorgertene.','Uno si addormenta con il muso ancora nel tuo pelo. Gli altri litigano piano per il posto migliore.','Li lavi uno per uno, dalla testa alla coda. Sanno di latte e di muschio.'],
- nomeIntro:(g)=>`Clan della Felce, guardate! Questi piccoli hanno visto due lune. È tempo che il clan li conosca per nome.`,nomeTit:'🐾 Il rito del nome',nomeScegli:(i,n)=>`Il ${['primo','secondo','terzo'][i]||'prossimo'} cucciolo ti guarda. Con quale nome lo presenti al clan?`,
+ nomeIntro:(n,f)=>n===1?`Clan della Felce, guardate! ${f?'Questa piccola ha':'Questo piccolo ha'} visto due lune. È tempo che il clan ${f?'la':'lo'} conosca per nome.`:`Clan della Felce, guardate! Questi piccoli hanno visto due lune. È tempo che il clan li conosca per nome.`,nomeTit:'🐾 Il rito del nome',nomeScegli:(i,f)=>i<0?`${f?'La tua cucciola':'Il tuo cucciolo'} ti guarda. Con quale nome ${f?'la':'lo'} presenti al clan?`:`${f?['La prima','La seconda','La terza'][i]||'La prossima':'Il '+(['primo','secondo','terzo'][i]||'prossimo')} ${f?'cucciola':'cucciolo'} ti guarda. Con quale nome ${f?'la':'lo'} presenti al clan?`,
  nomeDato:n=>`Il clan ti conosce: sei ${n}.`,nomeFine:'Uno alla volta, i guerrieri toccano con il naso la fronte dei piccoli. Da oggi non sono più soltanto tuoi: sono del clan.',
  nomeBox:['Dare un nome davanti a tutti','Nell’antica Atene, pochi giorni dopo la nascita, il neonato veniva portato di corsa intorno al focolare di casa: era la festa delle Anfidromie, con cui la famiglia lo accoglieva; il nome gli veniva dato allora o al decimo giorno, davanti a parenti e amici. Platone vi allude nel <i>Teeteto</i> (160e).'],
  raduno:n=>`Sotto la Roccia Alta, tutto il Clan della Felce si raduna intorno a ${n}. Nessuno parla.`,capo:(n,l,pr,b)=>`${n} ha camminato con noi per ${l} lune. Ha portato ${pr} prede al mucchio e ha difeso il clan ${b} volte. Ciò che ha dato resta qui.`,
  figli:['Mi hai insegnato a cacciare. Caccerò anche per te.','Racconterò le tue storie ai miei piccoli.','Guarderò le stelle, e saprò qual è la tua.'],compagno:'Abbiamo diviso il muschio e le lune. Aspettami tra le stelle.',
  miao:'Poi, uno dopo l’altro, tutti i gatti del clan alzano il muso al cielo. Un solo, lungo miagolio sale dal campo, e il bosco tace per ascoltarlo.',stelle:'Quando il canto si spegne, in cielo c’è una stella in più.'},
 en:{poppa:['The kits press against you and suckle, kneading with their tiny paws. You purr without noticing.','One falls asleep with its muzzle still in your fur. The others squabble softly over the best spot.','You wash them one by one, from head to tail. They smell of milk and moss.'],
- nomeIntro:()=>`Fern Clan, look! These little ones have seen two moons. It is time the clan knew them by name.`,nomeTit:'🐾 The naming rite',nomeScegli:(i)=>`The ${['first','second','third'][i]||'next'} kit looks up at you. By what name do you present this kit to the clan?`,
+ nomeIntro:(n)=>n===1?`Fern Clan, look! This little one has seen two moons. It is time the clan knew them by name.`:`Fern Clan, look! These little ones have seen two moons. It is time the clan knew them by name.`,nomeTit:'🐾 The naming rite',nomeScegli:(i)=>`${i<0?'Your':'The '+(['first','second','third'][i]||'next')} kit looks up at you. By what name do you present this kit to the clan?`,
  nomeDato:n=>`The clan knows you: you are ${n}.`,nomeFine:'One at a time, the warriors touch the little ones’ foreheads with their noses. From today they are no longer only yours: they belong to the clan.',
  nomeBox:['Naming before everyone','In ancient Athens, a few days after birth, the newborn was carried at a run around the household hearth: this was the feast of the Amphidromia, by which the family welcomed the child; the name was given then or on the tenth day, before relatives and friends. Plato alludes to it in the <i>Theaetetus</i> (160e).'],
  raduno:n=>`Beneath Tall Rock, the whole Fern Clan gathers around ${n}. Nobody speaks.`,capo:(n,l,pr,b)=>`${n} walked with us for ${l} moons, brought ${pr} prey to the pile and defended the clan ${b} times. What was given stays here.`,
  figli:['You taught me to hunt. I will hunt for you too.','I will tell your stories to my own kits.','I will look at the stars, and I will know which one is yours.'],compagno:'We shared the moss and the moons. Wait for me among the stars.',
  miao:'Then, one after another, every cat of the clan lifts its muzzle to the sky. A single, long cry rises from the camp, and the forest falls silent to hear it.',stelle:'When the song dies away, there is one more star in the sky.'},
 fr:{poppa:['Les chatons se serrent contre toi et tètent, en pétrissant de leurs petites pattes. Tu ronronnes sans t’en rendre compte.','L’un d’eux s’endort, le museau encore dans ton poil. Les autres se disputent doucement la meilleure place.','Tu les laves un par un, de la tête à la queue. Ils sentent le lait et la mousse.'],
- nomeIntro:()=>`Clan de la Fougère, regardez ! Ces petits ont vu deux lunes. Il est temps que le clan les connaisse par leur nom.`,nomeTit:'🐾 Le rite du nom',nomeScegli:(i)=>`Le ${['premier','deuxième','troisième'][i]||'prochain'} chaton lève les yeux vers toi. Sous quel nom le présentes-tu au clan ?`,
+ nomeIntro:(n,f)=>n===1?`Clan de la Fougère, regardez ! ${f?'Cette petite':'Ce petit'} a vu deux lunes. Il est temps que le clan ${f?'la':'le'} connaisse par son nom.`:`Clan de la Fougère, regardez ! Ces petits ont vu deux lunes. Il est temps que le clan les connaisse par leur nom.`,nomeTit:'🐾 Le rite du nom',nomeScegli:(i,f)=>i<0?`${f?'Ta petite':'Ton petit'} lève les yeux vers toi. Sous quel nom ${f?'la':'le'} présentes-tu au clan ?`:`${f?(['La première','La deuxième','La troisième'][i]||'La prochaine')+' chatonne':'Le '+(['premier','deuxième','troisième'][i]||'prochain')+' chaton'} lève les yeux vers toi. Sous quel nom ${f?'la':'le'} présentes-tu au clan ?`,
  nomeDato:n=>`Le clan te connaît : tu es ${n}.`,nomeFine:'Un par un, les guerriers touchent du museau le front des petits. Désormais, ils ne sont plus seulement à toi : ils sont au clan.',
  nomeBox:['Donner un nom devant tous','Dans l’Athènes antique, quelques jours après la naissance, on portait le nouveau-né en courant autour du foyer de la maison : c’était la fête des Amphidromies, par laquelle la famille l’accueillait ; le nom lui était donné alors ou le dixième jour, devant parents et amis. Platon y fait allusion dans le <i>Théétète</i> (160e).'],
  raduno:n=>`Sous la Haute Roche, tout le Clan de la Fougère se rassemble autour de ${n}. Personne ne parle.`,capo:(n,l,pr,b)=>`${n} a marché avec nous pendant ${l} lunes, a apporté ${pr} proies au tas et a défendu le clan ${b} fois. Ce qui a été donné reste ici.`,
@@ -540,10 +547,10 @@ STORIE.battesimo=function(){ const p=G.p, C=G.cucciolata, K=(C?C.ids:[]).map(gat
  const k0=p.leader?p:capo(), voce=k0||p;
  const fine=()=>{ K.forEach(k=>{ k.segueFino=0; }); modale(VITA2.nomeTit,VITA2.nomeFine+stSapere(VITA2.nomeBox),[{t:'🐾',f:()=>spirito(10,'rito')}]); };
  const uno=i=>{ if(i>=K.length) return fine(); const k=K[i], liberi=shuffle(prefissiPer(k.sesso).filter(x=>!(G.usati||[]).includes(x))).slice(0,2), scelte=[k.prefisso,...liberi];
-  mettiAFuoco(k,4000); modale(VITA2.nomeTit,VITA2.nomeScegli(i),scelte.map(pr=>({t:nome({...k,prefisso:pr}),f:()=>{ if(pr!==k.prefisso){ if(typeof liberaNome==='function') liberaNome(k); k.prefisso=pr; (G.usati=G.usati||[]).push(pr); }
+  mettiAFuoco(k,4000); modale(VITA2.nomeTit,VITA2.nomeScegli(K.length===1?-1:i,k.sesso==='f'),scelte.map(pr=>({t:nome({...k,prefisso:pr}),f:()=>{ if(pr!==k.prefisso){ if(typeof liberaNome==='function') liberaNome(k); k.prefisso=pr; (G.usati=G.usati||[]).push(pr); }
    recita([{c:voce,t:VITA2.nomeDato(nome(k)),dur:4},{coro:partecipanti().filter(c=>c!==p&&c!==k).slice(0,7),coroT:nome(k)+'!',dur:3.5,f:()=>scintille(k.x,k.y-14,'#ffe08a',12)}],()=>uno(i+1)); }}))); };
  avviaScena('cerimonia',[...new Set([...partecipanti(),...K])],3.6,()=>{ const R=L.roccia; K.forEach((k,i)=>{ k.x=R.x+(i-(K.length-1)/2)*20; k.y=R.y+R.r+52; k.vx=k.vy=0; k.segueFino=0; k.attesa=90; k.tx=k.x; k.ty=k.y; setPosa(k,'siede',90); });
-  recita([{c:voce,t:VITA2.nomeIntro(),dur:8}],()=>uno(0)); }); };
+  recita([{c:voce,t:VITA2.nomeIntro(K.length,K.length===1&&K[0].sesso==='f'),dur:8}],()=>uno(0)); }); };
 // l'addio: tutto il clan sotto la Roccia Alta, i figli davanti, e un grande miagolio
 addEventListener('DOMContentLoaded',()=>{ if(typeof fineVita!=='function'||typeof rinascita!=='function') return;
  fineVita=function(){ const p=G.p, V=TESTI_LEGG.vita, R=L.roccia; G.riposoFinale={t:G.t}; p.guida=null; p.caccia=null; p.anim=null; p.sopra=false; p.elev=0;
@@ -561,7 +568,7 @@ addEventListener('DOMContentLoaded',()=>{ if(typeof fineVita!=='function'||typeo
 });
 // il regista delle cose di famiglia
 setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||typeof recita!=='function') return; const p=G.p, W=stG(), C=G.cucciolata;
- if(C&&!C.nomi&&G.t>=C.t+MOON*2&&nelCampo(p,40)&&storiaLibera(15)) return STORIE.battesimo();
+ if(C&&!C.nomi&&G.t>=C.t+MOON*2&&nelCampo(p,40)&&storiaLibera(6)) return STORIE.battesimo();
  if(p.sesso==='f'&&p.allatta&&G.t<p.allatta&&nelCampo(p,20)&&!p.guida&&cuccioliDi(0).length&&G.t-(W.allattaT??-99)>MOON*0.4&&storiaLibera(18)&&(p.vel||0)<8) return STORIE.allatta(); },2500);
 
 // ================== incontri nel bosco con gatti di altri clan ==================
@@ -814,7 +821,8 @@ const GUAR2={it:{chiedi:'🌿 Chiedere una cura leggera',dice:'Sto ancora impara
  fr:{chiedi:'🌿 Demander un petit soin',dice:'J’apprends encore : je sais nettoyer une plaie et arrêter le sang. Pour le reste, va voir mon maître.',fatto:n=>`🌿 ${n} nettoie ta plaie et y pose une feuille. Ça va un peu mieux.`,nuovoG:n=>`🌿 Le clan a un nouveau guérisseur : ${n}.`,nuovoA:n=>`🌿 ${n} commence son apprentissage auprès du guérisseur.`}}[LINGUA];
 function curaLeggera(h){ const p=G.p; segnaEvento(); recita([{c:h,t:GUAR2.dice,dur:6,scena:['cura',[h,p],4.5]}],()=>{ p.salute=Math.min(100,p.salute+20); log(GUAR2.fatto(nome(h)),'#c8f0a8'); flo(p.x,p.y-30,'🌿 +20','#9be07f'); }); }
 setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused||scena||(typeof recitaAtt!=='undefined'&&recitaAtt)||G.raid) return; const p=G.p, F=G.cats.filter(c=>c.clan==='felce');
- for(const c of F) if(c.rango==='guerriero'&&c.via==='guaritore'){ c.rango='guaritore'; c.via=null; c.suffisso=pick(SUFF_GUAR); stat(c); nuovoPuntoCampo(c); } // un apprendista guaritore cresciuto diventa guaritore, non guerriero
+ let nG=F.filter(c=>c.rango==='guaritore').length; // al massimo due guaritori nel clan, altrimenti i guerrieri finiscono (prova del 13 novembre 2026)
+ for(const c of F) if((c.rango==='guerriero'||(c.rango==='apprendista'&&lune(c)>=12))&&c.via==='guaritore'){ if(nG>=2){ c.via=c.rango==='apprendista'?'guerriero':null; continue; } nG++; const era=c.rango; c.rango='guaritore'; c.via=null; c.suffisso=pick(SUFF_GUAR); stat(c); nuovoPuntoCampo(c); if(era==='apprendista') log(GUAR2.nuovoG(nome(c)),'#c8f0a8'); } // un apprendista guaritore cresciuto diventa guaritore, non guerriero
  const guar=F.filter(c=>c.rango==='guaritore'), appr=F.filter(c=>c.rango==='apprendista'&&c.via==='guaritore');
  if(!guar.length&&(p.rango!=='guaritore'||p.leader)){ const c=appr[0]||F.filter(c=>c.rango==='guerriero'&&!c.leader&&!c.regina&&!c.figlio&&c.id!==p.compagno&&c.id!==p.mentore&&c.id!==G.vice).sort((a,b)=>lune(a)-lune(b))[0];
   if(c){ c.rango='guaritore'; c.via=null; c.suffisso=pick(SUFF_GUAR); stat(c); c.stato='campo'; nuovoPuntoCampo(c); log(GUAR2.nuovoG(nome(c)),'#c8f0a8'); } return; }
@@ -930,12 +938,22 @@ function colossoGuarda(){ const C=G.colosso, st=C.massi>=COLOSSO_N?COL.fine:COL.
 function colossoPosa(){ const C=G.colosso, p=G.p; if(C.mioMasso!=null&&G.t-C.mioMasso<MOON) return log('🗿 '+COL.stanco,'#e8d9a8'); C.mioMasso=G.t; segnaEvento();
  avviaScena('annusa',[p],1.6,()=>{ C.massi++; C.miei=(C.miei||0)+1; log(COL.posato(C.massi),'#d9c8ff'); scintille(p.x,p.y-20,'#c9b4ff',16); spirito(4,'rito');
   if(C.miei===MASSI_MISSIONE){ p.cure=Math.max(p.cure||0,5); tensione('nebbia',-15); tensione('pietre',-15); setTimeout(()=>{ if(G&&!paused&&!scena) modale(COE.massiTit,COE.massiFine+stSapere(COE.boxMassi),[{t:'🗿',f:()=>spirito(15,'rito')}]); },400); } }); }
-function colossoFesta(){ const C=G.colosso, p=G.p; C.festa=true; segnaEvento(); G.treguaFino=Math.max(G.treguaFino||0,G.t+MOON*6); G.treguaAvviso=true; tensione('nebbia',-60); tensione('pietre',-60);
+function colossoFesta(){ const C=G.colosso, p=G.p; C.festa=true; if(window.SOLIDI) window.SOLIDI=window.SOLIDI.filter(q=>Math.hypot(q.x-C.x,q.y-C.y)>430); segnaEvento(); G.treguaFino=Math.max(G.treguaFino||0,G.t+MOON*6); G.treguaAvviso=true; tensione('nebbia',-60); tensione('pietre',-60); // la radura si allarga per la festa: spariscono anche i tronchi
  // i tre clan si radunano ai piedi del grande gatto
  const ospiti=[...G.cats.filter(c=>c.clan==='felce'&&!c.ferito&&c.rango!=='gattino').slice(0,7),...G.cats.filter(c=>c.clan!=='felce'&&c.stato!=='fuga').slice(0,8)];
- ospiti.forEach((c,i)=>{ const a=Math.PI*(0.1+0.8*i/Math.max(1,ospiti.length-1)); c.x=C.x+Math.cos(a)*170; c.y=C.y+110+Math.sin(a)*60; c.vx=c.vy=0; c.tx=c.x; c.ty=c.y; c.attesa=40; if(c.clan!=='felce'){ c.stato='pattuglia'; c.amicoPrima=c.amico; c.amico=true; c.pacificoFino=G.t+60; } setPosa(c,'siede',40); });
+ // davanti al grande gatto (guarda verso il fiume): i clan a semicerchio, il giocatore dietro di loro, la telecamera che inquadra la statua intera
+ const dir=C.x<(FX0+FX1)/2?1:-1, cx=C.x+dir*175;
+ ospiti.forEach((c,i)=>{ const fila=i%2, n=Math.ceil(ospiti.length/2), k=Math.floor(i/2); c.x=cx+dir*fila*45; c.y=C.y+(k-(n-1)/2)*44+fila*20; c.vx=c.vy=0; c.tx=c.x; c.ty=c.y; c.attesa=60; c.flip=-dir; c.dir=dir>0?Math.PI:0; if(c.clan!=='felce'){ c.stato='pattuglia'; c.amicoPrima=c.amico; c.amico=true; c.pacificoFino=G.t+90; } setPosa(c,'siede',60); }); // due file davanti alla statua
+ p.x=C.x+dir*290; p.y=C.y; p.vx=p.vy=0; p.guida=null; p.caccia=null; p.flip=-dir;
+ if(window.R3D){ R3D.cam3.yaw=Math.atan2(C.x-p.x,C.y-p.y); R3D.cam3.pitch=0.32; R3D.cam3.dist=5.5; R3D.cam3.rotella=performance.now()+90000; R3D.cam3.manuale=G.t+90; R3D.cam3.init=false; }
  if(window.suonoMiaoGrande) setTimeout(suonoMiaoGrande,2500);
- recita([{t:COL.finito.replace('🗿 ',''),dur:6}],()=>modale(COL.fineTit,COL.fine+stSapere(COL.box),[{t:'🗿',f:()=>spirito(20,'rito')}])); }
+ const V=VIVO_T[LINGUA]||VIVO_T.it, fase=k=>()=>{ C.vivo={fase:k,t0:G.t,verso:dir}; }, sacro=()=>{ for(const c of ospiti) if(G.cats.includes(c)) setPosa(c,'canta',12); if(window.suonoMiaoGrande) suonoMiaoGrande(); };
+ recita([{t:COL.finito.replace('🗿 ',''),dur:6,f:fase(0)},{t:V[0],dur:6,f:fase(1)},{t:V[1],dur:7,f:fase(2)},{t:V[2],dur:6,f:fase(3)},{t:V[3],dur:8,f:()=>{ fase(4)(); sacro(); }},{t:V[4],dur:6,f:fase(5)}],
+  ()=>{ C.vivo=null; C.animato=true; modale(COL.fineTit,COL.fine+stSapere(COL.box),[{t:'🗿',f:()=>{ spirito(20,'rito'); parata(ospiti); }}]); }); }
+const VIVO_T={
+ it:['Poi la pietra trema. Un brivido corre lungo il grande gatto, dai massi della base fino alla punta delle orecchie.','Il grande gatto gira la testa, lentamente, e guarda i tre clan uno per uno. Nei suoi occhi ardono due fuochi.','Alza una zampa sopra di voi, come per benedirvi. Nessuno respira.','Una luce d’oro esce dalla pietra e sale tra le stelle: è lo spirito di tutti i gatti che l’hanno costruito, un masso alla volta.','Poi il grande gatto torna immobile. Ma i suoi occhi, da quella notte, non si spengono più.'],
+ en:['Then the stone trembles. A shiver runs through the great cat, from the stones of its base to the tips of its ears.','The great cat turns its head, slowly, and looks at the three clans one by one. Two fires burn in its eyes.','It raises a paw above you all, as if to bless you. Nobody breathes.','A golden light leaves the stone and rises among the stars: it is the spirit of all the cats who built it, one stone at a time.','Then the great cat is still again. But from that night on, its eyes never go out.'],
+ fr:['Puis la pierre tremble. Un frisson parcourt le grand chat, des blocs de sa base jusqu’au bout de ses oreilles.','Le grand chat tourne la tête, lentement, et regarde les trois clans l’un après l’autre. Deux feux brûlent dans ses yeux.','Il lève une patte au-dessus de vous, comme pour vous bénir. Personne ne respire.','Une lumière d’or sort de la pierre et monte parmi les étoiles : c’est l’esprit de tous les chats qui l’ont bâti, un bloc après l’autre.','Puis le grand chat redevient immobile. Mais ses yeux, depuis cette nuit, ne s’éteignent plus.'] };
 setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused) return; const p=G.p; if(!G.colosso) G.colosso=colossoCrea(); const C=G.colosso;
  if(C.massi>COLOSSO_N) C.massi=COLOSSO_N; if(C.altri==null) C.altri=Math.max(0,C.massi-(C.miei||0));
  // i guaritori degli altri due clan portano dieci massi; gli ultimi cinque toccano al guaritore della Felce: il giocatore, se è guaritore o apprendista guaritore
@@ -960,7 +978,7 @@ const COE={
   proponi:'proponi una guerra dalla Roccia Alta',proponiTit:'📯 Proporre una guerra',proponiTesto:'Dalla Roccia Alta il clan ti ascolta. Chi propone una guerra la guida: camminerai in testa all’orda, e gli altri ti seguiranno.',nebbia:'⚔️ Contro il Clan della Nebbia',pietre:'⚔️ Contro il Clan delle Pietre',niente:'Nessuna guerra, per ora',
   veglia:'veglia sulla battaglia',inMarcia:c=>`🔮 Segui l’orda a distanza. ${c?c+' cammina in testa.':''} Tu non combatti: ti fermerai dove si vede il campo di battaglia.`,
   posto:'🔮 Ti fermi su un’altura, a debita distanza. Da qui vedi tutta la battaglia, e i feriti sanno dove trovarti.',aiuto:['«Guaritore, aiutami!»','«Una zampa… non mi regge più.»','«Mi hanno preso al fianco. Fai presto!»'],
-  curato:n=>`🌿 ${n} è venuto da te ferito: lo curi sul posto, e torna nella mischia.`,dopoTit:'🔮 Dopo la battaglia',dopo:n=>n?`Hai vegliato da lontano e curato <b>${n}</b> ${n===1?'ferito':'feriti'} sul campo. Nessuno di loro è rimasto indietro.`:'Hai vegliato da lontano. Questa volta nessuno ha avuto bisogno di te: è la notizia migliore.',
+  curato:(n,f)=>`🌿 ${n} è venut${f?'a':'o'} da te ferit${f?'a':'o'}: ${f?'la':'lo'} curi sul posto, e torna nella mischia.`,dopoTit:'🔮 Dopo la battaglia',dopo:n=>n?`Hai vegliato da lontano e curato <b>${n}</b> ${n===1?'ferito':'feriti'} sul campo. Nessuno di loro è rimasto indietro.`:'Hai vegliato da lontano. Questa volta nessuno ha avuto bisogno di te: è la notizia migliore.',
   ancheSe:['«Anche se siamo nemici, sei un guaritore. Aiutami.»','«I nostri clan si graffiano, lo so. Ma il male non guarda i confini.»','«Anche se siamo nemici… da noi si dice che le tue zampe guariscono chiunque.»'],
   anzTit:'📜 L’anziano viene da te',anziano:'«Hai l’età per la cerimonia, ma non hai ancora ascoltato nessuno dei miei racconti. Un gatto senza storie non sa da dove viene. Siediti: te ne racconto uno adesso.»',anzApp:'«Ti mancano dei racconti per finire l’apprendistato. Siediti qui: le storie non pesano, e si portano dappertutto.»',ascolta:'📜 Ascoltare',
   mentoreViene:v=>`«Ti manca soltanto l’allenamento (${v}). Hai un momento? Alleniamoci adesso.»`,allena:'⚔️ Allenarsi',nonOra:'Non ora',
@@ -996,7 +1014,7 @@ const COE={
   proponi:'propose une guerre depuis le Haut Rocher',proponiTit:'📯 Proposer une guerre',proponiTesto:'Du Haut Rocher, le clan t’écoute. Qui propose une guerre la mène : tu marcheras en tête de la horde, et les autres te suivront.',nebbia:'⚔️ Contre le Clan de la Brume',pietre:'⚔️ Contre le Clan des Pierres',niente:'Pas de guerre pour l’instant',
   veglia:'veille sur la bataille',inMarcia:c=>`🔮 Tu suis la horde à distance. ${c?c+' marche en tête.':''} Tu ne te bats pas : tu t’arrêteras là où l’on voit le champ de bataille.`,
   posto:'🔮 Tu t’arrêtes sur une hauteur, à bonne distance. D’ici tu vois toute la bataille, et les blessés savent où te trouver.',aiuto:['« Guérisseur, aide-moi ! »','« Ma patte… elle ne me porte plus. »','« Ils m’ont eu au flanc. Fais vite ! »'],
-  curato:n=>`🌿 ${n} est venu à toi blessé : tu le soignes sur place, et il retourne dans la mêlée.`,dopoTit:'🔮 Après la bataille',dopo:n=>n?`Tu as veillé de loin et soigné <b>${n}</b> ${n===1?'blessé':'blessés'} sur le terrain. Aucun n’est resté en arrière.`:'Tu as veillé de loin. Cette fois, personne n’a eu besoin de toi : c’est la meilleure nouvelle.',
+  curato:(n,f)=>`🌿 ${n} est venu${f?'e':''} à toi blessé${f?'e':''} : tu ${f?'la':'le'} soignes sur place, et ${f?'elle':'il'} retourne dans la mêlée.`,dopoTit:'🔮 Après la bataille',dopo:n=>n?`Tu as veillé de loin et soigné <b>${n}</b> ${n===1?'blessé':'blessés'} sur le terrain. Aucun n’est resté en arrière.`:'Tu as veillé de loin. Cette fois, personne n’a eu besoin de toi : c’est la meilleure nouvelle.',
   ancheSe:['« Même si nous sommes ennemis, tu es guérisseur. Aide-moi. »','« Nos clans se griffent, je sais. Mais le mal ne regarde pas les frontières. »','« Même si nous sommes ennemis… chez nous on dit que tes pattes guérissent n’importe qui. »'],
   anzTit:'📜 L’ancien vient à toi',anziano:'« Tu as l’âge de la cérémonie, mais tu n’as encore écouté aucun de mes récits. Un chat sans histoires ne sait pas d’où il vient. Assieds-toi : je t’en raconte un maintenant. »',anzApp:'« Il te manque des récits pour finir ton apprentissage. Assieds-toi ici : les histoires ne pèsent rien, et on les emporte partout. »',ascolta:'📜 Écouter',
   mentoreViene:v=>`« Il ne te manque que l’entraînement (${v}). Tu as un moment ? Entraînons-nous maintenant. »`,allena:'⚔️ S’entraîner',nonOra:'Pas maintenant',
@@ -1035,7 +1053,7 @@ addEventListener('DOMContentLoaded',()=>{
   return o.call(this,tit,testo,bt); }; }
  // il condottiero cammina davanti, gli altri dietro di lui; i feriti cercano il guaritore che veglia
  if(typeof aggiornaFelce==='function'){ const o=aggiornaFelce; aggiornaFelce=function(c,dt){ const r=G.raid, p=G.p;
-  if(c.stato==='soccorso'){ if(!vegliaAttiva){ c.stato='ferito'; return o.apply(this,arguments); } if(dist(c,p)>46) muovi(c,p.x,p.y,95,dt); else { c.vx=c.vy=0; } return; }
+  if(c.stato==='soccorso'){ if(!vegliaAttiva&&!G.veglia){ c.stato='ferito'; return o.apply(this,arguments); } if(dist(c,p)>46) muovi(c,p.x,p.y,95,dt); else { c.vx=c.vy=0; } return; }
   if(r&&r.condottiero!=null&&c.stato==='segui'){ const k=gatto(r.condottiero); if(!k||k.stato!=='segui'){ r.condottiero=null; return o.apply(this,arguments); }
    const nem=nemicoVicino(c,170); if(nem) return combatti(c,nem,dt,150);
    if(c===k){ const lu=r.luogo; if(dist(c,lu)<60) return; if(dist(c,p)>230&&dist(c,lu)<dist(p,lu)&&!G.bolla){ c.vx=c.vy=0; c.flip=p.x<c.x?-1:1; if(performance.now()>tDiQua){ tDiQua=performance.now()+7000; parla(c,pick(COE.diQua),3); } return; }
@@ -1067,16 +1085,16 @@ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused) return; const p=G
   if((legato(c)&&(suDiMe||c.stato==='schierato'||c.stato==='assalto'))||(G.bolla&&suDiMe)){ const eraSchierato=c.stato==='schierato'; c.stato='pattuglia'; c.posto=null; c.bersaglio=null; if(typeof puntoNemico==='function') puntoNemico(c);
    if(r&&eraSchierato&&legato(c)){ if(!r.battuti){ r.battuti=[]; r.visti={}; } if(!r.battuti.includes(c.id)) r.battuti.push(c.id); }
    if(legato(c)&&dist(c,p)<320&&!(c.dettoAmico>ora)){ c.dettoAmico=ora+30000; parla(c,p.compagno===c.id?COE.nonCompagno:pick(COE.nonCombatto),4); } } }
- if(vegliaAttiva&&!G.dentro){ for(const c of G.cats){ if(c.clan!=='felce'||c===p) continue;
-   if(c.stato==='ferito'&&c.ferito&&!c.soccorsoIl&&dist(c,p)<1100){ c.stato='soccorso'; c.soccorsoIl=G.t; parla(c,pick(COE.aiuto),4); }
+ if((vegliaAttiva||G.veglia)&&!G.dentro){ for(const c of G.cats){ if(c.clan!=='felce'||c===p) continue;
+   if(c.stato==='ferito'&&c.ferito&&!c.soccorsoIl&&dist(c,p)<1600){ c.stato='soccorso'; c.soccorsoIl=G.t; parla(c,pick(COE.aiuto),4); }
    if(c.stato==='soccorso'&&dist(c,p)<=50&&!scena&&!recitaAtt){ avviaScena('cura',[p,c],2.6,()=>{ c.hp=c.hpMax*0.8; c.ferito=false; c.soccorsoIl=null; c.stato=G.raid?'segui':'campo'; if(!G.raid) nuovoPuntoCampo(c);
-     if(G.raid) G.raid.perdite=Math.max(0,(G.raid.perdite||0)-1); p.cure=(p.cure||0)+1; vegliaCurati++; scintille(c.x,c.y-20,'#c9b4ff',18); log(COE.curato(nome(c)),'#c8f0a8'); }); break; } } }
+     if(G.raid) G.raid.perdite=Math.max(0,(G.raid.perdite||0)-1); p.cure=(p.cure||0)+1; vegliaCurati++; scintille(c.x,c.y-20,'#c9b4ff',18); log(COE.curato(nome(c),c.sesso==='f'),'#c8f0a8'); }); break; } } }
  if(!r&&vegliaAttiva){ if(!vegliaFine) vegliaFine=G.t+40; else G.bolla=false; // dopo la battaglia i feriti hanno ancora il tempo di raggiungere il guaritore
-  if(!scena&&(G.t>vegliaFine||G.dentro||!G.cats.some(c=>c.stato==='soccorso'))){ vegliaAttiva=false; G.veglia=false; for(const c of G.cats){ if(c.stato==='soccorso') c.stato='ferito'; c.soccorsoIl=null; }
+  if(!scena&&(G.t>vegliaFine||G.dentro||!G.cats.some(c=>c.stato==='soccorso'||(c.clan==='felce'&&c.ferito&&c.stato==='ferito'&&dist(c,p)<1600)))){ vegliaAttiva=false; G.veglia=false; for(const c of G.cats){ if(c.stato==='soccorso') c.stato='ferito'; c.soccorsoIl=null; } // la veglia finisce quando nessun ferito vicino aspetta più
    const n=vegliaCurati; setTimeout(()=>{ if(G&&!paused&&!scena) modale(COE.dopoTit,COE.dopo(n),[{t:'🔮',f:()=>spirito(6+2*n,'cura')}]); },1500); } }
  if(!r&&!vegliaAttiva&&!recitaAtt){ if(G.bolla) G.bolla=false; if(G.veglia) G.veglia=false; } },500);
 // l'anziano e il mentore vengono da te quando manca soltanto ciò che danno loro; la missione dei massi viene annunciata
-setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||typeof storiaLibera!=='function'||!storiaLibera(20)) return; const p=G.p, S=stP(), C=G.colosso;
+setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||typeof storiaLibera!=='function'||!storiaLibera(6)) return; const p=G.p, S=stP(), C=G.colosso;
  if(C&&eGuarP(p)&&!C.missioneDetta&&C.massi<COLOSSO_N){ C.missioneDetta=true; C.miei=C.miei||0; log(COE.massiNuova,'#d9c8ff'); if(typeof mostraToast==='function') mostraToast(COE.massiNuova,'#d9c8ff'); return; }
  if(p.rango!=='gattino'&&p.rango!=='apprendista') return; if(S.maestroIl&&G.t-S.maestroIl<MOON*0.8) return; if(!nelCampo(p,0)) return;
  const manca=requisiti().filter(q=>!q.ok&&q.b!=='lune'); if(!manca.length||!manca.every(q=>q.b==='racconti'||q.b==='allenamenti')) return;
@@ -1087,3 +1105,169 @@ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||typeof storiaLibera!=='fu
  const a=manca.some(q=>q.b==='racconti')&&anziano(); if(a&&!a.ferito){ S.maestroIl=G.t; segnaEvento(); vicino(a); modale(COE.anzTit,p.rango==='gattino'?COE.anziano:COE.anzApp,[{t:COE.ascolta,f:()=>racconto(a)},{t:COE.nonOra}]); } },3000);
 // il guaritore che accetta di vegliare segue davvero l'orda: la battaglia si combatte, e lui resta a distanza dentro la bolla
 vegliaBattaglia=function(cl){ segnaEvento(); if(window.suonoMiao) suonoMiao('solenne'); iniziaGuerra(cl,true); };
+
+// ================== la gita del gattino con un adulto ==================
+// Correzione del 13 novembre 2026
+// Stato: G.gita={id,tipo:'caccia'|'erbe',fase:'andata'|'fuori'|'ritorno',meta,da,prese,erbe}. Durante la gita il gattino esce dal campo
+// resta entro 200 px dall'adulto (guinzaglio), insegue le prede (caccia) o raccoglie le erbe (erbe), e rientra con lui.
+const GITA_T={
+ it:{ chiediC:'🐾 Posso venire a caccia con te?', chiediE:'🌿 Mi insegni a raccogliere le erbe?',
+  si:(f,t)=>t==='erbe'?`Va bene, piccol${f?'a':'o'}. Andiamo a cercare le erbe: stammi vicino e annusa quello che annuso io.`:`Va bene, piccol${f?'a':'o'}. Ti porto a caccia: stammi vicino e fai quello che faccio io.`,
+  no:'Non adesso, piccolo: sono appena rientrato. Chiedimelo più tardi.', noF:'Non adesso, piccola: sono appena rientrata. Chiedimelo più tardi.',
+  propC:f=>`«Vuoi venire a caccia con me, piccol${f?'a':'o'}? Ti insegno a prendere un topo. Fuori dal campo si va soltanto insieme a un grande.»`,
+  propG:f=>`«Vuoi uscire con me, piccol${f?'a':'o'}? Posso insegnarti a cacciare, oppure a riconoscere le erbe che curano.»`,
+  vaC:'🐾 Andiamo a caccia', vaE:'🌿 Andiamo a cercare le erbe', nonOra:'Non ora',
+  ann:n=>`🐾 Esci dal campo con ${n}: restagli vicino`, log:(n,t)=>`🐾 Esci dal campo con ${n}, ${t==='erbe'?'a cercare le erbe':'a caccia'}. Fuori dal campo resta vicino a lui.`,
+  vicino:f=>`Resta vicino a me, piccol${f?'a':'o'}! Nel bosco non ci si allontana.`,
+  consC:['Abbassati e avvicinati piano: la preda non deve sentirti.','Guarda le orecchie del topo: quando si muovono, fermati.','Ecco, lì c\'è un topo che sonnecchia. Premi Spazio e inseguilo!','Quando sei vicino, salta! Il balzo è tutto.'],
+  consE:['Annusa: ogni pianta ha il suo odore, e il suo odore dice a che cosa serve.','Si prende soltanto quello che serve, e si lascia la radice: così la pianta ricresce.','Vedi quei fiori che brillano? Avvicinati e premi Spazio per raccoglierli.'],
+  insegui:n=>'insegui '+n, cogli:'raccogli l’erba', colta:(e,n)=>`🌿 Hai raccolto ${e}: ${n} la mette da parte per l’armadio delle erbe.`,
+  bravoC:'Brav{o}! La tua prima preda. Ora torniamo al campo: portala al mucchio, è il tuo dono al clan.', bravoE:'Brav{o}! Hai il naso di un guaritore. Ora torniamo al campo.',
+  tardi:'Si fa tardi: torniamo al campo. Ci riproveremo un’altra volta.', allarme:'Al campo, presto! Il clan ha bisogno di noi.',
+  fine:(n)=>`🏡 Sei tornat{o} al campo con ${n}. Hai imparato qualcosa del bosco.`, mot:'una gita con un grande' },
+ en:{ chiediC:'🐾 May I come hunting with you?', chiediE:'🌿 Will you teach me to gather herbs?',
+  si:(f,t)=>t==='erbe'?'All right, little one. Let us go and look for herbs: stay close and sniff what I sniff.':'All right, little one. I will take you hunting: stay close and do what I do.',
+  no:'Not now, little one: I have just come back. Ask me later.', noF:'Not now, little one: I have just come back. Ask me later.',
+  propC:()=>'«Do you want to come hunting with me, little one? I will teach you to catch a mouse. Kits only leave camp together with a grown cat.»',
+  propG:()=>'«Do you want to come out with me, little one? I can teach you to hunt, or to know the herbs that heal.»',
+  vaC:'🐾 Let us go hunting', vaE:'🌿 Let us look for herbs', nonOra:'Not now',
+  ann:n=>`🐾 You leave camp with ${n}: stay close`, log:(n,t)=>`🐾 You leave camp with ${n}, ${t==='erbe'?'to look for herbs':'to hunt'}. Outside the camp, stay close.`,
+  vicino:()=>'Stay close to me, little one! In the forest we do not wander off.',
+  consC:['Crouch and creep up slowly: the prey must not hear you.','Watch the mouse’s ears: when they twitch, freeze.','There, a mouse is dozing. Press Space and chase it!','When you are close, pounce! The leap is everything.'],
+  consE:['Sniff: every plant has its smell, and its smell tells what it is for.','We take only what we need, and leave the root: so the plant grows back.','See those glowing flowers? Go close and press Space to gather them.'],
+  insegui:n=>'chase '+n, cogli:'gather the herb', colta:(e,n)=>`🌿 You gathered ${e}: ${n} puts it aside for the herb cabinet.`,
+  bravoC:'Well done! Your first prey. Now back to camp: take it to the pile, it is your gift to the Clan.', bravoE:'Well done! You have a healer’s nose. Now back to camp.',
+  tardi:'It is getting late: back to camp. We will try again another time.', allarme:'Back to camp, quickly! The Clan needs us.',
+  fine:(n)=>`🏡 You are back in camp with ${n}. You have learned something of the forest.`, mot:'an outing with a grown cat' },
+ fr:{ chiediC:'🐾 Je peux venir chasser avec toi ?', chiediE:'🌿 Tu m’apprends à cueillir les herbes ?',
+  si:(f,t)=>t==='erbe'?`D’accord, ${f?'petite':'petit'}. Allons chercher les herbes : reste près de moi et renifle ce que je renifle.`:`D’accord, ${f?'petite':'petit'}. Je t’emmène chasser : reste près de moi et fais comme moi.`,
+  no:'Pas maintenant, petit : je viens de rentrer. Redemande-moi plus tard.', noF:'Pas maintenant, petite : je viens de rentrer. Redemande-moi plus tard.',
+  propC:f=>`«Tu veux venir chasser avec moi, ${f?'petite':'petit'} ? Je t’apprends à attraper une souris. Hors du camp, on ne sort qu’avec un grand.»`,
+  propG:f=>`«Tu veux sortir avec moi, ${f?'petite':'petit'} ? Je peux t’apprendre à chasser, ou à reconnaître les herbes qui soignent.»`,
+  vaC:'🐾 Allons chasser', vaE:'🌿 Allons chercher les herbes', nonOra:'Pas maintenant',
+  ann:n=>`🐾 Tu sors du camp avec ${n} : reste près de lui`, log:(n,t)=>`🐾 Tu sors du camp avec ${n}, ${t==='erbe'?'chercher les herbes':'pour chasser'}. Hors du camp, reste près de lui.`,
+  vicino:f=>`Reste près de moi, ${f?'petite':'petit'} ! Dans la forêt, on ne s’éloigne pas.`,
+  consC:['Baisse-toi et approche doucement : la proie ne doit pas t’entendre.','Regarde les oreilles de la souris : quand elles bougent, ne bouge plus.','Là, une souris somnole. Appuie sur Espace et poursuis-la !','Quand tu es près, bondis ! Le saut, c’est tout.'],
+  consE:['Renifle : chaque plante a son odeur, et son odeur dit à quoi elle sert.','On ne prend que ce qu’il faut, et on laisse la racine : ainsi la plante repousse.','Tu vois ces fleurs qui brillent ? Approche-toi et appuie sur Espace pour les cueillir.'],
+  insegui:n=>'poursuis '+n, cogli:'cueille l’herbe', colta:(e,n)=>`🌿 Tu as cueilli ${e} : ${n} la met de côté pour l’armoire aux herbes.`,
+  bravoC:'Bravo ! Ta première proie. Maintenant, rentrons au camp : apporte-la au tas, c’est ton cadeau au clan.', bravoE:'Bravo ! Tu as le nez d’un guérisseur. Maintenant, rentrons au camp.',
+  tardi:'Il se fait tard : rentrons au camp. On réessaiera une autre fois.', allarme:'Au camp, vite ! Le clan a besoin de nous.',
+  fine:(n)=>`🏡 Tu es rentré{e} au camp avec ${n}. Tu as appris quelque chose de la forêt.`, mot:'une sortie avec un grand' },
+};
+addEventListener('DOMContentLoaded',()=>{ if(typeof menuGatto!=='function'||typeof aggiornaFelce!=='function') return;
+ const T=GITA_T[LINGUA]||GITA_T.it, cm=CLAN.felce.campo;
+ const gen=(s,p)=>s.replace(/\{o\}/g,p.sesso==='f'?'a':'o').replace(/\{e\}/g,p.sesso==='f'?'e':'');
+ const insegnante=c=>c&&c.clan==='felce'&&!c.ferito&&(c.rango==='guerriero'||c.rango==='guaritore')&&c.stato==='campo';
+ const puoUscire=()=>{ const p=G.p; return p.rango==='gattino'&&!G.gita&&!G.raid&&!occupato()&&!G.funerale&&!p.preda; };
+ const metaCaccia=()=>{ for(let k=0;k<40;k++){ const x=cm.x+cm.r+120+Math.random()*120, y=cm.y+(Math.random()-0.5)*300; if(!acqua(x,y)&&!inCampo(x,y,30)) return {x,y}; } return {x:cm.x+cm.r+150,y:cm.y}; };
+ const metaErbe=()=>{ const h=piuVicino(ERBE.filter((h,i)=>G.erbe[i]<=G.t&&!acqua(h.x,h.y)),cm); return h?{x:h.x,y:h.y}:metaCaccia(); };
+ function avvia(c,tipo){ const p=G.p; if(!puoUscire()||!insegnante(c)) return; segnaEvento();
+  G.gita={id:c.id,tipo,fase:'andata',meta:tipo==='erbe'?metaErbe():metaCaccia(),da:G.t,prese:p.prede||0,erbe:0,cons:0,consT:G.t};
+  c.stato='gita'; c.vx=c.vy=0; parla(c,T.si(p.sesso==='f',tipo),6); mettiAFuoco(c,3000);
+  log(T.log(nome(c),tipo),'#ffe0a0'); annuncia(T.ann(nome(c)),'#ffe0a0'); stP().gite=(stP().gite||0)+1; if(window.REG) REG.evento('gita',tipo+' con '+nome(c)); }
+ function chiedi(c,tipo){ const p=G.p, S=stP(); if(S.gitaFine&&G.t-S.gitaFine<MOON*0.4){ const t=c.sesso==='f'?T.noF:T.no; parla(c,t,5); log(`🗣️ ${nome(c)}: «${t}»`,'#cfe8ff'); return; } avvia(c,tipo); }
+ function fineGita(motivo){ const g=G.gita, p=G.p; if(!g) return; const c=gatto(g.id); G.gita=null; stP().gitaFine=G.t;
+  if(c){ c.stato='campo'; if(typeof nuovoPuntoCampo==='function') nuovoPuntoCampo(c); }
+  if(motivo==='casa'){ log(gen(T.fine(c?nome(c):''),p),'#ffe0a0'); spirito(4,T.mot); } }
+ window.GITA={avvia,fine:fineGita};
+ // durante la gita niente altri eventi né storie: una cosa alla volta
+ { const o=puoEvento; puoEvento=function(){ return G&&G.gita?false:o.apply(this,arguments); }; const s2=storiaLibera; storiaLibera=function(){ return G&&G.gita?false:s2.apply(this,arguments); }; }
+ // nel menu di un guerriero o di un guaritore, il gattino può chiedere di uscire con lui
+ { const o=menuGatto; menuGatto=function(c){ const p=G.p; if(!(p.rango==='gattino'&&insegnante(c)&&puoUscire())) return o.apply(this,arguments);
+  const m0=modale, extra=[{t:T.chiediC,f:()=>chiedi(c,'caccia')}]; if(c.rango==='guaritore') extra.push({t:T.chiediE,f:()=>chiedi(c,'erbe')});
+  modale=function(t,x,bt){ modale=m0; return m0(t,x,[...extra,...(bt||[])]); }; try{ return o.apply(this,arguments); } finally{ modale=m0; } }; }
+ // ogni tanto è il grande a proporlo, quando il gattino è al campo e libero
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused||scena||recitaAtt||fx||transizione||G.dentro) return; const p=G.p, S=stP();
+  if(!puoUscire()||!nelCampo(p,0)||!storiaLibera(10)) return; if(S.gitaProp&&G.t-S.gitaProp<MOON*0.9) return; if(S.gitaFine&&G.t-S.gitaFine<MOON*0.6) return; if(Math.random()>0.35) return;
+  const c=pick(G.cats.filter(insegnante).filter(c=>!c.leader&&dist(c,p)<500)); if(!c) return; S.gitaProp=G.t; segnaEvento();
+  const a=Math.random()*6.283; c.x=clamp(p.x+Math.cos(a)*60,30,WW-30); c.y=clamp(p.y+Math.sin(a)*60,30,WH-30); c.vx=c.vy=0; c.flip=p.x<c.x?-1:1;
+  const f=p.sesso==='f', bt=c.rango==='guaritore'?[{t:T.vaC,f:()=>avvia(c,'caccia')},{t:T.vaE,f:()=>avvia(c,'erbe')},{t:T.nonOra}]:[{t:T.vaC,f:()=>avvia(c,'caccia')},{t:T.nonOra}];
+  modale(nome(c),c.rango==='guaritore'?T.propG(f):T.propC(f),bt); },3000);
+ // l'adulto della gita: va alla meta aspettando il gattino, gira lì intorno dando consigli, poi riporta tutti al campo
+ { const o=aggiornaFelce; aggiornaFelce=function(c,dt){ const g=G.gita; if(!g||c.id!==g.id) return o.apply(this,arguments);
+  const p=G.p, lontano=dist(c,p)>110, v=72;
+  if(g.fase==='andata'){ if(lontano&&dist(c,cm)>cm.r-30){ c.vx=c.vy=0; c.flip=p.x<c.x?-1:1; } else if(muovi(c,g.meta.x,g.meta.y,v,dt)||dist(c,g.meta)<20){ g.fase='fuori'; g.fuoriDa=G.t; } }
+  else if(g.fase==='fuori'){ if(!g.giro||dist(c,g.giro)<8) g.giro={x:g.meta.x+(Math.random()-0.5)*90,y:g.meta.y+(Math.random()-0.5)*90}; if(lontano) { c.vx=c.vy=0; c.flip=p.x<c.x?-1:1; } else muovi(c,g.giro.x,g.giro.y,25,dt); }
+  else { if(lontano&&!nelCampo(p,0)){ c.vx=c.vy=0; c.flip=p.x<c.x?-1:1; } else muovi(c,cm.x+20,cm.y+20,v,dt); }
+  return; }; }
+ // il gattino attraversa la siepe e l'apertura soltanto durante la gita, e resta vicino all'adulto
+ { const o=siepe; siepe=function(p,ox,oy,dt){ const g=G&&G.gita; if(!g||p!==G.p) return o.apply(this,arguments); const c=gatto(g.id); const r=o.apply(this,arguments); if(!c){ fineGita(); return r; }
+  const d=dist(p,c); if(!nelCampo(p,0)&&d>200){ p.x=c.x+(p.x-c.x)/d*200; p.y=c.y+(p.y-c.y)/d*200; p.guida=null; const ora=performance.now(); if(ora-(g.richiamo||0)>6000){ g.richiamo=ora; const t=T.vicino(p.sesso==='f'); parla(c,t,4); } } }; }
+ // Spazio durante la gita: inseguire la preda (caccia) o raccogliere l'erba (erbe)
+ { const o=azioneSpazio; azioneSpazio=function(){ const p=G.p, g=G.gita; if(!g||p.rango!=='gattino'||G.dentro||nelCampo(p,0)||scena) return o.apply(this,arguments);
+  if(g.tipo==='caccia'&&!p.caccia&&!p.preda){ const q=predaMirata(); if(q&&dist(q,p)<320) return {t:T.insegui(PREDE[q.tipo].nome),f:()=>{ p.caccia={q,t:0}; }}; }
+  if(g.tipo==='erbe'){ const h=erbaVicina(); if(h>=0) return {t:T.cogli,f:()=>{ G.erbe[h]=G.t+40; const s=ERBE[h].specie||0, c=gatto(g.id); avviaScena('annusa',[p],0.9,()=>{ g.erbe++; if(window.ERBE_PROVA&&ERBE_PROVA.impara) ERBE_PROVA.impara(s); const P=window.PIANTE&&PIANTE[s]; log(T.colta(P?P.e+' '+P[LINGUA][0]:'',c?nome(c):''),'#c8f0a8'); flo(p.x,p.y-30,'+1 🌿','#9be07f'); }); }}; }
+  return o.apply(this,arguments); }; }
+ // ogni mezzo secondo: consigli, una preda assonnata vicino alla meta, fine della gita
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||!G.gita||paused) return; const g=G.gita, p=G.p, c=gatto(g.id); if(!c||c.ferito||p.rango!=='gattino'){ fineGita(); return; }
+  if((G.raid||occupato())&&g.fase!=='ritorno'){ g.fase='ritorno'; parla(c,T.allarme,4); }
+  if(g.fase==='fuori'){
+   if(g.tipo==='caccia'&&!prede.some(q=>!q.morta&&dist(q,g.meta)<180)) prede.push({x:g.meta.x+(Math.random()-0.5)*120,y:g.meta.y+(Math.random()-0.5)*120,tipo:'topo',vx:0,vy:0,t:0,allarme:0,vola:0,morta:false,lenta:true});
+   const L2=g.tipo==='erbe'?T.consE:T.consC; if(!scena&&!recitaAtt&&G.t-g.consT>11&&g.cons<L2.length){ g.consT=G.t; parla(c,L2[g.cons++],7); }
+   if(p.preda||p.pasto||(scena&&scena.tipo==='cattura'&&scena.attori.includes(p))) g.presa=true; // anche una preda mangiata subito conta
+   const fatto=g.tipo==='erbe'?g.erbe>=2:g.presa;
+   if(fatto&&!scena){ g.fase='ritorno'; parla(c,gen(g.tipo==='erbe'?T.bravoE:T.bravoC,p),7); mettiAFuoco(c,3000); spirito(4,T.mot); }
+   else if(G.t-g.fuoriDa>110){ g.fase='ritorno'; parla(c,T.tardi,6); } }
+  if(g.fase==='ritorno'&&nelCampo(p,0)&&dist(c,cm)<cm.r) fineGita('casa');
+  if(G.t-g.da>300) fineGita(); },500);
+});
+
+// ================== vecchiaia e addio: testi giusti per il guaritore e per il capo ==================
+// Correzione del 13 novembre 2026, dalla prova di una vita da guaritrice: a 60 lune le si diceva, e all'addio
+// l'elogio contava soltanto prede e difese.
+const VEC_T={
+ it:{ guar:n=>`${n}, hai visto moltissime lune: le tue zampe non reggono più i sentieri lunghi del bosco. Ma le tue mani sanno ancora curare: insegna ai giovani le erbe e le parole giuste.`,
+  capo:n=>`${n}, hai visto moltissime lune e non puoi più combattere. Il clan ti segue ancora: guidalo con la parola, e racconta le tue storie ai giovani.`,
+  inizio:(n,l)=>`${n} ha camminato con noi per ${l} lune.`, cure:c=>`Ha curato ${c} ${c===1?'gatto':'gatti'}.`, massi:m=>`Ha portato ${m} ${m===1?'masso':'massi'} al grande gatto di pietra.`,
+  guida:(x,pont)=>`Ha guidato il clan per ${x} ${x===1?'luna':'lune'}${pont?', come pontefice, in pace':''}.`, prede:x=>`Ha portato ${x} ${x===1?'preda':'prede'} al mucchio.`, difese:x=>`Ha difeso il clan ${x} ${x===1?'volta':'volte'}.`, fine:'Ciò che ha dato resta qui.' },
+ en:{ guar:n=>`${n}, you have seen a great many moons: your paws can no longer manage the long forest paths. But your paws still know how to heal: teach the young the herbs and the right words.`,
+  capo:n=>`${n}, you have seen a great many moons and can no longer fight. The clan still follows you: guide it with words, and tell your stories to the young.`,
+  inizio:(n,l)=>`${n} walked with us for ${l} moons.`, cure:c=>`${c===1?'One cat was':c+' cats were'} healed by those paws.`, massi:m=>`${m===1?'One stone':m+' stones'} carried to the great stone cat.`,
+  guida:(x,pont)=>`The clan was guided for ${x} ${x===1?'moon':'moons'}${pont?', as pontiff, in peace':''}.`, prede:x=>`${x===1?'One prey':x+' prey'} brought to the pile.`, difese:x=>`The clan defended ${x===1?'once':x+' times'}.`, fine:'What was given stays here.' },
+ fr:{ guar:n=>`${n}, tu as vu d’innombrables lunes : tes pattes ne supportent plus les longs sentiers de la forêt. Mais elles savent encore soigner : apprends aux jeunes les herbes et les mots justes.`,
+  capo:n=>`${n}, tu as vu d’innombrables lunes et tu ne peux plus combattre. Le clan te suit encore : guide-le par la parole, et raconte tes histoires aux jeunes.`,
+  inizio:(n,l)=>`${n} a marché avec nous pendant ${l} lunes.`, cure:c=>`${c===1?'Un chat a été soigné':c+' chats ont été soignés'} par ses pattes.`, massi:m=>`${m===1?'Un bloc porté':m+' blocs portés'} jusqu’au grand chat de pierre.`,
+  guida:(x,pont)=>`Le clan a été guidé pendant ${x} ${x===1?'lune':'lunes'}${pont?', en pontife, dans la paix':''}.`, prede:x=>`${x===1?'Une proie apportée':x+' proies apportées'} au tas.`, difese:x=>`Le clan défendu ${x===1?'une fois':x+' fois'}.`, fine:'Ce qui a été donné reste ici.' },
+};
+addEventListener('DOMContentLoaded',()=>{ const T=VEC_T[LINGUA]||VEC_T.it;
+ if(TESTI_LEGG&&TESTI_LEGG.vita){ const o=TESTI_LEGG.vita.vecchio; TESTI_LEGG.vita.vecchio=function(n){ const p=G&&G.p; if(p&&eGuarP(p)) return T.guar(n); if(p&&p.leader) return T.capo(n); return o.apply(this,arguments); }; }
+ if(typeof STORIE!=='undefined'&&STORIE.capoDiventa){ const o=STORIE.capoDiventa; STORIE.capoDiventa=function(){ stP().capoDa=G.t; return o.apply(this,arguments); }; }
+ { const o=TESTI_LEGG.vita.discorso; TESTI_LEGG.vita.discorso=function(c,n,l,pr,b){ const p=G.p, g=eGuarP(p); let t=o.call(this,c,n,l,g?0:pr,g?0:b);
+   return t.replace(/ 1 prede/g,' 1 preda').replace(/ 1 battaglie/g,' 1 battaglia').replace(/ 1 battles/g,' 1 battle').replace(/ 1 proies/g,' 1 proie').replace(/ 1 batailles/g,' 1 bataille'); }; }
+ VITA2.capo=function(n,l,pr,b){ const p=G.p, S=stP(), cu=p.cure||0, ma=(G.colosso&&G.colosso.miei)||0, da=p.leader&&S.capoDa!=null?Math.max(1,Math.round((G.t-S.capoDa)/MOON)):0;
+  const pezzi=[T.inizio(n,l)]; if(cu) pezzi.push(T.cure(cu)); if(ma) pezzi.push(T.massi(ma)); if(da) pezzi.push(T.guida(da,!!G.pace)); if(pr) pezzi.push(T.prede(pr)); if(b) pezzi.push(T.difese(b));
+  return pezzi.slice(0,4).join(' ')+' '+T.fine; };
+});
+
+// ================== la parata dei tre clan ==================
+// Idea del 13 novembre 2026, per il finale lieto della festa
+//. Dopo la statua che si anima, i gatti della festa si mettono in fila a tre a tre e fanno il giro
+// della radura intorno al grande gatto, miagolando in coro; il giocatore può accodarsi o guardarli passare. Dura circa 40 secondi di gioco.
+const PARATA_T={ it:{ann:'🎶 I tre clan si mettono in fila, a tre a tre, e girano per il bosco miagolando in coro!',fine:'🎶 La parata finisce: ognuno torna al suo campo, con la voce ancora piena di miagolii.'},
+ en:{ann:'🎶 The three clans line up, three by three, and parade through the forest meowing in chorus!',fine:'🎶 The parade is over: everyone goes back to their camp, voices still full of meows.'},
+ fr:{ann:'🎶 Les trois clans se mettent en file, trois par trois, et défilent dans la forêt en miaulant en chœur !',fine:'🎶 Le défilé est fini : chacun rentre à son camp, la voix encore pleine de miaulements.'} };
+function parata(ospiti){ const C=G.colosso, T=PARATA_T[LINGUA]||PARATA_T.it, vivi=ospiti.filter(c=>G.cats.includes(c));
+ G.parata={da:G.t,fino:G.t+40,ids:vivi.map(c=>c.id),cx:C.x,cy:C.y,R:290,a0:Math.atan2(G.p.y-C.y,G.p.x-C.x)+0.6,coro:G.t};
+ annuncia(T.ann,'#ffe08a'); log(T.ann,'#ffe08a'); if(window.suonoMiaoGrande) suonoMiaoGrande(); if(window.REG) REG.evento('parata',vivi.length+' gatti'); }
+addEventListener('DOMContentLoaded',()=>{ const T=PARATA_T[LINGUA]||PARATA_T.it;
+ const meta=(P,c)=>{ const k=P.ids.indexOf(c.id), r=Math.floor(k/3), col=k%3, a=P.a0+60*(G.t-P.da)/P.R-r*36/P.R, rr=P.R+(col-1)*26; return {x:P.cx+Math.cos(a)*rr,y:P.cy+Math.sin(a)*rr}; };
+ const marcia=o=>function(c,dt){ const P=G.parata; if(!P||!P.ids.includes(c.id)) return o.apply(this,arguments); const m=meta(P,c);
+  muovi(c,m.x,m.y,dist(c,m)>60?150:95,dt); c.elev=0; if(c.posa!=='canta') c.posa=null; return; };
+ if(typeof aggiornaFelce==='function') aggiornaFelce=marcia(aggiornaFelce);
+ if(typeof aggiornaNemico==='function') aggiornaNemico=marcia(aggiornaNemico);
+ { const o=puoEvento; puoEvento=function(){ return G&&G.parata?false:o.apply(this,arguments); }; }
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.parata||paused) return; const P=G.parata, gatti=P.ids.map(gatto).filter(Boolean);
+  if(G.t>P.fino||!gatti.length){ G.parata=null; for(const c of gatti){ c.posa=null; if(c.clan==='felce'){ c.stato='campo'; nuovoPuntoCampo(c); } else { c.stato='pattuglia'; if(typeof puntoNemico==='function') puntoNemico(c); } } log(T.fine,'#ffe08a'); return; }
+  if(G.t-P.coro>4){ P.coro=G.t; if(window.suonoMiao) suonoMiao('gioia'); const scelti=gatti.filter(()=>Math.random()<0.5); for(const c of scelti){ setPosa(c,'canta',2.5); testo(c.x,c.y-44*scala(c),pick(['♪','♫','Miao!','♩']),pick(['#ffe08a','#bfe8ff','#ffd0f0']),14,-20,2); } } },300);
+});
+
+// ================== al mucchio con le prede in bocca ==================
+// Correzione del 13 novembre 2026
+//. Prima bastava un passo di troppo e Spazio apriva il dialogo con il gatto più vicino: ora, a pochi passi dal mucchio
+// Spazio fa un balzo fino al mucchio e lascia tutte le prede.
+const MUCCHIO_T={it:n=>n>1?`lascia le ${n} prede nel mucchio`:'lascia la preda nel mucchio',en:n=>n>1?`leave the ${n} prey on the pile`:'leave the prey on the pile',fr:n=>n>1?`dépose les ${n} proies sur le tas`:'dépose la proie sur le tas'};
+addEventListener('DOMContentLoaded',()=>{ if(typeof azioneSpazio!=='function'||typeof deposita!=='function') return; const T=MUCCHIO_T[LINGUA]||MUCCHIO_T.it;
+ const o=azioneSpazio; azioneSpazio=function(){ const p=G.p, M=L.mucchio;
+  if(p.preda&&!G.dentro&&!G.raid&&!p.anim&&!(p.elev>0)&&!scena&&!(typeof campoSottoAttacco==='function'&&campoSottoAttacco())&&dist(p,M)<M.r+90){ const n=1+(p.carico||[]).length;
+   return {t:T(n),f:()=>{ if(dist(p,M)>M.r+14){ const d=dist(p,M)||1; salta(p,M.x+(p.x-M.x)/d*(M.r+8),M.y+(p.y-M.y)/d*(M.r+8),0,10,0.35); setTimeout(()=>{ if(G&&G.p.preda) deposita(); },420); } else deposita(); }}; }
+  return o.apply(this,arguments); }; });
