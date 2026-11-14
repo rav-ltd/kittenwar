@@ -768,7 +768,7 @@ function etichettaUtile(c){ const p=G.p; if(c===p) return false;
  return (c.ferito&&puoErbe())||(m&&(m.b===c.id||((m.k==='ascolta'||m.k==='anziano')&&c.rango==='anziano')||(m.k==='allievo'&&p.allievo===c.id)))||(corteggia&&corteggia.id===c.id); }
 function metaPosto(k){ if(TANE.includes(k)) return ingressoTana(k); if(k==='roccia') return davantiRoccia(); return {x:L[k].x,y:L[k].y+(k==='lago'||k==='stagno'?L[k].r+12:0)}; }
 const ZONE=[];
-function targaCliccabile(t,x,y,col,meta){ if((scena&&(scena.tipo==='rito'||scena.tipo==='cerimonia'))||(G&&G.riposoFinale)) return; // durante i riti, soltanto il rito
+function targaCliccabile(t,x,y,col,meta){ if((scena&&(scena.tipo==='rito'||scena.tipo==='cerimonia'))||(G&&(G.riposoFinale||G.golem))) return; // durante i riti e la marcia del grande gatto, soltanto la scena
  targa(t,x,y,col); ctx.font='bold 15px system-ui'; const w=ctx.measureText(t).width+18; ZONE.push({x0:x-w/2,y0:y-17,x1:x+w/2,y1:y+7,meta}); }
 function zonaSotto(e){ const r=e.target.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top; return ZONE.find(z=>x>=z.x0&&x<=z.x1&&y>=z.y0&&y<=z.y1); }
 addEventListener('DOMContentLoaded',()=>{ const cv=document.getElementById('c'); if(!cv) return; let giu=null;

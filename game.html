@@ -61,7 +61,7 @@ kbd{background:#0006;border:1px solid #777;border-radius:4px;padding:0 4px;font-
 </div>
 </div>
 <div id="modal"><div class="box"><h2 id="mt"></h2><div id="mx"></div><div id="mb"></div></div></div>
-<script src="js/leggende.js?v=20261113154836"></script><script src="js/suoni.js?v=20261113154836"></script><script src="js/musica.js?v=20261113154836"></script><script src="js/storie.js?v=20261113154836"></script><script src="js/registro.js?v=20261113154836"></script><script src="js/modello.js?v=20261113154836"></script>
+<script src="js/leggende.js?v=20261114230847"></script><script src="js/suoni.js?v=20261114230847"></script><script src="js/musica.js?v=20261114230847"></script><script src="js/storie.js?v=20261114230847"></script><script src="js/registro.js?v=20261114230847"></script><script src="js/modello.js?v=20261114230847"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script>
 'use strict';
@@ -1342,7 +1342,7 @@ function aggiornaGiocatore(dt){
     if(dq<60&&p.energia>=3){ p.energia-=2; p.balzo=0.35; } else { const v=175*(acqua(p.x,p.y)?0.5:1); tvx=ddx/dq*v; tvy=ddy/dq*v; } } }
   if(dx||dy){ const l=Math.hypot(dx,dy); tvx=dx/l*sp; tvy=dy/l*sp; p.dir=Math.atan2(dy,dx); if(dx) p.flip=dx<0?-1:1; }
   const k=1-Math.exp(-dt*((dx||dy)?8:10)); p.vx=(p.vx||0)+(tvx-(p.vx||0))*k; p.vy=(p.vy||0)+(tvy-(p.vy||0))*k; p.x+=p.vx*dt; p.y+=p.vy*dt; }
- if(!inScena&&nelFiume(p.x)&&acqua(p.x,p.y)){ // la corrente trascina verso valle
+ if(!inScena&&!G.golem&&nelFiume(p.x)&&acqua(p.x,p.y)){ // la corrente trascina verso valle
   p.y+=48*dt; p.energia=Math.max(0,p.energia-1.2*dt);
   if(Math.random()<dt*6) particelle.push({tipo:'onda',x:p.x+rnd(-10,10),y:p.y,t:0.9});
   if(G.t>avvisoFiume){ avvisoFiume=G.t+8; annuncia('🌊 The river is sweeping you away!','#9cd0ff'); consiglio('fiume','The current is strong! Cross the river on the stepping stones of the ford, where the water is shallow: you can see them on the map.',30); } }
@@ -1833,7 +1833,7 @@ function disegnaPreda(q){
 
 // ---------- la scena ----------
 function targa(t,x,y,col){ ctx.font='bold 15px system-ui'; const w=ctx.measureText(t).width+18; ctx.fillStyle='rgba(20,16,10,0.72)'; ctx.beginPath(); ctx.roundRect(x-w/2,y-17,w,24,7); ctx.fill(); ctx.strokeStyle='rgba(245,231,196,0.5)'; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle=col; ctx.textAlign='center'; ctx.fillText(t,x,y); }
-function frecceGuida(){ if(G.dentro||G.riposoFinale) return; // frecce verso le cose importanti, con la distanza in metri
+function frecceGuida(){ if(G.dentro||G.riposoFinale||G.golem) return; // frecce verso le cose importanti, con la distanza in metri
  const p=G.p, cm=CLAN.felce.campo, T=[];
  if(dist(p,cm)>cm.r+40) T.push({x:cm.x,y:cm.y,s:'🏕️',t:'your camp',c:'#9be07f'});
  for(const k of ['nebbia','pietre']){ const c=CLAN[k].campo; if(dist(p,c)<1500) T.push({x:c.x,y:c.y,s:EMBLEMA[k],t:CLAN[k].nome+' camp',c:CLAN[k].col}); }
@@ -2003,7 +2003,7 @@ addEventListener('r3d-pronto',()=>ridimensiona());
 avvio();
 requestAnimationFrame(loop);
 </script>
-<script src="js/erbe.js?v=20261113154836"></script>
-<script type="module" src="js/mondo3d.js?v=20261113154836"></script>
+<script src="js/erbe.js?v=20261114230847"></script>
+<script type="module" src="js/mondo3d.js?v=20261114230847"></script>
 </body>
 </html>

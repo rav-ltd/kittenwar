@@ -773,7 +773,7 @@ addEventListener('DOMContentLoaded',()=>{
  // il guaritore non combatte: è convocato, e veglia da lontano dentro una bolla
  if(typeof chiamataAlleArmi==='function'){ const o=chiamataAlleArmi; chiamataAlleArmi=function(cl){ const p=G.p; if(p.rango!=='guaritore'||p.vecchio||p.incinta) return o.apply(this,arguments);
   G.tens[cl]=60; annuncia('📯','#ff9a8a'); const k=capo(), kn=k?nome(k):'';
-  modale(GUAR.chiamaTit,GUAR.chiama(kn,CLAN[cl].nome)+stSapere(GUAR.boxB),[{t:GUAR.veglia,f:()=>vegliaBattaglia(cl)},{t:GUAR.resta,f:()=>battagliaLontana(cl)}]); }; }
+  modale(GUAR.chiamaTit,GUAR.chiama(kn,CLAN[cl].nome)+stSapere(GUAR.boxB),[{t:GUAR.veglia,f:()=>vegliaBattaglia(cl)},...(golemPronto()?[{t:MAG.golemBtn,f:()=>ritoGrandeGatto(cl)}]:[]),{t:GUAR.resta,f:()=>battagliaLontana(cl)}]); }; }
  // il guaritore che guida il clan è un pontefice
  if(typeof rangoTesto==='function'){ const o=rangoTesto; rangoTesto=function(c){ if(c&&c.leader&&c.rango==='guaritore') return c.sesso==='f'?GUAR.pontF:GUAR.pontM; return o.apply(this,arguments); }; }
  if(typeof tensione==='function'){ const o=tensione; tensione=function(cl,n,m){ if(n>0&&G&&G.pace) n=n*0.35; return o.call(this,cl,n,m); }; } // sotto un pontefice le offese pesano tre volte meno
@@ -1271,3 +1271,196 @@ addEventListener('DOMContentLoaded',()=>{ if(typeof azioneSpazio!=='function'||t
   if(p.preda&&!G.dentro&&!G.raid&&!p.anim&&!(p.elev>0)&&!scena&&!(typeof campoSottoAttacco==='function'&&campoSottoAttacco())&&dist(p,M)<M.r+90){ const n=1+(p.carico||[]).length;
    return {t:T(n),f:()=>{ if(dist(p,M)>M.r+14){ const d=dist(p,M)||1; salta(p,M.x+(p.x-M.x)/d*(M.r+8),M.y+(p.y-M.y)/d*(M.r+8),0,10,0.35); setTimeout(()=>{ if(G&&G.p.preda) deposita(); },420); } else deposita(); }}; }
   return o.apply(this,arguments); }; });
+
+// ================== la vita dei guaritori: duelli di magia e il grande gatto in marcia ==================
+// Richiesta del 14 novembre 2026
+// Ogni clan nemico ha un guaritore (vive vicino alla sua tana, la seconda del campo, e raccoglie erbe nel suo bosco; non combatte mai).
+// Il duello: tre arti (✨ lume batte 🌑 ombra, 🌑 ombra batte 🌿 radice, 🌿 radice batte ✨ lume), vince chi arriva prima a due prove; a volte
+// l'aria tradisce l'arte del rivale (cera calda, nebbia fredda, terra bagnata). Nessuno si fa male. Il rito del grande gatto richiede il monumento finito.
+const MAG_T={
+ it:{ arti:[['✨','il tuo lume','cera calda','il lume'],['🌑','la tua ombra','nebbia fredda','l’ombra'],['🌿','la tua radice','terra bagnata','la radice']], Arti:['✨ Il lume','🌑 L’ombra','🌿 La radice'],
+  tit:'✨ Duello di magia', regole:'Un duello di magia tra guaritori non ferisce nessuno: vince chi piega l’arte dell’altro. Ci sono tre arti: ✨ <b>il lume</b> scioglie l’ombra, 🌑 <b>l’ombra</b> soffoca la radice, 🌿 <b>la radice</b> beve il lume. Vince chi arriva per primo a due prove.<br><br>A volte l’aria tradisce l’arte del rivale: la cera calda annuncia il lume, la nebbia fredda l’ombra, la terra bagnata la radice.',
+  prova:(k,a,b,n)=>`<b>Prova ${k}</b> · tu ${a}, ${n} ${b}`, indizio:o=>`Nell’aria senti odore di <b>${o}</b>.`, niente:'L’aria non dice niente.', scegli:'Quale arte chiami?',
+  vinta:(m,s)=>`${m.charAt(0).toUpperCase()+m.slice(1)} piega ${s}: la prova è tua.`, persa:(m,s)=>`${s.charAt(0).toUpperCase()+s.slice(1)} piega ${m}: la prova è del rivale.`, pari:x=>`Due volte ${x}: le arti si annullano, e l’aria trema.`,
+  sfida:(n,f)=>`«${n}, ${f?'guaritrice':'guaritore'} della Felce: le mie stelle dicono che le tue sono più deboli. Mettiamole alla prova.»`,
+  accetta:'✨ Accettare il duello', sfidaB:'✨ Sfidare a duello', rifiuta:'Rifiutare con un inchino', rifiutoT:n=>`🙇 ${n} se ne va senza duello. Nel clan qualcuno mormora.`,
+  vintoTit:'✨ Hai vinto il duello', persoTit:'✨ Hai perso il duello', pariTit:'✨ Nessun vincitore',
+  vinto:n=>`${n} china il muso: «La tua arte è più antica della mia. Prendi queste erbe: sono il pegno di chi perde.»`, perso:n=>`${n} china il muso, gentile: «Le stelle oggi erano con me. Torna quando avrai ascoltato meglio il bosco.»`, pareggio:n=>`Tu e ${n} vi inchinate: nessuna arte ha piegato l’altra.`,
+  mot:'un duello di magia vinto', boschiTit:n=>'🔮 '+n, boschi:(n,cl,f)=>`${n}, ${f?'guaritrice':'guaritore'} del ${cl}, raccoglie erbe tra le radici. Porta la mantellina viola, come tutti i guaritori.`, saluta:'Salutare e proseguire', nonSiAttacca:(n,f)=>`${n} è ${f?'una guaritrice':'un guaritore'}: nessun guerriero alza gli artigli contro chi cura.`,
+  tanaTit:'🕯️ La tana del guaritore nemico', tana:(n,f)=>`Nella penombra, ${n} alza la testa dal suo mortaio di pietra. Ti ha riconosciut${f?'a':'o'}: ${f?'una guaritrice':'un guaritore'} di un altro clan.`, sfidaT:'✨ Sfidare il guaritore', profana:'🔥 Profanare la tana', esci:'Uscire in silenzio',
+  golemBtn:'🗿 Il rito del grande gatto (una volta sola)', g1:'Mentre il clan si prepara alla battaglia, corri al grande gatto di pietra e accendi le erbe ai suoi piedi.', g2:'Canti i nomi di tutti quelli che hanno portato un masso. Gli occhi di pietra si accendono.', g3:'Il grande gatto si alza, e la terra trema. Ti porge una zampa: sali sulla sua testa.',
+  marcia:cl=>`Il grande gatto cammina verso il ${cl}. Attraversa il fiume come se fosse un ruscello.`, arrivo:cl=>`I gatti del ${cl} vedono arrivare il gigante e fuggono nel bosco. Nessuno si fa male.`, voce:'Dalla pietra esce una voce profonda, che fa tremare il bosco: «Ora io sono Morte, il Distruttore di Mondi.»', boxVoce:['Le parole del gigante','Nella Bhagavad Gita (XI, 32) il dio Krishna si mostra al guerriero Arjuna nella sua forma immensa e dice di essere il Tempo che distrugge i mondi. Il fisico Robert Oppenheimer raccontò che quel verso gli tornò in mente nel 1945, davanti all’esplosione della prima bomba atomica, e lo ripeté così: «Ora sono diventato Morte, il distruttore di mondi».'], distrugge:'Il grande gatto alza la zampa e la abbatte sulle tane: una, due, tre. Restano soltanto sassi e polvere.', ritorno:'All’alba il grande gatto è di nuovo al suo posto, immobile. Nessuno l’ha visto tornare.',
+  golemTit:'🗿 Il gigante di pietra', golemFine:cl=>`Le tane del ${cl} sono crollate: per sei lune i loro gatti penseranno soltanto a ricostruirle. La guerra è vinta. Ma nel bosco nessuno ne parla ad alta voce: il grande gatto, adesso, fa paura a tutti, anche a noi.`,
+  golemLog:cl=>`🗿 Il grande gatto di pietra ha distrutto le tane del ${cl}. La guerra è vinta.`, rovina:'🏚️ La tana è crollata: i suoi gatti la stanno ricostruendo.', ricostruita:cl=>`🏗️ Il ${cl} ha ricostruito le sue tane.`,
+  boxGolem:['Il Golem di Praga','Una leggenda ebraica di Praga, messa per iscritto nell’Ottocento, racconta che il rabbino Judah Loew, vissuto nel Cinquecento, diede vita a una figura d’argilla, il Golem, per difendere la sua comunità; e che poi, quando la sua forza divenne pericolosa, lo riportò all’immobilità.'],
+  box:[['La gara di canto','Nel terzo canto del Kalevala, il poema finlandese raccolto da Elias Lönnrot, il vecchio Väinämöinen accetta la sfida del giovane Joukahainen e con il suo canto lo fa sprofondare nella palude.'],['I bastoni e i serpenti','Nel libro dell’Esodo (7, 10-12) il bastone di Aronne diventa un serpente davanti al faraone; i maghi d’Egitto fanno lo stesso con i loro bastoni, ma il bastone di Aronne inghiotte i loro.'],['Le Muse e le Pieridi','Nelle Metamorfosi di Ovidio (libro V) le nove figlie di Pierio sfidano le Muse in una gara di canto; perdono, e vengono trasformate in gazze.']] },
+ en:{ arti:[['✨','your light','warm wax','the light'],['🌑','your shadow','cold mist','the shadow'],['🌿','your root','wet earth','the root']], Arti:['✨ The light','🌑 The shadow','🌿 The root'],
+  tit:'✨ Magic duel', regole:'A magic duel between healers hurts nobody: the winner is the one who bends the other’s art. There are three arts: ✨ <b>the light</b> melts the shadow, 🌑 <b>the shadow</b> smothers the root, 🌿 <b>the root</b> drinks the light. The first to win two trials wins.<br><br>Sometimes the air betrays the rival’s art: warm wax announces the light, cold mist the shadow, wet earth the root.',
+  prova:(k,a,b,n)=>`<b>Trial ${k}</b> · you ${a}, ${n} ${b}`, indizio:o=>`You smell <b>${o}</b> in the air.`, niente:'The air says nothing.', scegli:'Which art do you call?',
+  vinta:(m,s)=>`${m.charAt(0).toUpperCase()+m.slice(1)} bends ${s}: the trial is yours.`, persa:(m,s)=>`${s.charAt(0).toUpperCase()+s.slice(1)} bends ${m}: the trial goes to your rival.`, pari:x=>`${x.charAt(0).toUpperCase()+x.slice(1)} twice: the arts cancel out, and the air trembles.`,
+  sfida:n=>`«${n}, healer of the Fern Clan: my stars say yours are weaker. Let us put them to the test.»`,
+  accetta:'✨ Accept the duel', sfidaB:'✨ Challenge to a duel', rifiuta:'Decline with a bow', rifiutoT:n=>`🙇 ${n} leaves without a duel. In the clan, someone murmurs.`,
+  vintoTit:'✨ You won the duel', persoTit:'✨ You lost the duel', pariTit:'✨ No winner',
+  vinto:n=>`${n} bows: «Your art is older than mine. Take these herbs: the loser’s pledge.»`, perso:n=>`${n} bows, kindly: «The stars were with me today. Come back when you have listened better to the forest.»`, pareggio:n=>`You and ${n} bow to each other: neither art bent the other.`,
+  mot:'a magic duel won', boschiTit:n=>'🔮 '+n, boschi:(n,cl)=>`${n}, healer of the ${cl}, is gathering herbs among the roots, wearing the violet cape of all healers.`, saluta:'Greet and move on', nonSiAttacca:n=>`${n} is a healer: no warrior raises claws against those who heal.`,
+  tanaTit:'🕯️ The enemy healer’s den', tana:n=>`In the half-light, ${n} looks up from a stone mortar. You have been recognised: a healer of another clan.`, sfidaT:'✨ Challenge the healer', profana:'🔥 Desecrate the den', esci:'Leave quietly',
+  golemBtn:'🗿 The rite of the great cat (only once)', g1:'While the clan gets ready for battle, you run to the great stone cat and light herbs at its feet.', g2:'You sing the names of all who carried a stone. The stone eyes light up.', g3:'The great cat rises, and the earth trembles. It holds out a paw: you climb onto its head.',
+  marcia:cl=>`The great cat walks towards the ${cl}. It crosses the river as if it were a brook.`, arrivo:cl=>`The cats of the ${cl} see the giant coming and flee into the forest. Nobody is hurt.`, voce:'A deep voice comes out of the stone, and the forest trembles: «Now I am become Death, the destroyer of worlds.»', boxVoce:['The giant’s words','In the Bhagavad Gita (XI, 32) the god Krishna shows himself to the warrior Arjuna in his immense form and says that he is Time, the destroyer of worlds. The physicist Robert Oppenheimer said that this verse came back to him in 1945, before the explosion of the first atomic bomb, and he repeated it as: “Now I am become Death, the destroyer of worlds”.'], distrugge:'The great cat raises its paw and brings it down on the dens: one, two, three. Only stones and dust remain.', ritorno:'At dawn the great cat is back in its place, motionless. Nobody saw it return.',
+  golemTit:'🗿 The stone giant', golemFine:cl=>`The dens of the ${cl} have collapsed: for six moons their cats will think only of rebuilding them. The war is won. But in the forest nobody speaks of it aloud: the great cat now frightens everyone, us included.`,
+  golemLog:cl=>`🗿 The great stone cat destroyed the dens of the ${cl}. The war is won.`, rovina:'🏚️ The den has collapsed: its cats are rebuilding it.', ricostruita:cl=>`🏗️ The ${cl} has rebuilt its dens.`,
+  boxGolem:['The Golem of Prague','A Jewish legend from Prague, written down in the nineteenth century, tells that Rabbi Judah Loew, who lived in the sixteenth century, brought a clay figure to life, the Golem, to defend his community; and that later, when its strength became dangerous, he returned it to stillness.'],
+  box:[['The singing contest','In the third song of the Kalevala, the Finnish epic compiled by Elias Lönnrot, old Väinämöinen accepts the challenge of young Joukahainen and with his singing sinks him into the swamp.'],['The staffs and the serpents','In the book of Exodus (7:10-12) Aaron’s staff becomes a serpent before Pharaoh; the magicians of Egypt do the same with their staffs, but Aaron’s staff swallows theirs.'],['The Muses and the Pierides','In Ovid’s Metamorphoses (book V) the nine daughters of Pierus challenge the Muses to a singing contest; they lose, and are turned into magpies.']] },
+ fr:{ arti:[['✨','ta lumière','cire chaude','la lumière'],['🌑','ton ombre','brume froide','l’ombre'],['🌿','ta racine','terre mouillée','la racine']], Arti:['✨ La lumière','🌑 L’ombre','🌿 La racine'],
+  tit:'✨ Duel de magie', regole:'Un duel de magie entre guérisseurs ne blesse personne : gagne celui qui fait plier l’art de l’autre. Il y a trois arts : ✨ <b>la lumière</b> dissout l’ombre, 🌑 <b>l’ombre</b> étouffe la racine, 🌿 <b>la racine</b> boit la lumière. Gagne qui remporte le premier deux épreuves.<br><br>Parfois l’air trahit l’art du rival : la cire chaude annonce la lumière, la brume froide l’ombre, la terre mouillée la racine.',
+  prova:(k,a,b,n)=>`<b>Épreuve ${k}</b> · toi ${a}, ${n} ${b}`, indizio:o=>`Dans l’air, tu sens une odeur de <b>${o}</b>.`, niente:'L’air ne dit rien.', scegli:'Quel art appelles-tu ?',
+  vinta:(m,s)=>`${m.charAt(0).toUpperCase()+m.slice(1)} fait plier ${s} : l’épreuve est à toi.`, persa:(m,s)=>`${s.charAt(0).toUpperCase()+s.slice(1)} fait plier ${m} : l’épreuve est pour ton rival.`, pari:x=>`Deux fois ${x} : les arts s’annulent, et l’air tremble.`,
+  sfida:(n,f)=>`« ${n}, ${f?'guérisseuse':'guérisseur'} de la Fougère : mes étoiles disent que les tiennes sont plus faibles. Mettons-les à l’épreuve. »`,
+  accetta:'✨ Accepter le duel', sfidaB:'✨ Défier en duel', rifiuta:'Refuser avec une révérence', rifiutoT:n=>`🙇 ${n} s’en va sans duel. Dans le clan, quelqu’un murmure.`,
+  vintoTit:'✨ Tu as gagné le duel', persoTit:'✨ Tu as perdu le duel', pariTit:'✨ Pas de vainqueur',
+  vinto:n=>`${n} baisse le museau : « Ton art est plus ancien que le mien. Prends ces herbes : c’est le gage du perdant. »`, perso:n=>`${n} baisse le museau, avec douceur : « Les étoiles étaient avec moi aujourd’hui. Reviens quand tu auras mieux écouté la forêt. »`, pareggio:n=>`Toi et ${n} vous inclinez : aucun art n’a fait plier l’autre.`,
+  mot:'un duel de magie gagné', boschiTit:n=>'🔮 '+n, boschi:(n,cl,f)=>`${n}, ${f?'guérisseuse':'guérisseur'} du ${cl}, cueille des herbes entre les racines. ${f?'Elle':'Il'} porte la petite cape violette de tous les guérisseurs.`, saluta:'Saluer et passer son chemin', nonSiAttacca:(n,f)=>`${n} est ${f?'une guérisseuse':'un guérisseur'} : aucun guerrier ne lève les griffes contre qui soigne.`,
+  tanaTit:'🕯️ La tanière du guérisseur ennemi', tana:(n,f)=>`Dans la pénombre, ${n} lève la tête de son mortier de pierre. On t’a reconnu${f?'e':''} : ${f?'une guérisseuse':'un guérisseur'} d’un autre clan.`, sfidaT:'✨ Défier le guérisseur', profana:'🔥 Profaner la tanière', esci:'Sortir en silence',
+  golemBtn:'🗿 Le rite du grand chat (une seule fois)', g1:'Pendant que le clan se prépare à la bataille, tu cours au grand chat de pierre et tu allumes les herbes à ses pieds.', g2:'Tu chantes les noms de tous ceux qui ont porté un bloc. Les yeux de pierre s’allument.', g3:'Le grand chat se lève, et la terre tremble. Il te tend une patte : tu montes sur sa tête.',
+  marcia:cl=>`Le grand chat marche vers le ${cl}. Il traverse la rivière comme un ruisseau.`, arrivo:cl=>`Les chats du ${cl} voient arriver le géant et s’enfuient dans la forêt. Personne n’est blessé.`, voce:'Une voix profonde sort de la pierre, et la forêt tremble : « Maintenant je suis la Mort, le destructeur des mondes. »', boxVoce:['Les paroles du géant','Dans la Bhagavad Gita (XI, 32), le dieu Krishna se montre au guerrier Arjuna sous sa forme immense et dit qu’il est le Temps, destructeur des mondes. Le physicien Robert Oppenheimer raconta que ce vers lui revint en mémoire en 1945, devant l’explosion de la première bombe atomique, et il le répéta ainsi : « Maintenant je suis devenu la Mort, le destructeur des mondes ».'], distrugge:'Le grand chat lève la patte et l’abat sur les tanières : une, deux, trois. Il ne reste que des pierres et de la poussière.', ritorno:'À l’aube, le grand chat est de nouveau à sa place, immobile. Personne ne l’a vu revenir.',
+  golemTit:'🗿 Le géant de pierre', golemFine:cl=>`Les tanières du ${cl} se sont effondrées : pendant six lunes, leurs chats ne penseront qu’à les reconstruire. La guerre est gagnée. Mais dans la forêt personne n’en parle à voix haute : le grand chat, maintenant, fait peur à tout le monde, à nous aussi.`,
+  golemLog:cl=>`🗿 Le grand chat de pierre a détruit les tanières du ${cl}. La guerre est gagnée.`, rovina:'🏚️ La tanière s’est effondrée : ses chats la reconstruisent.', ricostruita:cl=>`🏗️ Le ${cl} a reconstruit ses tanières.`,
+  boxGolem:['Le Golem de Prague','Une légende juive de Prague, mise par écrit au XIXᵉ siècle, raconte que le rabbin Judah Loew, qui vécut au XVIᵉ siècle, donna vie à une figure d’argile, le Golem, pour défendre sa communauté ; puis, quand sa force devint dangereuse, il le rendit à l’immobilité.'],
+  box:[['Le concours de chant','Dans le troisième chant du Kalevala, l’épopée finlandaise rassemblée par Elias Lönnrot, le vieux Väinämöinen accepte le défi du jeune Joukahainen et, par son chant, l’enfonce dans le marais.'],['Les bâtons et les serpents','Dans le livre de l’Exode (7, 10-12), le bâton d’Aaron devient un serpent devant Pharaon ; les magiciens d’Égypte font de même avec leurs bâtons, mais le bâton d’Aaron avale les leurs.'],['Les Muses et les Piérides','Dans les Métamorphoses d’Ovide (livre V), les neuf filles de Piéros défient les Muses dans un concours de chant ; elles perdent, et sont changées en pies.']] } };
+const MAG=MAG_T[LINGUA]||MAG_T.it;
+const guarNemico=cl=>G.cats.find(c=>c.clan===cl&&c.rango==='guaritore');
+const golemPronto=()=>{ const C=G.colosso; return !!(C&&C.massi>=COLOSSO_N&&C.festa&&!stG().golem); };
+// il duello di magia: tre arti, la prima a due prove vince
+function duelloMagico(r,fine){ const p=G.p, S=stG(); if(!r||G.duelloMagico) return; segnaEvento(); G.duelloMagico={id:r.id}; r.duello=true; r.vx=r.vy=0; p.guida=null; p.caccia=null;
+ if(!G.dentro){ const a=Math.atan2(r.y-p.y,r.x-p.x)||0; r.x=p.x+Math.cos(a)*55; r.y=p.y+Math.sin(a)*55; } r.flip=p.x<r.x?-1:1; p.flip=-r.flip;
+ if(r.arte==null) r.arte=Math.floor(Math.random()*3);
+ let mie=0, sue=0, k=0; const nr=nome(r);
+ const fx=(c,i)=>{ const col=['#ffe9a0','#8a7aff','#7ad07a'][i]; scintille(c.x,c.y-24,col,16); testo(c.x,c.y-50*scala(c),MAG.arti[i][0],col,22,-14,1.8); setPosa(c,'canta',2.5); };
+ const finale=()=>{ r.duello=false; G.duelloMagico=null; segnaEvento(); const b=MAG.box[(S.duelli=(S.duelli||0)+1)%MAG.box.length];
+  if(mie>sue){ p.duelliVinti=(p.duelliVinti||0)+1; if(typeof ERBE_PROVA!=='undefined'&&p.erbe<8){ ERBE_PROVA.prendi(Math.floor(Math.random()*PIANTE.length),false); if(p.erbe<8) ERBE_PROVA.prendi(Math.floor(Math.random()*PIANTE.length),false); } tensione(r.clan,-10); r.conosciuto=(r.conosciuto||0)+1;
+   modale(MAG.vintoTit,MAG.vinto(nr)+stSapere(b),[{t:'✨',f:()=>spirito(12,MAG.mot)}]); }
+  else if(sue>mie){ if(p.erbe>0){ p.erbe--; if(Array.isArray(p.sacca)) p.sacca.pop(); } p.spirito=Math.max(0,(p.spirito??60)-4); modale(MAG.persoTit,MAG.perso(nr)+stSapere(b),[{t:'🌙'}]); }
+  else modale(MAG.pariTit,MAG.pareggio(nr)+stSapere(b),[{t:'🙇'}]);
+  if(window.REG) REG.evento('duello',nr+' '+mie+'-'+sue); if(fine) setTimeout(fine,300); };
+ const prova=()=>{ if(mie>=2||sue>=2||k>=5) return finale(); k++;
+  const lui=Math.random()<0.5?r.arte:Math.floor(Math.random()*3), sente=Math.random()<0.55, falso=Math.random()<0.15, ind=sente?MAG.indizio(MAG.arti[falso?(lui+1)%3:lui][2]):MAG.niente;
+  modale(MAG.tit,MAG.prova(k,mie,sue,nr)+'<br><br>'+ind+'<br><br>'+MAG.scegli,MAG.Arti.map((t,i)=>({t,f:()=>{
+   fx(p,i); setTimeout(()=>{ if(G.cats.includes(r)) fx(r,lui); },500);
+   const vinco=(i===0&&lui===1)||(i===1&&lui===2)||(i===2&&lui===0), t=i===lui?MAG.pari(MAG.arti[i][3]):vinco?MAG.vinta(MAG.arti[i][1],MAG.arti[lui][3]):MAG.persa(MAG.arti[i][1],MAG.arti[lui][3]);
+   if(i!==lui){ if(vinco) mie++; else sue++; } if(window.suonoMiao&&i!==lui) suonoMiao(vinco?'gioia':'allarme');
+   recita([{t,dur:3.2}],prova); }}))); };
+ recita([{c:r,t:MAG.sfida(nome(p),p.sesso==='f').replace(/^«|»$/g,''),dur:5}],()=>{ if(!S.regoleDuello){ S.regoleDuello=true; modale(MAG.tit,MAG.regole,[{t:'✨',f:prova}]); } else prova(); }); }
+window.duelloMagico=duelloMagico;
+addEventListener('DOMContentLoaded',()=>{ if(typeof aggiornaNemico!=='function') return;
+ // ogni clan nemico ha il suo guaritore, che non combatte mai e gira per il suo bosco a raccogliere erbe
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.cats||paused) return; if(typeof taneNemiche==='function') taneNemiche();
+  for(const cl of ['nebbia','pietre']){ if(guarNemico(cl)) continue; const d=L[cl+'Tana1']; const c=nuovoGatto(cl,'guaritore',{lune:40}); c.stato='erbe'; if(d){ c.x=d.x; c.y=d.y+d.r+14; } c.arte=Math.floor(Math.random()*3); } },2000);
+ const metaBosco=c=>{ for(let k=0;k<30;k++){ const x=FX1+60+Math.random()*(WW-FX1-100), y=c.clan==='nebbia'?60+Math.random()*800:960+Math.random()*780; if(territorio(x,y)===c.clan&&!acqua(x,y)&&!inCampo(x,y,15)) return {x,y}; } const d=L[c.clan+'Tana1']; return d?{x:d.x,y:d.y+d.r+14}:CLAN[c.clan].campo; };
+ const o=aggiornaNemico; aggiornaNemico=function(c,dt){ if(c.golemFuga&&G.t<c.golemFuga){ if(!c.metaB||dist(c,c.metaB)<12) c.metaB=metaBosco(c); muovi(c,c.metaB.x,c.metaB.y,140,dt); return; } // davanti al gigante si fugge nel bosco, non verso il campo
+  if(c.rango!=='guaritore') return o.apply(this,arguments);
+  if(c.duello||(G.duelloMagico&&G.duelloMagico.id===c.id)){ c.vx=c.vy=0; return; }
+  if(c.sfidante){ if(dist(c,G.p)>60) muovi(c,G.p.x,G.p.y,90,dt); else { c.vx=c.vy=0; } return; }
+  if(c.stato!=='erbe'){ c.stato='erbe'; c.metaB=null; }
+  if(c.attesa>0){ c.attesa-=dt; c.vx=c.vy=0; return; }
+  if(!c.metaB||dist(c,c.metaB)<10){ c.metaB=Math.random()<0.4?(()=>{ const d=L[c.clan+'Tana1']; return d?{x:d.x+(Math.random()-0.5)*30,y:d.y+d.r+14}:metaBosco(c); })():metaBosco(c); c.attesa=2+Math.random()*5; return; }
+  muovi(c,c.metaB.x,c.metaB.y,48,dt); };
+ // incontro nel bosco con un guaritore nemico: il duello per i guaritori, un saluto per gli altri
+ { const o=incontroNemico; incontroNemico=function(e){ const p=G.p; if(!e||e.rango!=='guaritore'||e.clan==='felce') return o.apply(this,arguments); if(paused||scena||G.duelloMagico) return;
+  segnaEvento(); p.guida=null; p.caccia=null; e.vx=e.vy=0; e.attesa=6; e.flip=p.x<e.x?-1:1; const nr=nome(e);
+  if(p.rango==='guaritore') return modale(MAG.boschiTit(nr),MAG.boschi(nr,CLAN[e.clan].nome,e.sesso==='f'),[{t:MAG.sfidaB,f:()=>duelloMagico(e)},{t:MAG.saluta,f:()=>{ e.attesa=1; }}]);
+  modale(MAG.boschiTit(nr),MAG.boschi(nr,CLAN[e.clan].nome,e.sesso==='f')+'<br><br>'+MAG.nonSiAttacca(nr,e.sesso==='f'),[{t:MAG.saluta,f:()=>{ e.attesa=1; }}]); }; }
+ // entrando nella tana del guaritore nemico: sfidarlo, profanare la tana o uscire in silenzio
+ if(typeof entraTana==='function'){ const o=entraTana; entraTana=function(k){ const d=L[k], p=G.p;
+  if(d&&d.clan&&G.rovine&&G.rovine[d.clan]){ const ora=performance.now(); if(!(G.rovinaDetto>ora)){ G.rovinaDetto=ora+5000; log(MAG.rovina,'#d8c8b0'); annuncia(MAG.rovina); } p.uscito=k; return; }
+  if(!(d&&d.clan&&/Tana1$/.test(k)&&p.rango==='guaritore')) return o.apply(this,arguments);
+  const pr=profanazione; profanazione=function(){}; try{ o.apply(this,arguments); } finally{ profanazione=pr; }
+  setTimeout(()=>{ if(!G||G.dentro!==k) return; const r=guarNemico(d.clan); if(r){ r.x=d.x+12; r.y=d.y-4; r.vx=r.vy=0; r.attesa=20; }
+   modale(MAG.tanaTit,r?MAG.tana(nome(r),p.sesso==='f'):'',[...(r?[{t:MAG.sfidaT,f:()=>duelloMagico(r,()=>{ offeso(d.clan); tensione(d.clan,5); })}]:[]),{t:MAG.profana,f:()=>profanazione(k)},{t:MAG.esci,f:()=>{ tensione(d.clan,5); esciTana(); }}]); },900); }; }
+ // il guaritore nemico viene a sfidarti: almeno due volte per partita, quando sei guaritore
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused||scena||recitaAtt||fx||G.raid||G.dentro||G.gita||G.parata||G.golem||G.duelloMagico) return; const p=G.p, S=stG();
+  if(p.rango!=='guaritore'||!nelCampo(p,40)||!storiaLibera(12)) return; const SF=S.sfide||(S.sfide={n:0,prox:G.t+MOON*2}); if(G.t<SF.prox) return;
+  const cl=pick(['nebbia','pietre']), r=guarNemico(cl); if(!r||r.duello) return; SF.n++; SF.prox=G.t+MOON*(SF.n<2?4:7+Math.random()*5); segnaEvento();
+  const a=Math.random()*6.283; r.x=clamp(p.x+Math.cos(a)*70,30,WW-30); r.y=clamp(p.y+Math.sin(a)*70,30,WH-30); r.vx=r.vy=0; r.flip=p.x<r.x?-1:1; r.pacificoFino=G.t+MOON; r.sfidante=true; if(typeof mettiAFuoco==='function') mettiAFuoco(r,4000);
+  const via=()=>{ r.sfidante=false; r.metaB=null; };
+  modale(nome(r),MAG.sfida(nome(p),p.sesso==='f'),[{t:MAG.accetta,f:()=>{ r.sfidante=false; duelloMagico(r,via); }},{t:MAG.rifiuta,f:()=>{ via(); log(MAG.rifiutoT(nome(r)),'#cfe8ff'); p.spirito=Math.max(0,(p.spirito??60)-3); }}]); },3000);
+ // durante il duello e la marcia del grande gatto non arrivano altri eventi
+ { const o=puoEvento; puoEvento=function(){ return G&&(G.duelloMagico||G.golem)?false:o.apply(this,arguments); }; const s2=storiaLibera; storiaLibera=function(){ return G&&(G.duelloMagico||G.golem)?false:s2.apply(this,arguments); }; }
+ // le tane distrutte si ricostruiscono dopo sei lune
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.rovine) return; for(const cl in G.rovine) if(G.t>G.rovine[cl].fino){ delete G.rovine[cl]; log(MAG.ricostruita(CLAN[cl].nome),'#d8c8b0'); } },2000);
+});
+// il rito del grande gatto: una volta per partita, alla chiamata alle armi, con il monumento finito
+function ritoGrandeGatto(cl){ const p=G.p, C=G.colosso, S=stG(); if(!golemPronto()) return; S.golem=true; segnaEvento(); G.tens[cl]=60; const nomeCl=CLAN[cl].nome, cm=CLAN[cl].campo;
+ const dir=C.x<(FX0+FX1)/2?1:-1;
+ passaggio(()=>{ G.dentro=null; p.x=C.x+dir*150; p.y=C.y; p.vx=p.vy=0; p.guida=null; p.caccia=null; p.flip=-dir; p.passaSiepe=performance.now()+4000;
+  if(window.R3D){ R3D.cam3.yaw=Math.atan2(C.x-p.x,C.y-p.y); R3D.cam3.pitch=0.3; R3D.cam3.dist=5.5; R3D.cam3.rotella=performance.now()+120000; R3D.cam3.manuale=G.t+120; R3D.cam3.init=false; } });
+ const fase=k=>()=>{ C.vivo={fase:k,t0:G.t,verso:dir}; };
+ setTimeout(()=>recita([{t:MAG.g1,dur:6,f:()=>{ setPosa(p,'canta',6); scintille(p.x,p.y-20,'#ffd27a',20); }},{t:MAG.g2,dur:6,f:fase(2)},{t:MAG.g3,dur:6,f:fase(1)}],()=>{ C.vivo=null; avviaMarcia(); }),900);
+ function avviaMarcia(){ const fine={x:cm.x-dir*0+(cm.x>C.x?-150:150),y:cm.y}; G.golem={cl,x:C.x,y:C.y,dest:fine,fase:'marcia',da:G.t};
+  if(window.suonoMiaoGrande) suonoMiaoGrande(); if(window.R3D){ R3D.cam3.dist=12; R3D.cam3.pitch=0.22; } didascalia.classList.add('alto');
+  let prec=performance.now(); const passo=ora=>{ const g=G&&G.golem; if(!g) return; const dt=Math.min(0.1,(ora-prec)/1000); prec=ora;
+   if(!paused&&g.fase==='marcia'){ const dx=g.dest.x-g.x, dy=g.dest.y-g.y, d=Math.hypot(dx,dy); if(d<8){ g.fase='distrugge'; g.daD=G.t; distruggi(); } else { const s=Math.min(d,70*dt); g.x+=dx/d*s; g.y+=dy/d*s; } }
+   p.x=g.x; p.y=g.y; p.elev=330; p.sopra=false; p.vx=p.vy=0; p.guida=null; p.passaSiepe=performance.now()+1000; if(window.R3D){ if(g.vista){ R3D.cam3.yaw=Math.atan2(cm.x-g.x||1,cm.y-g.y)+1.25; R3D.cam3.dist=13; R3D.cam3.pitch=0.4; } else R3D.cam3.yaw=Math.atan2(g.dest.x-g.x||1,g.dest.y-g.y); }
+   requestAnimationFrame(passo); }; requestAnimationFrame(passo);
+  recita([{t:MAG.marcia(nomeCl),dur:9},{t:MAG.arrivo(nomeCl),dur:9}],()=>{}); }
+ function distruggi(){ for(const c of G.cats){ if(c.clan!==cl) continue; c.golemFuga=G.t+25; c.metaB=null; if(c.rango!=='guaritore'){ c.stato='pattuglia'; c.bersaglio=null; } }
+  (G.rovine=G.rovine||{})[cl]={fino:G.t+MOON*6}; if(window.suonoMiao) suonoMiao('allarme'); G.golem.vista=true;
+  recita([{t:MAG.voce,dur:6},{t:MAG.distrugge,dur:7}],()=>{ didascalia.classList.remove('alto'); passaggio(()=>{ G.golem=null; p.elev=0; p.x=CLAN.felce.campo.x; p.y=CLAN.felce.campo.y+40; p.passaSiepe=performance.now()+2000; if(window.R3D){ R3D.cam3.dist=3.4; R3D.cam3.rotella=0; R3D.cam3.manuale=0; } });
+   setTimeout(()=>recita([{t:MAG.ritorno,dur:6}],()=>{ G.tens[cl]=0; if(G.conq&&G.conq[cl]<3) G.conq[cl]++; G.treguaFino=Math.max(G.treguaFino||0,G.t+MOON*6); log(MAG.golemLog(nomeCl),'#ffe08a'); annuncia('🏆 '+MAG.golemLog(nomeCl).replace('🗿 ',''),'#ffe08a'); if(window.REG) REG.evento('grande gatto',nomeCl);
+    modale(MAG.golemTit,MAG.golemFine(nomeCl)+stSapere(MAG.boxVoce)+stSapere(MAG.boxGolem),[{t:'🗿',f:()=>spirito(25,'rito')}]); }),1000); }); } }
+window.ritoGrandeGatto=ritoGrandeGatto;
+
+// Durante la marcia del grande gatto tutto è solenne: niente fumetti, consigli, annunci né messaggi di guadagno, e i bordi scuri dei riti
+// (correzione del 14 novembre 2026).
+addEventListener('DOMContentLoaded',()=>{ const muto=f=>function(){ if(typeof G!=='undefined'&&G&&G.golem) return; return f.apply(this,arguments); };
+ if(typeof consiglio==='function') consiglio=muto(consiglio);
+ if(typeof annuncia==='function') annuncia=muto(annuncia);
+ if(typeof mostraToast==='function') mostraToast=muto(mostraToast);
+ if(typeof parla==='function') parla=muto(parla);
+ if(typeof disegnaFumetti==='function'){ const o=disegnaFumetti; disegnaFumetti=function(){ if(G&&G.golem){ fumetti=[]; return; } return o.apply(this,arguments); }; }
+ if(typeof solennita==='function'){ const o=solennita; solennita=function(){ const r=o.apply(this,arguments); if(G&&G.golem) solenne.classList.add('si'); return r; }; } });
+
+// ================== il gigante si sveglia dal monumento, e il rito di riparazione ==================
+// Richiesta del 14 novembre 2026
+const RIP_T={
+ it:{ avvisoTit:'🗿 Il grande gatto ascolta', avviso:'Da quando i tre clan hanno finito il grande gatto di pietra, i guaritori sentono che ascolta il loro canto. Una notte sola, una volta nella vita del bosco, potrebbe alzarsi e camminare.<br><br>Ai piedi del monumento, premi Spazio: sarai tu a decidere se svegliarlo, e contro chi. Puoi farlo anche alla chiamata alle armi.',
+  sveglia:'svegliare il grande gatto', sceltaTit:'🗿 Svegliare il grande gatto', scelta:'Il grande gatto può camminare una volta sola. Se lo svegli, raggiungerà un villaggio nemico e ne farà crollare le tane: nessun gatto si farà male, ma quel clan non lo dimenticherà.<br><br>Quale villaggio deve raggiungere?', nessuno:'Nessuno: lasciarlo dormire',
+  rimorsoTit:'🌙 Una notte senza sonno', rimorso:cl=>`Non riesci a dormire. Ripensi alle tane del ${cl} che crollano, ai cuccioli che scappano nel bosco, alla polvere. Il clan ha vinto, ma dentro di te qualcosa non torna.<br><br>Tra le rovine del loro campo potresti fare un rito di riparazione.`, vai:'🕊️ Andare tra le rovine', nonOra:'Non ora',
+  ripara:'fare un rito di riparazione', r1:'Tra le pietre crollate posi le tue erbe, una per ogni tana.', r2:cl=>`Canti piano, perché gli antenati del ${cl} ti sentano: chiedi perdono per il gigante.`, r3:cl=>`Uno dopo l’altro, i gatti del ${cl} escono dal bosco. Nessuno parla. Poi il più vecchio prende un ramo e lo posa accanto alle tue erbe.`, r4:'Lavorate insieme fino all’alba, e le tane tornano in piedi.',
+  fineTit:'🕊️ Il rito di riparazione', fine:cl=>`Il ${cl} non dimenticherà il gigante. Ma ricorderà anche questa notte: le sue tane sono di nuovo in piedi, e per tre lune i suoi gatti ti saluteranno come un ospite.`, log:cl=>`🕊️ Hai fatto il rito di riparazione tra le rovine del ${cl}: le tane sono ricostruite.`, mot:'un rito di riparazione',
+  box:['Una genuflessione','Il 7 dicembre 1970 il cancelliere tedesco Willy Brandt, in visita a Varsavia, si inginocchiò davanti al monumento agli eroi del ghetto. Il gesto, che il protocollo non prevedeva, divenne il simbolo della richiesta di perdono della Germania verso la Polonia.'] },
+ en:{ avvisoTit:'🗿 The great cat is listening', avviso:'Since the three clans finished the great stone cat, healers feel that it listens to their singing. For one night only, once in the life of the forest, it could rise and walk.<br><br>At the foot of the monument, press Space: you will decide whether to wake it, and against whom. You can also do it at a call to arms.',
+  sveglia:'wake the great cat', sceltaTit:'🗿 Wake the great cat', scelta:'The great cat can walk only once. If you wake it, it will reach an enemy village and bring down its dens: no cat will be hurt, but that clan will never forget.<br><br>Which village should it reach?', nessuno:'None: let it sleep',
+  rimorsoTit:'🌙 A sleepless night', rimorso:cl=>`You cannot sleep. You think of the dens of the ${cl} collapsing, of the kits running into the forest, of the dust. The clan has won, but something inside you does not add up.<br><br>Among the ruins of their camp you could perform a rite of reparation.`, vai:'🕊️ Go to the ruins', nonOra:'Not now',
+  ripara:'perform a rite of reparation', r1:'Among the fallen stones you lay your herbs, one for each den.', r2:cl=>`You sing softly, so that the ancestors of the ${cl} may hear you: you ask forgiveness for the giant.`, r3:cl=>`One by one, the cats of the ${cl} come out of the forest. Nobody speaks. Then the oldest picks up a branch and lays it beside your herbs.`, r4:'You work together until dawn, and the dens stand again.',
+  fineTit:'🕊️ The rite of reparation', fine:cl=>`The ${cl} will not forget the giant. But it will also remember this night: its dens stand again, and for three moons its cats will greet you as a guest.`, log:cl=>`🕊️ You performed the rite of reparation among the ruins of the ${cl}: the dens are rebuilt.`, mot:'a rite of reparation',
+  box:['A kneeling','On 7 December 1970 the German chancellor Willy Brandt, visiting Warsaw, knelt before the monument to the heroes of the ghetto. The gesture, not foreseen by protocol, became the symbol of Germany asking Poland for forgiveness.'] },
+ fr:{ avvisoTit:'🗿 Le grand chat écoute', avviso:'Depuis que les trois clans ont achevé le grand chat de pierre, les guérisseurs sentent qu’il écoute leur chant. Une nuit seulement, une fois dans la vie de la forêt, il pourrait se lever et marcher.<br><br>Au pied du monument, appuie sur Espace : c’est toi qui décideras de le réveiller, et contre qui. Tu peux aussi le faire lors d’un appel aux armes.',
+  sveglia:'réveiller le grand chat', sceltaTit:'🗿 Réveiller le grand chat', scelta:'Le grand chat ne peut marcher qu’une seule fois. Si tu le réveilles, il atteindra un village ennemi et fera s’effondrer ses tanières : aucun chat ne sera blessé, mais ce clan ne l’oubliera pas.<br><br>Quel village doit-il atteindre ?', nessuno:'Aucun : le laisser dormir',
+  rimorsoTit:'🌙 Une nuit sans sommeil', rimorso:cl=>`Tu n’arrives pas à dormir. Tu repenses aux tanières du ${cl} qui s’effondrent, aux chatons qui fuient dans la forêt, à la poussière. Le clan a gagné, mais en toi quelque chose ne va pas.<br><br>Parmi les ruines de leur camp, tu pourrais faire un rite de réparation.`, vai:'🕊️ Aller parmi les ruines', nonOra:'Pas maintenant',
+  ripara:'faire un rite de réparation', r1:'Parmi les pierres effondrées, tu poses tes herbes, une pour chaque tanière.', r2:cl=>`Tu chantes doucement, pour que les ancêtres du ${cl} t’entendent : tu demandes pardon pour le géant.`, r3:cl=>`Un à un, les chats du ${cl} sortent de la forêt. Personne ne parle. Puis le plus vieux ramasse une branche et la pose à côté de tes herbes.`, r4:'Vous travaillez ensemble jusqu’à l’aube, et les tanières se relèvent.',
+  fineTit:'🕊️ Le rite de réparation', fine:cl=>`Le ${cl} n’oubliera pas le géant. Mais il se souviendra aussi de cette nuit : ses tanières sont de nouveau debout, et pendant trois lunes ses chats te salueront comme un hôte.`, log:cl=>`🕊️ Tu as fait le rite de réparation parmi les ruines du ${cl} : les tanières sont reconstruites.`, mot:'un rite de réparation',
+  box:['Un agenouillement','Le 7 décembre 1970, le chancelier allemand Willy Brandt, en visite à Varsovie, s’agenouilla devant le monument aux héros du ghetto. Le geste, que le protocole ne prévoyait pas, devint le symbole de la demande de pardon de l’Allemagne à la Pologne.'] } };
+const RIP=RIP_T[LINGUA]||RIP_T.it;
+function sceltaGrandeGatto(){ if(!golemPronto()) return; modale(RIP.sceltaTit,RIP.scelta,[{t:'🗿 '+CLAN.nebbia.nome,f:()=>ritoGrandeGatto('nebbia')},{t:'🗿 '+CLAN.pietre.nome,f:()=>ritoGrandeGatto('pietre')},{t:RIP.nessuno}]); }
+function ritoRiparazione(cl){ const p=G.p, S=stG(), cm=CLAN[cl].campo, nomeCl=CLAN[cl].nome; if(!(G.rovine&&G.rovine[cl])) return; segnaEvento(); S.riparato=(S.riparato||0)+1;
+ p.x=cm.x; p.y=cm.y+30; p.vx=p.vy=0; p.guida=null; p.caccia=null;
+ const loro=G.cats.filter(c=>c.clan===cl&&c.rango!=='gattino').slice(0,8);
+ loro.forEach((c,i)=>{ const a=Math.PI*(0.15+0.7*i/Math.max(1,loro.length-1)); c.x=cm.x+Math.cos(a)*90; c.y=cm.y+30+Math.sin(a)*55; c.vx=c.vy=0; c.stato='pattuglia'; c.golemFuga=0; c.amicoPrima=c.amico; c.amico=true; c.pacificoFino=G.t+MOON*3; c.attesa=30; c.flip=c.x<p.x?1:-1; setPosa(c,'siede',30); });
+ if(window.R3D){ R3D.cam3.dist=5; R3D.cam3.pitch=0.45; R3D.cam3.init=false; }
+ const erbe=()=>{ let n=Math.min(3,p.erbe||0); while(n-->0){ p.erbe--; if(Array.isArray(p.sacca)) p.sacca.pop(); } scintille(p.x,p.y-10,'#9be07f',20); setPosa(p,'canta',8); };
+ recita([{t:RIP.r1,dur:6,f:erbe},{t:RIP.r2(nomeCl),dur:6.5},{t:RIP.r3(nomeCl),dur:7.5},{t:RIP.r4,dur:6,f:()=>{ delete G.rovine[cl]; if(window.suonoMiaoGrande) suonoMiaoGrande(); }}],
+  ()=>{ G.tens[cl]=0; G.treguaFino=Math.max(G.treguaFino||0,G.t+MOON*3); log(RIP.log(nomeCl),'#c8f0a8'); if(window.REG) REG.evento('riparazione',nomeCl);
+   modale(RIP.fineTit,RIP.fine(nomeCl)+stSapere(RIP.box),[{t:'🕊️',f:()=>spirito(15,RIP.mot)}]); }); }
+window.sceltaGrandeGatto=sceltaGrandeGatto; window.ritoRiparazione=ritoRiparazione;
+addEventListener('DOMContentLoaded',()=>{
+ // ai piedi del monumento il guaritore può svegliare il gigante
+ if(typeof colossoVicino==='function'){ const o=colossoVicino; colossoVicino=function(p){ const r=o.apply(this,arguments); if(r&&p.rango==='guaritore'&&golemPronto()&&!G.raid&&!G.parata) return {t:RIP.sveglia,f:sceltaGrandeGatto}; return r; }; }
+ // tra le rovine di un campo nemico, Spazio propone il rito di riparazione
+ if(typeof azioneSpazio==='function'){ const o=azioneSpazio; azioneSpazio=function(){ const p=G.p; if(G.rovine&&!G.dentro&&!G.golem&&!G.raid&&(p.rango==='guaritore'||p.rango==='apprendista'&&p.via==='guaritore')) for(const cl in G.rovine){ if(dist(p,CLAN[cl].campo)<CLAN[cl].campo.r+20) return {t:RIP.ripara,f:()=>ritoRiparazione(cl)}; } return o.apply(this,arguments); }; }
+ // l'avviso, una volta: il grande gatto ascolta i guaritori; e qualche tempo dopo la distruzione, il rimorso
+ setInterval(()=>{ if(typeof G==='undefined'||!G||!G.p||paused||scena||recitaAtt||fx||G.raid||G.golem||G.parata||G.dentro) return; const p=G.p, S=stG();
+  if(p.rango==='guaritore'&&golemPronto()&&!S.golemAvvisato&&storiaLibera(8)){ S.golemAvvisato=true; segnaEvento(); return modale(RIP.avvisoTit,RIP.avviso,[{t:'🗿'}]); }
+  if(S.rimorso&&!S.rimorso.detto&&G.t>S.rimorso.quando&&G.rovine&&G.rovine[S.rimorso.cl]&&storiaLibera(10)){ S.rimorso.detto=true; segnaEvento(); const cl=S.rimorso.cl;
+   modale(RIP.rimorsoTit,RIP.rimorso(CLAN[cl].nome),[{t:RIP.vai,f:()=>avviaGuida('punto',{x:CLAN[cl].campo.x,y:CLAN[cl].campo.y+30})},{t:RIP.nonOra}]); } },3000);
+ // il rimorso arriva circa una luna dopo la distruzione
+ { const o=ritoGrandeGatto; ritoGrandeGatto=window.ritoGrandeGatto=function(cl){ if(golemPronto()) stG().rimorso={cl,quando:G.t+MOON*1.2}; return o.apply(this,arguments); }; }
+});

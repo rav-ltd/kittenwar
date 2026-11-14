@@ -190,10 +190,11 @@ function tana(x,y,rpx,tipo){ let g=new THREE.Group(); const r=rpx*K; g.position.
   if(tipo==='felci') for(let i=0;i<9;i++){ const a=R()*6.283, b=0.3+R()*0.9; const f=new THREE.Mesh(felce,new THREE.MeshStandardMaterial({color:'#5f9a42',side:THREE.DoubleSide,roughness:0.9})); f.position.set(Math.cos(a)*Math.cos(b)*r*0.95,Math.sin(b)*r*0.76,Math.sin(a)*Math.cos(b)*r*0.95); f.scale.setScalar(0.8); f.lookAt(f.position.clone().multiplyScalar(2)); f.rotateX(Math.PI/2); g.add(f); }
   if(tipo==='rovi') for(let i=0;i<26;i++){ const a=R()*6.283, b=0.15+R()*1.2; const m=new THREE.Mesh(new THREE.SphereGeometry(0.018,6,5),new THREE.MeshStandardMaterial({color:R()<0.5?'#2a0a1a':'#7a1838',roughness:0.4})); m.position.set(Math.cos(a)*Math.cos(b)*r*1.01,Math.sin(b)*r*0.8,Math.sin(a)*Math.cos(b)*r*1.01); g.add(m); }
  }
- entrata(g,r); scene.add(esterno); SINGOLI.push({o:g,x:x*K,z:y*K,r}); }
+ entrata(g,r); scene.add(esterno); SINGOLI.push({o:g,x:x*K,z:y*K,r}); return esterno; }
 const tipiTana={tanaGuerrieri:'rami',tanaApprendisti:'felci',nursery:'rovi',tanaGuaritore:'roccia'};
 for(const k of TANE) tana(L[k].x,L[k].y,L[k].r,tipiTana[k]);
-for(const k of ['nebbia','pietre']){ const cm=CLAN[k].campo; for(const [dx,dy,t] of [[-78,-52,'rami'],[78,-39,'felci'],[13,78,'roccia']]) tana(cm.x+dx,cm.y+dy,34,k==='pietre'?'roccia':t); }
+const TANE_N3={nebbia:[],pietre:[]}; // le tane dei campi nemici, per farle crollare quando passa il grande gatto (js/storie.js, ritoGrandeGatto)
+for(const k of ['nebbia','pietre']){ const cm=CLAN[k].campo; for(const [dx,dy,t] of [[-78,-52,'rami'],[78,-39,'felci'],[13,78,'roccia']]) TANE_N3[k].push({o:tana(cm.x+dx,cm.y+dy,34,k==='pietre'?'roccia':t),x:cm.x+dx,y:cm.y+dy}); }
 { // la Roccia Alta: un masso scabro con la cima piatta, dove sale il capo
  let gR=ruvido(new THREE.DodecahedronGeometry(1.0,2),0.2,1.4); const p=gR.attributes.position; for(let i=0;i<p.count;i++) if(p.getY(i)>0.62) p.setY(i,0.62+(p.getY(i)-0.62)*0.15); gR.computeVertexNormals();
  const r=new THREE.Mesh(gR,new THREE.MeshStandardMaterial({color:'#a19b8e',roughness:1,flatShading:true})); r.position.set(L.roccia.x*K,quotaPx(L.roccia.x,L.roccia.y)+0.7,L.roccia.y*K); r.scale.set(1.25,1.9,1.1); r.castShadow=r.receiveShadow=true; scene.add(r); SINGOLI.push({o:r,x:r.position.x,z:r.position.z,r:1.0,roccia:true});
@@ -465,6 +466,7 @@ function atmosfera(dt,fase,notte,p){
  // l'aria: fitta e bianca nel territorio della Nebbia, limpida e calda in quello delle Pietre
  const tr=territorio(p.x,p.y), nT=tr==='nebbia'?7:tr==='pietre'?15:12, fT=tr==='nebbia'?23:tr==='pietre'?42:34, k=Math.min(1,dt*0.8);
  ARIA.near+=(nT-ARIA.near)*k; ARIA.far+=(fT-ARIA.far)*k; scene.fog.near=ARIA.near; scene.fog.far=ARIA.far;
+ if(G.golem){ scene.fog.near=Math.max(scene.fog.near,30); scene.fog.far=Math.max(scene.fog.far,120); } // durante la marcia del grande gatto la foschia si dirada, perché si veda
  const sera=Math.max(0,1-Math.abs(fase-0.58)/0.1), alba=Math.max(0,1-Math.abs(fase-0.99)/0.06), oro=Math.max(sera,alba*0.7);
  tmpC.copy(scene.background); if(tr==='nebbia') tmpC.lerp(ariaBianca,0.35*(1-notte)); else if(tr==='pietre') tmpC.lerp(ariaCalda,0.25*(1-notte)); if(oro) tmpC.lerp(soleSera,0.3*oro); if(inverno) tmpC.lerp(ariaBianca,0.3*(1-notte));
  scene.background.copy(tmpC); scene.fog.color.copy(tmpC);
@@ -872,7 +874,25 @@ function aggiornaColosso(t){ const C=G.colosso; if(!C){ if(colosso3) colosso3.g.
   g.scale.setScalar(1.75); g.position.set(C.x*K,quotaPx(C.x,C.y)-0.05,C.y*K); g.rotation.y=Math.atan2((FX0+FX1)/2-C.x,0.001)>0?Math.PI/2:-Math.PI/2; scene.add(g); colosso3={g,massi,luce,C,n:-1,pm,pm2,om}; } // alto più di cinque metri: svetta sopra gli alberi
  const o=colosso3; o.g.visible=!G.dentro; const TOT=typeof COLOSSO_N!=='undefined'?COLOSSO_N:15, n=Math.min(o.massi.length,Math.ceil(o.massi.length*Math.min(TOT,C.massi||0)/TOT)); if(n!==o.n){ o.massi.forEach((m,i)=>{ m.visible=i<n; }); o.n=n; } // i pezzi sono ventiquattro, i massi da portare quindici: ogni masso posato ne scopre uno o due
  o.luce.intensity=n>=o.massi.length?2.2+0.6*Math.sin(t*5):0;
- colossoVivo(o,t); }
+ colossoVivo(o,t); golemMarcia(o,t); rovine3(t); }
+// il grande gatto in marcia verso il villaggio nemico (G.golem: x, y, dest, fase 'marcia' o 'distrugge'), con il guaritore sulla testa
+const POLVERE3=[];
+function golemMarcia(o,t){ const g=G.golem;
+ if(!g){ if(o.inMarcia){ o.inMarcia=false; const C=G.colosso; o.g.position.set(C.x*K,quotaPx(C.x,C.y)-0.05,C.y*K); o.g.rotation.y=Math.atan2((FX0+FX1)/2-C.x,0.001)>0?Math.PI/2:-Math.PI/2; o.massi.forEach(m=>m.position.copy(m.userData.p0)); o.pm.emissiveIntensity=o.pm2.emissiveIntensity=0; } return; }
+ o.inMarcia=true; o.g.visible=!G.dentro; const passo=g.fase==='marcia'?Math.abs(Math.sin(t*3.2)):0;
+ o.g.position.set(g.x*K,Math.max(quotaPx(g.x,g.y),0)-0.05+passo*0.22,g.y*K);
+ const dx=g.dest.x-g.x, dz=g.dest.y-g.y; if(Math.hypot(dx,dz)>4) o.g.rotation.y=Math.atan2(dx,dz);
+ o.massi.forEach((m,i)=>{ const q=m.userData.p0; let y=q.y, z=q.z;
+  if(g.fase==='marcia'&&(i===17||i===18)){ const f=Math.sin(t*3.2+(i===17?0:Math.PI)); y+=Math.max(0,f)*0.5; z+=f*0.3; }
+  if(g.fase==='distrugge'&&i===17){ const e=(G.t-(g.daD||G.t))%2.4, su=e<1.2?e/1.2:Math.max(0,1-(e-1.2)/0.25); y+=1.6*su; z+=0.8*su; if(e>1.35&&e<1.5){ scossa=Math.max(scossa,1.4); polvere(g); } }
+  m.position.set(q.x,y,z); });
+ o.pm.emissive.set('#ffb347'); o.pm2.emissive.set('#ffc860'); o.pm.emissiveIntensity=o.pm2.emissiveIntensity=0.35+0.15*Math.sin(t*4); o.om.emissiveIntensity=4; o.luce.intensity=6;
+ if(g.fase==='marcia'&&passo<0.08&&!(o.ultimoTonfo>t-0.5)){ o.ultimoTonfo=t; scossa=Math.max(scossa,0.35); }
+ for(const q of POLVERE3){ q.t-=1/60; q.sp.visible=q.t>0; if(q.t>0){ q.sp.position.y+=0.03; q.sp.scale.multiplyScalar(1.012); q.sp.material.opacity=Math.min(0.85,q.t/2); } } }
+function polvere(g){ const tane=TANE_N3[g.cl]||[]; for(const d of tane) for(let j=0;j<5;j++){ let q=POLVERE3.find(q=>q.t<=0); if(!q){ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:sfumato('rgba(200,180,150,0.9)','rgba(200,180,150,0)'),transparent:true,depthWrite:false})); scene.add(sp); q={sp,t:0}; POLVERE3.push(q); }
+  q.t=2.5+Math.random(); q.sp.position.set(d.x*K+(Math.random()-0.5)*1.2,quotaPx(d.x,d.y)+0.4+Math.random()*0.6,d.y*K+(Math.random()-0.5)*1.2); q.sp.scale.setScalar(1.2+Math.random()); } }
+// le tane crollate restano un cumulo di sassi finché il clan non le ricostruisce (G.rovine)
+function rovine3(t){ for(const cl of ['nebbia','pietre']){ const giu=!!(G.rovine&&G.rovine[cl]); for(const d of TANE_N3[cl]){ if(!!d.giu===giu) continue; d.giu=giu; d.o.scale.set(giu?1.15:1,giu?0.28:1,giu?1.15:1); d.o.rotation.z=giu?0.12:0; } } }
 // il grande gatto si anima alla festa dei tre clan (G.colosso.vivo={fase,t0}, fasi dettate dal racconto in js/storie.js; richiesta del 13 novembre 2026
 //). Fasi: 1 trema, 2 gira la testa, 3 alza la zampa, 4 lo spirito sale, 5 torna immobile.
 const TESTA=[13,14,15,16,21,22,23], CODA=[19,20], ZAMPA=17;
@@ -925,7 +945,7 @@ const NEBBIE=[];
   else { for(let j=0;j<9;j++){ const a=R()*6.283, r=cm.r*(0.25+R()*0.65), x=cm.x+Math.cos(a)*r, y=cm.y+Math.sin(a)*r, g=new THREE.Group(); g.position.set(x*K,quotaPx(x,y),y*K); let h=0; window.SOLIDI.push({x,y,r:11});
     for(let q=0;q<4+Math.floor(R()*3);q++){ const sz=0.22-q*0.03; const st=new THREE.Mesh(ruvido(new THREE.DodecahedronGeometry(sz,0),0.1,4),new THREE.MeshStandardMaterial({color:q%2?'#b86a3a':'#8a5a3a',roughness:1,flatShading:true})); st.scale.y=0.55; st.position.y=h+sz*0.5; h+=sz*0.9; g.add(st); }
     scene.add(g); } } } }
-function aggiornaNebbie(t){ for(const n of NEBBIE){ n.sp.position.x=n.x0+Math.sin(t*0.2+n.f)*1.2; n.sp.position.z=n.z0+Math.cos(t*0.15+n.f)*0.8; n.sp.material.opacity=0.45+0.25*Math.sin(t*0.5+n.f); } }
+function aggiornaNebbie(t){ for(const n of NEBBIE){ n.sp.position.x=n.x0+Math.sin(t*0.2+n.f)*1.2; n.sp.position.z=n.z0+Math.cos(t*0.15+n.f)*0.8; n.sp.material.opacity=(0.45+0.25*Math.sin(t*0.5+n.f))*(G.golem?0.15:1); } }
 // ---------- il rito della guarigione: lettiga, erbe, pozioni, fumi (richiesta del 12 novembre 2026) ----------
 let kitCura=null; const FUMI=[];
 function creaKitCura(){ const g=new THREE.Group(), leg=new THREE.MeshStandardMaterial({color:'#6a4a2a',roughness:1});
