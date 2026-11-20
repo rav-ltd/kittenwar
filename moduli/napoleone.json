@@ -1,0 +1,398 @@
+{
+  "schema": "stanza_del_tempo/1",
+  "id": "napoleone",
+  "materia": "Storia",
+  "titolo": "La stanza di Napoleone",
+  "durata_stimata_minuti": 10,
+  "regole": {
+    "oggetti_da_portare": 5,
+    "furto_richiede_quiz": true,
+    "errore": "la guardia si volta: il gattino fa la statua, appare l'indizio, si riprova",
+    "mescola_opzioni": true,
+    "stelle_furtivita": {
+      "1_tentativo": 3,
+      "2_tentativi": 2,
+      "3_o_piu": 1
+    },
+    "ordine_tana": "per_data",
+    "bonus_finale": {
+      "tipo": "ordina_per_data",
+      "descrizione": "Prima di tornare a casa, il gattino mette i suoi 5 totem in ordine dal più antico al più recente.",
+      "ricompensa": "cornice dorata sul totem più antico"
+    }
+  },
+  "stile_rendering": "Illustrazione piatta da libro per ragazzi, colori caldi, contorno scuro spesso, oggetto singolo centrato, sfondo trasparente, stesso stile per tutti gli oggetti.",
+  "personaggio": {
+    "nome": "Napoleone Bonaparte",
+    "aspetto": "bicorno portato di traverso, mano infilata nel gilet, sguardo un po' vanitoso ma simpatico",
+    "ingresso": "Un gatto! Mi dicono che voi gatti siate guerrieri. Io conosco un po' l'argomento.",
+    "proposta_porta": "Ho una porta che attraversa il tempo. Dietro c'è il mio studio alle Tuileries, pieno di oggetti della mia vita. Entra, guarda, leggi. Poi scegline cinque e portali nella tua tana come totem.",
+    "regola_furto": "Una cosa sola: i miei oggetti non si regalano. Per portarne via uno devi dimostrare di aver capito la sua storia. Si dice che io abbia portato a Parigi parecchi tesori trovati in giro per l'Europa, quindi non posso scandalizzarmi se un gatto fa lo stesso. Ma occhio al mio granatiere: se sbagli, ti vede.",
+    "chiusura": "Cinque totem, e tutti guadagnati. Nella tua tana adesso c'è un pezzetto della mia storia. Non dirlo agli storici, ma un po' ti invidio la tana."
+  },
+  "stanza": {
+    "nome": "Lo studio di Napoleone alle Tuileries",
+    "sfondo_prompt": "Studio imperiale di inizio Ottocento, scrivania grande, tende rosse, tavolo con carte geografiche, finestra su un giardino, luce di candele, stesso stile del gioco."
+  },
+  "guardia": {
+    "nome": "Il granatiere della Guardia imperiale",
+    "aspetto": "alto, con un grande colbacco di pelo, passeggia avanti e indietro",
+    "furto_riuscito": "Silenzio, un balzo... e il totem è tuo.",
+    "furto_fallito": "Il granatiere si volta! Immobile come una statua, gattino... ecco, ora è passato. Riprova."
+  },
+  "oggetti": [
+    {
+      "id": "carta_italia",
+      "nome": "La carta della campagna d'Italia",
+      "data_testo": "1796",
+      "ordine": 1796,
+      "etichetta_tana": "1796 · Il giovane generale in Italia",
+      "rendering_soggetto": "Carta geografica dell'Italia del Nord arrotolata a metà, con segni a matita e una spilla rossa.",
+      "frammento": "Nel 1796 Napoleone ha soltanto 26 anni ed è un giovane generale mandato a guidare l'esercito francese in Italia. Contro ogni previsione batte gli austriaci a Lodi, ad Arcole e a Rivoli. Questa carta è piena di segni a matita: da qui il suo nome comincia a girare per tutta l'Europa.",
+      "quiz": {
+        "domanda": "In Italia, contro quale esercito combatté il giovane Napoleone?",
+        "opzioni": [
+          {
+            "testo": "Quello austriaco",
+            "giusta": true
+          },
+          {
+            "testo": "Quello inglese",
+            "giusta": false
+          },
+          {
+            "testo": "Quello russo",
+            "giusta": false
+          }
+        ],
+        "indizio": "Rileggi: chi sconfigge a Lodi, ad Arcole e a Rivoli?",
+        "spiegazione": "L'Austria dominava gran parte del Nord Italia: le vittorie del 1796-97 fecero di Napoleone un eroe in Francia."
+      },
+      "battuta_napoleone": "Ventisei anni, e già un generale. Non è modestia, è un fatto."
+    },
+    {
+      "id": "legion_onore",
+      "nome": "La Legion d'onore",
+      "data_testo": "1802",
+      "ordine": 1802,
+      "etichetta_tana": "1802 · Il premio al merito",
+      "rendering_soggetto": "Medaglia a forma di stella a cinque raggi con nastro rosso, su un cuscinetto di velluto.",
+      "frammento": "Nel 1802 Napoleone inventa un premio nuovo: la Legion d'onore. Si riceve per ciò che hai fatto, che tu sia soldato o scienziato, e non per la famiglia in cui sei nato. Ancora oggi in Francia è la più alta onorificenza.",
+      "quiz": {
+        "domanda": "Che cosa premia la Legion d'onore?",
+        "opzioni": [
+          {
+            "testo": "Il merito, non la nascita",
+            "giusta": true
+          },
+          {
+            "testo": "Solo le famiglie nobili",
+            "giusta": false
+          },
+          {
+            "testo": "Chi paga di più",
+            "giusta": false
+          }
+        ],
+        "indizio": "Il frammento dice cosa conta e cosa non conta.",
+        "spiegazione": "Dopo la Rivoluzione, l'idea era che contassero i meriti personali e non i titoli di famiglia."
+      },
+      "battuta_napoleone": "Dare medaglie costa poco e rende molto. Ma questa la danno ancora."
+    },
+    {
+      "id": "codice_civile",
+      "nome": "Il Codice civile",
+      "data_testo": "1804",
+      "ordine": 1804.1,
+      "etichetta_tana": "1804 · Leggi uguali per tutti",
+      "rendering_soggetto": "Grosso libro rilegato in pelle marrone con un fermaglio dorato e un segnalibro rosso.",
+      "frammento": "Nel 1804 le leggi civili della Francia vengono scritte in un unico libro: proprietà, famiglia, contratti. Il principio chiave è che davanti alla legge i cittadini sono uguali e i privilegi di nascita non contano più. Il Codice civile napoleonico ha influenzato le leggi di molti paesi, Italia compresa.",
+      "quiz": {
+        "domanda": "Quale principio è alla base del Codice civile?",
+        "opzioni": [
+          {
+            "testo": "Davanti alla legge i cittadini sono uguali",
+            "giusta": true
+          },
+          {
+            "testo": "I nobili hanno più diritti dei contadini",
+            "giusta": false
+          },
+          {
+            "testo": "Ogni città ha le sue leggi",
+            "giusta": false
+          }
+        ],
+        "indizio": "Rileggi il principio chiave nel frammento.",
+        "spiegazione": "Un solo libro di leggi per tutti: era una grande novità rispetto ai tempi in cui ogni regione e ogni classe aveva regole diverse."
+      },
+      "battuta_napoleone": "Dicono che resterà più della mia spada. Io non do mai ragione ai critici, ma qui..."
+    },
+    {
+      "id": "corona",
+      "nome": "La corona imperiale",
+      "data_testo": "2 dicembre 1804",
+      "ordine": 1804.2,
+      "etichetta_tana": "1804 · L'incoronazione",
+      "rendering_soggetto": "Corona di foglie d'alloro dorate su un cuscino rosso.",
+      "frammento": "Il 2 dicembre 1804, nella cattedrale di Notre-Dame a Parigi, Napoleone diventa imperatore dei francesi. Il papa Pio VII è lì per incoronarlo, ma Napoleone gli prende la corona dalle mani e se la mette in testa da solo. Il gesto dice: questo potere me lo sono guadagnato io.",
+      "quiz": {
+        "domanda": "Chi mise la corona sulla testa di Napoleone?",
+        "opzioni": [
+          {
+            "testo": "Lui stesso",
+            "giusta": true
+          },
+          {
+            "testo": "Il papa",
+            "giusta": false
+          },
+          {
+            "testo": "Sua moglie Giuseppina",
+            "giusta": false
+          }
+        ],
+        "indizio": "Rileggi cosa fa Napoleone con la corona.",
+        "spiegazione": "Napoleone si incoronò da solo per mostrare che il suo potere non dipendeva dalla Chiesa."
+      },
+      "battuta_napoleone": "Alla cerimonia ero molto emozionato. Si vedeva? No? Meglio."
+    },
+    {
+      "id": "austerlitz",
+      "nome": "Il tavolo di Austerlitz",
+      "data_testo": "2 dicembre 1805",
+      "ordine": 1805,
+      "etichetta_tana": "1805 · La battaglia dei tre imperatori",
+      "rendering_soggetto": "Tavolo con una mappa e tante pedine di legno blu e rosse sparse, e un piccolo sole dorato disegnato in un angolo.",
+      "frammento": "Esattamente un anno dopo l'incoronazione, il 2 dicembre 1805, Napoleone vince la battaglia di Austerlitz. La chiamano «battaglia dei tre imperatori» perché c'erano lui, l'imperatore d'Austria e lo zar di Russia. È considerata il suo capolavoro militare.",
+      "quiz": {
+        "domanda": "Contro quali due imperi vinse Napoleone ad Austerlitz?",
+        "opzioni": [
+          {
+            "testo": "Austria e Russia",
+            "giusta": true
+          },
+          {
+            "testo": "Inghilterra e Spagna",
+            "giusta": false
+          },
+          {
+            "testo": "Prussia e Impero ottomano",
+            "giusta": false
+          }
+        ],
+        "indizio": "Cerca gli altri due imperatori nominati nel frammento.",
+        "spiegazione": "Francia contro Austria e Russia: un esercito più piccolo vinse contro uno più grande grazie a una mossa astuta."
+      },
+      "battuta_napoleone": "Quel giorno il sole era dalla mia parte. Il sole è sempre dalla parte di chi ha un buon piano."
+    },
+    {
+      "id": "lettera_giuseppina",
+      "nome": "La lettera a Giuseppina",
+      "data_testo": "1809",
+      "ordine": 1809,
+      "etichetta_tana": "1809 · Il divorzio e l'erede",
+      "rendering_soggetto": "Lettera piegata con un sigillo di ceralacca rossa e una penna d'oca appoggiata sopra.",
+      "frammento": "Napoleone vuole molto bene a Giuseppina, ma non hanno figli, e un imperatore vuole qualcuno a cui lasciare l'impero. Nel 1809 divorzia da lei, con grande dolore di tutti e due, e nel 1810 sposa Maria Luisa d'Austria, che gli darà un figlio.",
+      "quiz": {
+        "domanda": "Perché Napoleone divorziò da Giuseppina?",
+        "opzioni": [
+          {
+            "testo": "Voleva un erede a cui lasciare l'impero",
+            "giusta": true
+          },
+          {
+            "testo": "Lei non voleva più vivere a Parigi",
+            "giusta": false
+          },
+          {
+            "testo": "Lo aveva deciso il papa",
+            "giusta": false
+          }
+        ],
+        "indizio": "Che cosa vuole un imperatore, secondo il frammento?",
+        "spiegazione": "Senza figli, nessuno avrebbe ereditato il trono: per questo cercò una nuova moglie di una grande famiglia reale."
+      },
+      "battuta_napoleone": "Scrivere questa lettera è stato più difficile di una battaglia. Fai finta di non averlo sentito."
+    },
+    {
+      "id": "mappa_russia",
+      "nome": "La mappa della Russia",
+      "data_testo": "1812",
+      "ordine": 1812,
+      "etichetta_tana": "1812 · La disfatta in Russia",
+      "rendering_soggetto": "Mappa della Russia con una linea rossa verso Mosca e una linea blu di ritorno, bordo bruciacchiato, qualche fiocco di neve.",
+      "frammento": "Nel 1812 Napoleone invade la Russia con un esercito enorme, circa 600.000 uomini contando gli alleati. I russi si ritirano bruciando raccolti e villaggi, così a Mosca non trova né cibo né una resa. Con l'inverno arrivano freddo e fame, e dell'esercito torna indietro solo una piccola parte.",
+      "quiz": {
+        "domanda": "Che cosa distrusse l'esercito di Napoleone in Russia?",
+        "opzioni": [
+          {
+            "testo": "Il freddo, la fame e la terra bruciata",
+            "giusta": true
+          },
+          {
+            "testo": "Una grande flotta inglese",
+            "giusta": false
+          },
+          {
+            "testo": "Un terremoto a Mosca",
+            "giusta": false
+          }
+        ],
+        "indizio": "Pensa a cosa fanno i russi mentre si ritirano, e a cosa arriva con l'inverno.",
+        "spiegazione": "L'esercito non fu sconfitto in una grande battaglia: fu consumato dalla distanza, dal gelo e dalla mancanza di cibo."
+      },
+      "battuta_napoleone": "Un errore di calcolo. Non lo dico spesso, quindi goditelo."
+    },
+    {
+      "id": "sant_elena",
+      "nome": "Il globo con Sant'Elena",
+      "data_testo": "1815",
+      "ordine": 1815,
+      "etichetta_tana": "1815 · L'esilio a Sant'Elena",
+      "rendering_soggetto": "Piccolo globo terrestre con uno spillo su un'isola in mezzo all'oceano, una catenella e un lucchetto.",
+      "frammento": "Nel 1815, dopo la sconfitta di Waterloo, gli inglesi mandano Napoleone a Sant'Elena, un'isola minuscola e lontanissima in mezzo all'Atlantico. Vogliono essere sicuri che non possa più scappare, come aveva fatto dall'isola d'Elba. Qui morirà nel 1821.",
+      "quiz": {
+        "domanda": "Dopo Waterloo, in quale isola fu mandato Napoleone?",
+        "opzioni": [
+          {
+            "testo": "Sant'Elena",
+            "giusta": true
+          },
+          {
+            "testo": "Elba",
+            "giusta": false
+          },
+          {
+            "testo": "Corsica",
+            "giusta": false
+          }
+        ],
+        "indizio": "Non quella da cui era già scappato: questa è in mezzo all'Atlantico.",
+        "spiegazione": "L'Elba fu il primo esilio, da cui scappò dopo meno di un anno. Sant'Elena era così lontana che non c'era modo di tornare."
+      },
+      "battuta_napoleone": "Un'isola ben piccola per un uomo così grande. Almeno il panorama sul mare è bello."
+    }
+  ],
+  "ripasso_tana": {
+    "descrizione": "Un gattino ospite incontra un totem nella tana e chiede «che cos'è?». Il giocatore risponde con una domanda a scelta fra quelle dell'oggetto o, in futuro, con domande extra.",
+    "domande_extra_per_oggetto": 0
+  },
+  "sfida_finale": {
+    "descrizione": "Prima di tornare a casa, il gatto affronta il personaggio secondo la sua strada: il guerriero lo sfida in duello, il guaritore lo cura.",
+    "guerriero": {
+      "tipo": "duello_tattico",
+      "sfida": "Un gatto guerriero! Prima di lasciarti andare, vediamo se sai combattere come un generale. Tre scontri: io uso le mie manovre, tu le tue.",
+      "regole": "Il quadrato ferma la carica; l'aggiramento sorprende il quadrato; la carica travolge chi sta aggirando. Guarda bene Napoleone: a volte i suoi gesti tradiscono la mossa che prepara. Vince chi arriva prima a due scontri.",
+      "mosse": [
+        {
+          "id": "carica",
+          "nome": "Carica frontale",
+          "emoji": "⚔️",
+          "batte": "aggiramento",
+          "indizio": "Napoleone abbassa la testa e punta dritto verso di te."
+        },
+        {
+          "id": "aggiramento",
+          "nome": "Aggiramento sul fianco",
+          "emoji": "🌀",
+          "batte": "quadrato",
+          "indizio": "Napoleone guarda il tuo fianco e sorride."
+        },
+        {
+          "id": "quadrato",
+          "nome": "Quadrato di difesa",
+          "emoji": "🛡️",
+          "batte": "carica",
+          "indizio": "Napoleone pianta bene i piedi e si raccoglie."
+        }
+      ],
+      "vittoria": "Battuto da un gatto! Non scriverlo nei libri di storia, mi raccomando.",
+      "sconfitta": "Ah, ancora un po' di pratica, gattino. Riprova: i grandi generali imparano dalle sconfitte.",
+      "acclamazione": {
+        "chi": "I monarchici",
+        "bandiera": "gigli",
+        "grido": "Vive le roi !",
+        "descrizione": "Dalla porta entrano i monarchici con la bandiera bianca dei gigli: per loro chi batte Napoleone è un eroe."
+      },
+      "riquadro": [
+        "La Restaurazione",
+        "Dopo la caduta di Napoleone, nel 1814 e poi di nuovo nel 1815, in Francia tornò un re: Luigi XVIII, fratello di Luigi XVI. Questo ritorno si chiama Restaurazione, e i suoi sostenitori erano i monarchici. Il quadrato, invece, era una formazione della fanteria contro la cavalleria: a Waterloo i quadrati britannici resistettero alle cariche dei cavalieri francesi."
+      ]
+    },
+    "guaritore": {
+      "tipo": "cura",
+      "sfida": "Un guaritore? Allora ascolta: da anni ho un male allo stomaco che non mi lascia, e i miei medici non sanno più che cosa fare.",
+      "passi": [
+        {
+          "domanda": "Dove gli fa male?",
+          "opzioni": [
+            {
+              "testo": "Allo stomaco",
+              "giusta": true
+            },
+            {
+              "testo": "Alla zampa",
+              "giusta": false
+            },
+            {
+              "testo": "Alle orecchie",
+              "giusta": false
+            }
+          ],
+          "indizio": "Rileggi che cosa ti ha detto Napoleone.",
+          "spiegazione": "Napoleone soffrì per anni di dolori allo stomaco: ne parlano le memorie dei suoi ultimi anni."
+        },
+        {
+          "domanda": "Che cosa gli prepari?",
+          "opzioni": [
+            {
+              "testo": "Un infuso tiepido di camomilla e menta",
+              "giusta": true
+            },
+            {
+              "testo": "Un bicchiere di vino forte",
+              "giusta": false
+            },
+            {
+              "testo": "Una corsa intorno alla stanza",
+              "giusta": false
+            }
+          ],
+          "indizio": "Un guaritore usa le erbe che calmano.",
+          "spiegazione": "Nel gioco, le erbe che calmano e il riposo gli danno sollievo."
+        },
+        {
+          "domanda": "Che cosa gli consigli?",
+          "opzioni": [
+            {
+              "testo": "Pasti leggeri e tranquilli, senza fretta",
+              "giusta": true
+            },
+            {
+              "testo": "Mangiare in piedi durante le battaglie",
+              "giusta": false
+            },
+            {
+              "testo": "Saltare i pasti",
+              "giusta": false
+            }
+          ],
+          "indizio": "Lo stomaco ama la calma.",
+          "spiegazione": "Si racconta che Napoleone mangiasse molto in fretta, a volte in pochi minuti."
+        }
+      ],
+      "vittoria": "Il dolore... è passato! Gattino, sei meglio di tutti i miei medici messi insieme.",
+      "acclamazione": {
+        "chi": "I napoleonici",
+        "bandiera": "tricolore",
+        "grido": "Vive l'Empereur !",
+        "descrizione": "Dalla porta entrano i granatieri della Guardia con il tricolore: hai guarito il loro imperatore."
+      },
+      "riquadro": [
+        "La storia vera",
+        "A Sant'Elena Napoleone stava sempre peggio, e morì nel 1821. I medici che lo esaminarono dopo la morte trovarono una grave malattia dello stomaco. Nel gioco il guaritore riesce dove la medicina del suo tempo non poteva."
+      ]
+    }
+  }
+}

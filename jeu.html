@@ -61,7 +61,7 @@ kbd{background:#0006;border:1px solid #777;border-radius:4px;padding:0 4px;font-
 </div>
 </div>
 <div id="modal"><div class="box"><h2 id="mt"></h2><div id="mx"></div><div id="mb"></div></div></div>
-<script src="js/leggende.js?v=20261114230847"></script><script src="js/suoni.js?v=20261114230847"></script><script src="js/musica.js?v=20261114230847"></script><script src="js/storie.js?v=20261114230847"></script><script src="js/registro.js?v=20261114230847"></script><script src="js/modello.js?v=20261114230847"></script>
+<script src="js/leggende.js?v=20261120195648"></script><script src="js/suoni.js?v=20261120195648"></script><script src="js/musica.js?v=20261120195648"></script><script src="js/storie.js?v=20261120195648"></script><script src="js/registro.js?v=20261120195648"></script><script src="js/modello.js?v=20261120195648"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script>
 'use strict';
@@ -1346,10 +1346,10 @@ function aggiornaGiocatore(dt){
   p.y+=48*dt; p.energia=Math.max(0,p.energia-1.2*dt);
   if(Math.random()<dt*6) particelle.push({tipo:'onda',x:p.x+rnd(-10,10),y:p.y,t:0.9});
   if(G.t>avvisoFiume){ avvisoFiume=G.t+8; annuncia('🌊 La rivière t’emporte !','#9cd0ff'); consiglio('fiume','Le courant est fort ! Traverse la rivière sur les pierres du gué, là où l’eau est basse : tu les vois sur la carte.',30); } }
- p.x=clamp(p.x,10,WW-10); p.y=clamp(p.y,10,WH-10);
+ if(G.dentro!=='tempoStanza'){ p.x=clamp(p.x,10,WW-10); p.y=clamp(p.y,10,WH-10); } // la stanza del tempo sta fuori dalla mappa (js/stanza.js)
  vincoloTana(p,ox,oy,dt);
  p.cd-=dt;
- if(p.rango==='gattino'&&!G.gita){ // durante la gita con un adulto il gattino esce (js/storie.js)
+ if(p.rango==='gattino'&&!G.gita&&G.dentro!=='tempoStanza'){ // durante la gita con un adulto il gattino esce (js/storie.js)
   const cm=CLAN.felce.campo, d=dist(p,cm);
   if(d>cm.r+8){ p.x=cm.x+(p.x-cm.x)/d*(cm.r+8); p.y=cm.y+(p.y-cm.y)/d*(cm.r+8);
    } // a dirglielo è un adulto, in un fumetto (trattenuto, js/leggende.js)
@@ -2003,7 +2003,8 @@ addEventListener('r3d-pronto',()=>ridimensiona());
 avvio();
 requestAnimationFrame(loop);
 </script>
-<script src="js/erbe.js?v=20261114230847"></script>
-<script type="module" src="js/mondo3d.js?v=20261114230847"></script>
+<script src="js/erbe.js?v=20261120195648"></script>
+<script src="js/stanza.js?v=20261120200241"></script>
+<script type="module" src="js/mondo3d.js?v=20261120200241"></script>
 </body>
 </html>

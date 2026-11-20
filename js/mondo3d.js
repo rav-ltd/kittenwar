@@ -411,10 +411,10 @@ function aggiornaCamera(dt,fx,fy,zoom,pp,alt){
  if(cam3.dist>3.4&&performance.now()-(cam3.rotella||0)>6000) cam3.dist+=(3.4-cam3.dist)*Math.min(1,dt*0.8);
  const CG=G.colosso, cgD=CG&&!G.dentro&&(CG.massi||0)>=2?Math.hypot(G.p.x-CG.x,G.p.y-CG.y):9999, cgV=zoom>1.05?0:Math.max(0,Math.min(1,(560-cgD)/220))*Math.min(1,(CG?CG.massi:0)/9); // vicino al grande gatto di pietra la telecamera alza lo sguardo, per vederlo intero
  cam3.cg=(cam3.cg||0)+(cgV-(cam3.cg||0))*Math.min(1,dt*2);
- const d=(G.dentro?Math.min(cam3.dist,2.6):cam3.dist*(1+0.35*cam3.cg))/zoom, base=G.dentro?0.55:quota(cam3.tx,cam3.tz)+0.25+(alt!=null?alt:(G.p.elev||0)*K);
+ const d=(G.dentro?Math.min(cam3.dist,G.dentro==='tempoStanza'?4.2:2.6):cam3.dist*(1+0.35*cam3.cg))/zoom, base=G.dentro?0.55:quota(cam3.tx,cam3.tz)+0.25+(alt!=null?alt:(G.p.elev||0)*K);
  const fwd=new THREE.Vector3(Math.sin(cam3.yaw),0,Math.cos(cam3.yaw));
  const sh=scossa>0?(Math.random()-0.5)*scossa*0.3:0;
- const pit=G.dentro?Math.min(cam3.pitch,0.2):cam3.pitch*(1-0.72*cam3.cg);
+ const pit=G.dentro?Math.min(cam3.pitch,G.dentro==='tempoStanza'?0.5:0.2):cam3.pitch*(1-0.72*cam3.cg);
  camera.position.set(cam3.tx-fwd.x*d*Math.cos(pit)+sh,base+d*Math.sin(pit),cam3.tz-fwd.z*d*Math.cos(pit));
  const minY=quota(camera.position.x,camera.position.z)+0.25; if(camera.position.y<minY) camera.position.y=minY;
  const sl=G.dentro&&SALE[G.dentro]; if(sl){ const ox=camera.position.x-sl.O.x, oz=camera.position.z-sl.O.z, r=Math.hypot(ox,oz), m=sl.Rr-0.8; if(r>m){ camera.position.x=sl.O.x+ox/r*m; camera.position.z=sl.O.z+oz/r*m; } camera.position.y=Math.min(camera.position.y,salaH+0.4); }
@@ -774,6 +774,7 @@ function inSala(x,y){ const k=G&&G.dentro, s=k&&SALE[k]; if(!s) return null; con
 let salaVista=null;
 const buioSala=new THREE.Color('#120b07');
 function aggiornaSala(t){
+ aggiornaImpero(t); // la stanza del tempo e la porta al campo (js/stanza.js)
  const k=G.dentro, s=k&&SALE[k];
  if(k!==salaVista){ for(const kk in SALE) SALE[kk].g.visible=kk===k; salaVista=k; }
  const rito=scena&&(scena.tipo==='rito'||scena.tipo==='cerimonia'), alto=rito?1.9:1;
@@ -965,3 +966,116 @@ function aggiornaCura(t){ const sc=scena&&scena.tipo==='cura'?scena:null; if(!ki
 window.R3D={frame,aggiornaCamera,proietta,vis:visibile,ruota,resize,quota:quotaPx,cam3};
 resize(W,H);
 window.dispatchEvent(new Event('r3d-pronto'));
+
+// ================== la stanza del tempo in 3D (js/stanza.js) ==================
+// Richiesta del 20 novembre 2026
+// e, per Napoleone. Tutto è disegnato nel codice, senza file esterni: una sala rettangolare in stile Impero (pareti rosse
+// con le api d'oro, fregio d'alloro, parquet a spina di pesce, finestra sul giardino, scrivania, tricolore nella corona d'alloro, lampadario)
+// i piedistalli con gli oggetti del modulo, il personaggio e la guardia come figurine a soldatino, e al campo la porta del tempo con il personaggio.
+// Dati da js/stanza.js in window.TEMPO3D: { campo:{x,y}|null, pers:{aspetto}, guardia:{aspetto}, ped:[{id,x,y,emoji,img,preso}], voltata, statua }.
+const texTela=(w,h,disegna,rx=1,ry=1)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; disegna(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); t.colorSpace=THREE.SRGBColorSpace; return t; };
+const ape=(g,x,y,s)=>{ g.save(); g.translate(x,y); g.scale(s,s); g.fillStyle='#f2c94c'; g.beginPath(); g.ellipse(0,2,3,6,0,0,6.283); g.fill(); g.beginPath(); g.arc(0,-6,2.6,0,6.283); g.fill(); g.globalAlpha=0.85; g.beginPath(); g.ellipse(-5,-2,5,2.6,-0.5,0,6.283); g.ellipse(5,-2,5,2.6,0.5,0,6.283); g.fill(); g.restore(); };
+const TEX_IMP={
+ damasco:()=>texTela(128,128,(g,w,h)=>{ g.fillStyle='#8c1c1f'; g.fillRect(0,0,w,h); g.strokeStyle='rgba(255,210,120,0.14)'; g.lineWidth=2; for(let i=0;i<4;i++){ g.beginPath(); g.ellipse(64,64,46-i*10,58-i*12,0,0,6.283); g.stroke(); } ape(g,32,32,1.5); ape(g,96,96,1.5); },4,2),
+ boiserie:()=>texTela(128,64,(g,w,h)=>{ g.fillStyle='#efe6cf'; g.fillRect(0,0,w,h); g.strokeStyle='#c9a24a'; g.lineWidth=3; g.strokeRect(10,10,w-20,h-20); g.strokeStyle='#d8cdb0'; g.lineWidth=1; g.strokeRect(18,18,w-36,h-36); },5,1),
+ fregio:()=>texTela(256,32,(g,w,h)=>{ g.fillStyle='#24452c'; g.fillRect(0,0,w,h); g.strokeStyle='#e0b040'; g.lineWidth=2; g.beginPath(); g.moveTo(0,16); g.lineTo(w,16); g.stroke(); g.fillStyle='#e0b040'; for(let x=6;x<w;x+=14){ g.beginPath(); g.ellipse(x,11,5,2.4,-0.5,0,6.283); g.ellipse(x+5,21,5,2.4,0.5,0,6.283); g.fill(); } },6,1),
+ parquet:()=>texTela(128,128,(g,w,h)=>{ g.fillStyle='#6a3e1e'; g.fillRect(0,0,w,h); for(let y=-128;y<256;y+=16) for(let x=0;x<w;x+=32){ const c=['#8a5428','#7a4822','#94602e'][(x/32+y/16)&1?0:((x+y)>>4)%3]; g.fillStyle=c; g.save(); g.translate(x,y); g.rotate(Math.PI/4); g.fillRect(0,0,30,9); g.restore(); g.save(); g.translate(x+16,y); g.rotate(-Math.PI/4); g.fillStyle='#7e4c24'; g.fillRect(0,0,30,9); g.restore(); } },16,16),
+ soffitto:()=>texTela(128,128,(g,w,h)=>{ g.fillStyle='#f3ead4'; g.fillRect(0,0,w,h); g.strokeStyle='#d9b45a'; g.lineWidth=4; g.strokeRect(6,6,w-12,h-12); },1,1),
+ giardino:()=>texTela(256,256,(g,w,h)=>{ const s=g.createLinearGradient(0,0,0,h*0.55); s.addColorStop(0,'#8fc4ef'); s.addColorStop(1,'#dbeefa'); g.fillStyle=s; g.fillRect(0,0,w,h); g.fillStyle='#4f8a3a'; g.fillRect(0,h*0.55,w,h); g.fillStyle='#e8dcc0'; g.beginPath(); g.moveTo(w*0.44,h); g.lineTo(w*0.5,h*0.56); g.lineTo(w*0.56,h); g.fill();
+  g.fillStyle='#2f6a2a'; for(const x of [30,70,186,226]){ g.beginPath(); g.moveTo(x,h*0.56); g.lineTo(x-14,h*0.85); g.lineTo(x+14,h*0.85); g.fill(); } g.fillStyle='#3a7a32'; for(const x of [10,110,150,250]){ g.beginPath(); g.arc(x,h*0.5,26,0,6.283); g.fill(); }
+  g.strokeStyle='#f6f0e2'; g.lineWidth=6; g.strokeRect(3,3,w-6,h-6); g.beginPath(); g.moveTo(w/2,0); g.lineTo(w/2,h); g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke(); }),
+ emblema:()=>texTela(128,128,(g,w,h)=>{ g.fillStyle='#1f3a8a'; g.beginPath(); g.arc(64,64,62,0,6.283); g.fill(); g.strokeStyle='#e0b040'; g.lineWidth=5; g.beginPath(); g.arc(64,64,56,0,6.283); g.stroke();
+  g.fillStyle='#e0b040'; for(let i=0;i<14;i++){ const a=Math.PI*0.62+i*0.12, b=Math.PI*0.38-i*0.12; for(const q of [a,b]){ g.beginPath(); g.ellipse(64+Math.cos(q)*42,64+Math.sin(q)*42,7,3,q+1.4,0,6.283); g.fill(); } } g.font='bold 62px Georgia,serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('N',64,68); }),
+ mappa:()=>texTela(128,96,(g,w,h)=>{ g.fillStyle='#e8d9b0'; g.fillRect(0,0,w,h); g.fillStyle='#bcd29a'; g.beginPath(); g.ellipse(50,50,38,26,0.4,0,6.283); g.fill(); g.strokeStyle='#4a6aa8'; g.lineWidth=2; g.beginPath(); g.moveTo(5,80); g.bezierCurveTo(40,60,70,90,124,50); g.stroke(); g.fillStyle='#2a3a8a'; for(let i=0;i<7;i++) g.fillRect(30+i*8,40+(i%2)*6,5,5); g.fillStyle='#a82a2a'; for(let i=0;i<6;i++) g.fillRect(70+i*7,30+(i%3)*5,5,5); }),
+ gigli:()=>texTela(96,64,(g,w,h)=>{ g.fillStyle='#f6f4ee'; g.fillRect(0,0,w,h); g.fillStyle='#d9a520'; g.font='bold 22px serif'; g.textAlign='center'; g.textBaseline='middle'; for(const [x,y] of [[24,18],[72,18],[48,46]]) g.fillText('⚜',x,y); }),
+ tricolore:()=>texTela(96,64,(g,w,h)=>{ g.fillStyle='#1f3a8a'; g.fillRect(0,0,32,h); g.fillStyle='#f6f4ee'; g.fillRect(32,0,32,h); g.fillStyle='#c0282a'; g.fillRect(64,0,32,h); }) };
+const MI=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:0.6,...o});
+// figurina a soldatino: testa grande, cappello secondo l' (bicorno, colbacco, corona), cappotto, mano nel gilet
+function figurina(aspetto,tipo){ const a=(aspetto||'').toLowerCase(), g=new THREE.Group(), pelle=MI('#f2c9a0'), nero=MI('#1d1d24',{roughness:0.8}), oro=MI('#e0b040',{metalness:0.7,roughness:0.3});
+ const guard=tipo==='guardia', monar=tipo==='monarchico', giacca=MI(monar?'#f2efe6':guard?'#1f3a8a':'#24346a'), cappotto=MI(guard||monar?'#1f3a8a':'#7d7f86',{roughness:0.9}), bianco=MI(monar?'#1f3a8a':'#f2efe6');
+ const c=(geo,m,x,y,z,sx=1,sy=1,sz=1)=>{ const o=new THREE.Mesh(geo,m); o.position.set(x,y,z); o.scale.set(sx,sy,sz); o.castShadow=true; g.add(o); return o; };
+ for(const s of [-1,1]){ c(new THREE.CylinderGeometry(0.075,0.07,0.42,10),bianco,s*0.1,0.42,0); c(new THREE.CylinderGeometry(0.085,0.09,0.3,10),nero,s*0.1,0.15,0.01); c(new THREE.BoxGeometry(0.16,0.06,0.24),nero,s*0.1,0.03,0.05); }
+ c(new THREE.CylinderGeometry(0.2,0.24,0.62,14),giacca,0,0.92,0); c(new THREE.CylinderGeometry(0.08,0.12,0.5,10),bianco,0,0.94,0.13,1,1,0.4);
+if(!guard&&!monar){ const cp=c(new THREE.CylinderGeometry(0.25,0.36,0.9,16,1,true,Math.PI*0.62,Math.PI*1.76),cappotto,0,0.8,0); cp.material.side=THREE.DoubleSide; }
+ else { for(const s of [-1,1]){ const b=c(new THREE.BoxGeometry(0.05,0.72,0.02),bianco,0,0.95,0.2); b.rotation.z=s*0.6; } for(const s of [-1,1]) c(new THREE.SphereGeometry(0.08,8,6),MI('#c0282a'),s*0.22,1.22,0,1,0.6,1); }
+ c(new THREE.CylinderGeometry(0.06,0.06,0.5,8),giacca,0.27,0.95,0).rotation.z=0.25;
+ if(/gilet|mano/.test(a)){ const br=c(new THREE.CylinderGeometry(0.055,0.055,0.32,8),giacca,-0.13,1.0,0.14); br.rotation.set(1.2,0,0.9); c(new THREE.SphereGeometry(0.06,8,6),pelle,-0.04,1.0,0.2); }
+ else c(new THREE.CylinderGeometry(0.06,0.06,0.5,8),giacca,-0.27,0.95,0).rotation.z=-0.25;
+ if(guard){ const fucile=c(new THREE.CylinderGeometry(0.018,0.018,1.3,6),MI('#5a3a1a'),0.34,1.15,0.05); c(new THREE.CylinderGeometry(0.008,0.008,0.25,5),MI('#c8ccd2',{metalness:0.8}),0.34,1.92,0.05); }
+ const testa=c(new THREE.SphereGeometry(0.27,20,16),pelle,0,1.5,0); g.userData.testa=testa;
+ for(const s of [-1,1]) c(new THREE.SphereGeometry(0.035,8,6),nero,s*0.1,1.53,0.24);
+ c(new THREE.SphereGeometry(0.035,8,6),MI('#e8a888'),0,1.47,0.265); for(const s of [-1,1]) c(new THREE.SphereGeometry(0.05,8,6),MI('#f4a9a0'),s*0.15,1.44,0.2,1,0.6,0.4); c(new THREE.TorusGeometry(0.05,0.012,6,12,Math.PI),MI('#8a3a2a'),0,1.4,0.245).rotation.z=Math.PI;
+ c(new THREE.SphereGeometry(0.28,16,12,0,6.283,0,1.2),MI(guard?'#3a2a1a':'#2a1d14'),0,1.56,-0.02);
+ if(/colbacco|pelo/.test(a)||guard){ const cb=c(ruvido(new THREE.CylinderGeometry(0.27,0.3,0.78,16),0.03,6),nero,0,1.95,0); c(new THREE.SphereGeometry(0.06,8,6),MI('#c0282a'),0.2,2.15,0.18); }
+ else if(/bicorn/.test(a)){ const h=new THREE.Group(); const b=new THREE.Mesh(new THREE.SphereGeometry(1,24,12,0,6.283,0,Math.PI/2),nero); b.scale.set(0.5,0.26,0.17); h.add(b); const orlo=new THREE.Mesh(new THREE.TorusGeometry(1,0.04,6,32,Math.PI),MI('#e0b040',{metalness:0.6})); orlo.scale.set(0.5,0.26,0.4); h.add(orlo);
+  for(const [r,col,z] of [[0.07,'#1f3a8a',0.17],[0.048,'#f2efe6',0.172],[0.026,'#c0282a',0.174]]){ const cc=new THREE.Mesh(new THREE.CircleGeometry(r,16),MI(col)); cc.position.set(0.14,0.11,z); h.add(cc); } h.position.set(0,1.7,0); h.rotation.z=-0.08; g.add(h); } // il bicorno di traverso: le punte verso le spalle
+ else if(/corona|crown/.test(a)) c(new THREE.CylinderGeometry(0.2,0.18,0.14,10,1,true),oro,0,1.8,0);
+ g.scale.setScalar(tipo==='guardia'?0.62:0.55); return g; } // figurine piccole, in scala con i gattini
+function texEmoji(e){ return texTela(128,128,(g,w,h)=>{ g.font='96px serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(e,64,70); }); }
+let IMP=null, portaCampo=null;
+function salaImpero(k){ const d=L[k], Rr=d.r*SALA_S*K, A=Rr*0.98, H=salaH, g=new THREE.Group(); g.position.set(-300,0,20); scene.add(g);
+ const piano=(w,h,mat,x,y,z,ry=0)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat); m.position.set(x,y,z); m.rotation.y=ry; m.receiveShadow=true; g.add(m); return m; };
+ const pav=piano(2*A,2*A,new THREE.MeshStandardMaterial({map:TEX_IMP.parquet(),roughness:0.5}),0,0.002,0); pav.rotation.x=-Math.PI/2;
+ const sof=piano(2*A,2*A,new THREE.MeshStandardMaterial({map:TEX_IMP.soffitto(),side:THREE.DoubleSide}),0,H,0); sof.rotation.x=Math.PI/2;
+ const dam=new THREE.MeshStandardMaterial({map:TEX_IMP.damasco(),roughness:0.85}), boi=new THREE.MeshStandardMaterial({map:TEX_IMP.boiserie(),roughness:0.7}), fre=new THREE.MeshStandardMaterial({map:TEX_IMP.fregio(),roughness:0.6});
+ const parete=(lung,x,z,ry)=>{ piano(lung,H,dam,x,H/2,z,ry); const dx=Math.sin(ry)*0.02, dz=Math.cos(ry)*0.02; piano(lung,0.95,boi,x+dx,0.475,z+dz,ry); piano(lung,0.32,fre,x+dx,H-0.36,z+dz,ry); };
+ parete(2*A,0,-A,0); parete(2*A,-A,0,Math.PI/2); parete(2*A,A,0,-Math.PI/2);
+ const porta=1.8; parete(A-porta/2,-(A+porta/2)/2,A,Math.PI); parete(A-porta/2,(A+porta/2)/2,A,Math.PI); piano(porta,H*0.75,new THREE.MeshBasicMaterial({color:'#fff1c8'}),0,H*0.375,A+0.05,Math.PI);
+ const oroM=MI('#e0b040',{metalness:0.7,roughness:0.3}), mogano=MI('#5a2414',{roughness:0.5});
+ for(const s of [-1,1]){ const st=new THREE.Mesh(new THREE.BoxGeometry(0.16,H*0.8,0.2),oroM); st.position.set(s*porta/2,H*0.4,A-0.05); g.add(st); }
+ // la finestra sul giardino, con le tende rosse, dietro la scrivania
+ piano(1.8,1.9,new THREE.MeshBasicMaterial({map:TEX_IMP.giardino()}),0,1.75,-A+0.03);
+ for(const s of [-1,1]){ const t=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.3,2.6,12,1,true),MI('#a01e22',{side:THREE.DoubleSide,roughness:0.9})); t.position.set(s*1.15,1.55,-A+0.25); g.add(t); }
+ const bastone=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,3.0,8),oroM); bastone.rotation.z=Math.PI/2; bastone.position.set(0,2.9,-A+0.25); g.add(bastone);
+ const emb=piano(0.8,0.8,new THREE.MeshStandardMaterial({map:TEX_IMP.emblema(),transparent:true,metalness:0.3}),0,H-0.75,-A+0.04); emb.renderOrder=1;
+ // la scrivania Impero con le carte, il calamaio e la penna
+ const scr=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.08,0.9),mogano); scr.position.set(0,0.82,-A+1.5); scr.castShadow=true; g.add(scr);
+ for(const sx of [-0.9,0.9]) for(const sz of [-0.36,0.36]){ const z=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.8,0.1),mogano); z.position.set(sx,0.4,-A+1.5+sz); g.add(z); const o=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.08,0.12),oroM); o.position.set(sx,0.74,-A+1.5+sz); g.add(o); }
+ const carta=piano(0.9,0.6,new THREE.MeshStandardMaterial({map:TEX_IMP.mappa()}),0.2,0.865,-A+1.5); carta.rotation.x=-Math.PI/2;
+ const cal=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.1,10),MI('#1d1d24')); cal.position.set(-0.6,0.91,-A+1.4); g.add(cal);
+ // il tricolore e il lampadario
+ const asta=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,2.6,8),oroM); asta.position.set(A-0.7,1.3,-A+0.7); g.add(asta);
+ const ban=piano(0.9,0.6,new THREE.MeshStandardMaterial({map:TEX_IMP.tricolore(),side:THREE.DoubleSide}),A-0.7+0.46,2.25,-A+0.7,0.4); ban.userData.bandiera=true;
+ const lam=new THREE.Group(); lam.position.set(0,H-0.6,0); g.add(lam); const anello=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.03,8,24),oroM); anello.rotation.x=Math.PI/2; lam.add(anello);
+ for(let i=0;i<8;i++){ const a=i/8*6.283; fiamma(lam,Math.cos(a)*0.55,0.05,Math.sin(a)*0.55,1.4); }
+ const luce=new THREE.PointLight('#ffe2b0',18,16,1.2); luce.position.set(0,H-0.8,0); g.add(luce); const luce2=new THREE.PointLight('#fff0d8',8,12,1.2); luce2.position.set(0,1.6,A-1.2); g.add(luce2);
+ const napo=figurina('',''), guardia=figurina('colbacco','guardia'); g.add(napo); g.add(guardia);
+ SALE[k]={g,Rr,zA:-A*0.8,polvere:new THREE.Group(),O:g.position}; TEMI[k]={stile:'impero',luce:'#ffd9a0'};
+ return {k,g,A,napo,guardia,ped:new Map(),aspettoN:'',luceRossa:Object.assign(new THREE.PointLight('#ff2a1a',0,5,1.5),{}),statua:null}; }
+const salaPx=(k,x,y)=>{ const d=L[k], s=SALE[k]; return [s.O.x+(x-d.x)*SALA_S*K,s.O.z+(y-d.y)*SALA_S*K]; };
+function aggiornaImpero(t){ const T=window.TEMPO3D;
+ // la porta del tempo al campo, con il personaggio accanto
+ if(T&&T.campo&&!G.dentro){ if(!portaCampo){ const g=new THREE.Group(); const arco=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.07,10,24,Math.PI),MI('#e0b040',{metalness:0.7,emissive:'#7a5a10'})); arco.position.y=1.1; g.add(arco);
+   for(const s of [-1,1]){ const p=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.1,0.12),MI('#e0b040',{metalness:0.7})); p.position.set(s*0.55,0.55,0); g.add(p); }
+   const vel=new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.6),new THREE.MeshBasicMaterial({map:sfumato('rgba(255,255,255,1)','rgba(110,80,255,0.9)'),transparent:true,side:THREE.DoubleSide})); vel.position.y=0.85; g.add(vel); g.userData.vel=vel;
+   const al=new THREE.Sprite(new THREE.SpriteMaterial({map:sfumato('rgba(200,180,255,0.9)','rgba(120,90,255,0)'),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); al.scale.setScalar(3); al.position.y=1; g.add(al);
+   const fig=figurina(T.pers&&T.pers.aspetto,''); fig.position.set(0.95,0,0.1); fig.rotation.y=-0.4; g.add(fig); g.userData.fig=fig; scene.add(g); portaCampo=g; }
+  portaCampo.visible=true; portaCampo.position.set(T.campo.x*K,quotaPx(T.campo.x,T.campo.y),T.campo.y*K); portaCampo.userData.vel.material.opacity=0.75+0.2*Math.sin(t*3); portaCampo.userData.fig.userData.testa.rotation.y=Math.sin(t*0.7)*0.3; }
+ else if(portaCampo) portaCampo.visible=false;
+ // dentro la stanza
+ const k=G.dentro; if(!T||!T.k||k!==T.k) return; if(!IMP||IMP.k!==k){ IMP=salaImpero(k); } if(IMP.aspettoN!==(T.pers&&T.pers.aspetto)){ IMP.g.remove(IMP.napo); IMP.napo=figurina(T.pers&&T.pers.aspetto,''); IMP.g.add(IMP.napo); IMP.aspettoN=T.pers&&T.pers.aspetto; }
+ const d=L[k], p=G.p, [px,pz]=salaPx(k,p.x,p.y), O=IMP.g.position;
+ IMP.napo.position.set(1.4,0,-IMP.A+1.7); IMP.napo.rotation.y=Math.atan2(px-O.x-1.4,pz-O.z+IMP.A-1.7); IMP.napo.userData.testa.position.y=1.5+Math.sin(t*2)*0.01;
+ const gx=Math.sin(t*0.45)*2.6, gz=-IMP.A+3.4; let dir=Math.cos(t*0.45)>0?Math.PI/2:-Math.PI/2; if(T.voltata) dir=Math.atan2(px-O.x-gx,pz-O.z-gz);
+ IMP.guardia.position.set(T.voltata?IMP.guardia.position.x:gx,0,gz); IMP.guardia.rotation.y+= (dir-IMP.guardia.rotation.y)*0.25;
+ if(!IMP.luceRossa.parent) IMP.g.add(IMP.luceRossa); IMP.luceRossa.position.set(IMP.guardia.position.x,2.2,gz); IMP.luceRossa.intensity=T.voltata?6+3*Math.sin(t*12):0;
+ for(const q of T.ped||[]){ let o=IMP.ped.get(q.id); if(!o){ o=new THREE.Group(); const col=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.26,0.9,14),MI('#f2efe6',{roughness:0.35})); col.position.y=0.45; col.castShadow=true; o.add(col);
+   const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.06,14),MI('#e0b040',{metalness:0.7,roughness:0.3})); cap.position.y=0.93; o.add(cap);
+   const map=q.img?new THREE.TextureLoader().load(q.img):texEmoji(q.emoji); const sp=new THREE.Sprite(new THREE.SpriteMaterial({map,transparent:true})); sp.scale.setScalar(0.62); sp.position.y=1.32; o.add(sp); o.userData.sp=sp;
+   const al=new THREE.Sprite(new THREE.SpriteMaterial({map:sfumato('rgba(255,236,170,0.9)','rgba(255,200,90,0)'),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); al.scale.setScalar(1.1); al.position.y=1.3; o.add(al); o.userData.al=al;
+   const [x,z]=salaPx(k,q.x,q.y); o.position.set(x-O.x,0,z-O.z); IMP.g.add(o); IMP.ped.set(q.id,o); }
+  o.userData.sp.visible=o.userData.al.visible=!q.preso; o.userData.sp.position.y=1.32+Math.sin(t*2+q.x)*0.04; o.userData.al.material.opacity=0.45+0.25*Math.sin(t*3+q.y); }
+ if(!IMP.statua){ IMP.statua=new THREE.Sprite(new THREE.SpriteMaterial({map:sfumato('rgba(255,255,255,0.95)','rgba(220,230,255,0)'),transparent:true,depthWrite:false})); IMP.g.add(IMP.statua); }
+ IMP.statua.visible=!!T.statua; IMP.statua.position.set(px-O.x,0.45,pz-O.z); IMP.statua.scale.setScalar(1.6+0.1*Math.sin(t*5));
+ IMP.g.children.forEach(m=>{ if(m.userData.bandiera) m.rotation.y=0.4+Math.sin(t*1.6)*0.12; });
+ // la sfida finale: il personaggio scende davanti al gattino e fa un affondo a ogni scontro
+ if(T.duello){ const dx=px-O.x, dz=pz-O.z, aff=Math.max(0,1-(performance.now()-(T.colpo||0))/450); const yw=(R3D.cam3&&R3D.cam3.yaw)||Math.PI, fx=Math.sin(yw), fz=Math.cos(yw), rx=-Math.cos(yw), rz=Math.sin(yw), av=1.5-aff*0.5, nx=dx+fx*av-rx*0.2, nz=dz+fz*av-rz*0.2; IMP.napo.position.set(nx,0,nz); IMP.napo.rotation.y=Math.atan2(dx-nx,dz-nz); IMP.napo.rotation.x=aff*0.25; }
+ else IMP.napo.rotation.x=0;
+ // l'acclamazione: monarchici con la bandiera dei gigli, o granatieri con il tricolore, che entrano dalla porta e saltano di gioia
+ if(T.folla&&IMP.follaTipo!==T.folla){ if(IMP.folla) IMP.g.remove(IMP.folla); const fg=new THREE.Group(); IMP.g.add(fg); IMP.folla=fg; IMP.follaTipo=T.folla;
+  const tex=T.folla==='gigli'?TEX_IMP.gigli():TEX_IMP.tricolore();
+  for(let i=0;i<7;i++){ const f=figurina(T.folla==='gigli'?'bicorno':'colbacco',T.folla==='gigli'?'monarchico':'guardia'); const x=-2.4+i*0.8, z=-(i%2)*0.5; f.position.set(x,0,z); f.userData.x=x; f.userData.ph=i*0.7; fg.add(f);
+   if(i%2===0){ const asta=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,2.0,6),MI('#e0b040',{metalness:0.6})); asta.position.set(0.3,1.3,0); f.add(asta); const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.75),new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})); ban.position.set(0.86,1.9,0); f.add(ban); } } }
+ if(!T.folla&&IMP.folla){ IMP.g.remove(IMP.folla); IMP.folla=null; IMP.follaTipo=null; }
+ if(IMP.folla){ const yw=(R3D.cam3&&R3D.cam3.yaw)||Math.PI, fx=Math.sin(yw), fz=Math.cos(yw); IMP.folla.position.set(px-O.x+fx*3,0,pz-O.z+fz*3); IMP.folla.rotation.y=Math.atan2(-fx,-fz); IMP.folla.children.forEach(f=>{ f.position.y=Math.abs(Math.sin(t*5+f.userData.ph))*0.18; f.rotation.y=Math.sin(t*3+f.userData.ph)*0.25; }); } }
+window.R3D.stanzaTempo=true;
